@@ -17,11 +17,11 @@ test("formatSessionDuration formats sub-minute and minute durations", () => {
   const start = new Date(0);
   assert.equal(
     formatSessionDuration(start, () => 30 * 1000),
-    "<1m",
+    "< 1 分鐘",
   );
   assert.equal(
     formatSessionDuration(start, () => 5 * 60 * 1000),
-    "5m",
+    "5 分鐘",
   );
 });
 
@@ -29,7 +29,7 @@ test("formatSessionDuration formats hour durations", () => {
   const start = new Date(0);
   assert.equal(
     formatSessionDuration(start, () => 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
-    "2h 5m",
+    "2 小時 5 分鐘",
   );
 });
 
@@ -38,7 +38,7 @@ test("formatSessionDuration uses Date.now by default", () => {
   Date.now = () => 60000;
   try {
     const result = formatSessionDuration(new Date(0));
-    assert.equal(result, "1m");
+    assert.equal(result, "1 分鐘");
   } finally {
     Date.now = originalNow;
   }
@@ -160,7 +160,7 @@ test("main executes the happy path with default dependencies", async () => {
     Date.now = originalNow;
   }
 
-  assert.equal(renderedContext?.sessionDuration, "1m");
+  assert.equal(renderedContext?.sessionDuration, "1 分鐘");
   assert.equal(renderedContext?.outputStyle, "tech-leader");
 });
 
