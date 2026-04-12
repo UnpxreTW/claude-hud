@@ -11,6 +11,7 @@ import {
   renderGitFilesLine,
   renderEnvironmentLine,
   renderUsageLine,
+  renderWeeklyUsageLine,
   renderMemoryLine,
   renderSessionTokensLine,
 } from './lines/index.js';
@@ -349,6 +350,8 @@ function renderElementLine(ctx: RenderContext, element: HudElement): string | nu
       return renderIdentityLine(ctx);
     case 'usage':
       return renderUsageLine(ctx);
+    case 'weeklyUsage':
+      return renderWeeklyUsageLine(ctx);
     case 'memory':
       return renderMemoryLine(ctx);
     case 'environment':
