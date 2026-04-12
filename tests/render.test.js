@@ -693,7 +693,7 @@ test('render expanded layout includes speed and duration on the project line', a
 
     assert.ok(projectLine, 'expected an expanded project line');
     assert.ok(projectLine.includes('out: 1000.0 tok/s'), 'should include deterministic speed');
-    assert.ok(projectLine.includes('⏱️  12m 34s'), 'should include session duration');
+    assert.ok(projectLine.includes('⏱️ 執行時間：12m 34s'), 'should include session duration');
   });
 });
 
