@@ -27,6 +27,6 @@ export function renderEnvironmentLine(ctx) {
     if (parts.length === 0) {
         return null;
     }
-    return label(parts.join(" | "), ctx.config?.colors);
+    return label(`參考：${parts.join(" | ")}`, ctx.config?.colors);
 }
 //# sourceMappingURL=environment.js.map
