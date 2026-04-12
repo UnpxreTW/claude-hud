@@ -13,6 +13,9 @@ upstream updates.
 - If unresolvable, create a warning Issue for @UnpxreTW with details
 - **Each override must be applied in its own separate commit and PR** —
   do not bundle multiple overrides into a single PR
+- **When modifying code behavior, also update any related test cases** to
+  match the new expected output. Run `npm run test:coverage` to verify
+  before committing
 
 ---
 
