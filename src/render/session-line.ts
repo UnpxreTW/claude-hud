@@ -31,6 +31,12 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   const parts: string[] = [];
   const display = ctx.config?.display;
+
+  // Custom line (static user-defined text) — rendered first
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
   const contextValueMode = display?.contextValue ?? 'percent';
   const contextValue = formatContextValue(ctx, percent, contextValueMode);
   const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
@@ -226,12 +232,6 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   if (ctx.extraLabel) {
     parts.push(label(ctx.extraLabel, colors));
-  }
-
-  // Custom line (static user-defined text)
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   let line = parts.join(' | ');
