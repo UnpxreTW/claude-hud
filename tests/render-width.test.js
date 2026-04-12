@@ -227,14 +227,14 @@ test('render ignores OSC 8 hyperlink sequences when measuring line width', () =>
   ctx.extraLabel = '\x1b]8;;file:///tmp/my-project\x1b\\linked-label\x1b]8;;\x1b\\';
 
   let lines = [];
-  withTerminal(47, () => {
+  withTerminal(50, () => {
     lines = captureRender(ctx);
   });
 
   assert.equal(lines.length, 1, 'a visibly short line with an OSC 8 hyperlink should stay on one line');
   assert.ok(lines[0].includes('linked-label'), 'hyperlink label text should still render');
   assert.ok(lines[0].includes('1m'), 'later elements should not be wrapped off the line');
-  assert.ok(displayWidth(lines[0]) <= 47, 'visible width should respect terminal width');
+  assert.ok(displayWidth(lines[0]) <= 50, 'visible width should respect terminal width');
 });
 
 test('render ignores BEL-terminated OSC 8 hyperlink sequences when measuring line width', () => {
@@ -249,14 +249,14 @@ test('render ignores BEL-terminated OSC 8 hyperlink sequences when measuring lin
   ctx.extraLabel = '\x1b]8;;file:///tmp/my-project\x07linked-label\x1b]8;;\x07';
 
   let lines = [];
-  withTerminal(47, () => {
+  withTerminal(50, () => {
     lines = captureRender(ctx);
   });
 
   assert.equal(lines.length, 1, 'a visibly short BEL-terminated OSC 8 hyperlink should stay on one line');
   assert.ok(lines[0].includes('linked-label'), 'hyperlink label text should still render');
   assert.ok(lines[0].includes('1m'), 'later elements should not be wrapped off the line');
-  assert.ok(displayWidth(lines[0]) <= 47, 'visible width should respect terminal width');
+  assert.ok(displayWidth(lines[0]) <= 50, 'visible width should respect terminal width');
 });
 
 test('render falls back to a safe default width when no terminal size is available', () => {
@@ -321,8 +321,8 @@ test('render does not strand a bare 5h continuation line in compact mode', () =>
     });
   });
 
-  assert.ok(lines.some(line => line.includes('Usage 5h 30%')), `expected usage window to keep its label: ${lines.join(' | ')}`);
-  assert.ok(lines.some(line => line.includes('Weekly 85%')), `expected weekly usage window to render: ${lines.join(' | ')}`);
+  assert.ok(lines.some(line => line.includes('Usage') && line.includes('5h') && line.includes('30 %')), `expected usage window to keep its label: ${lines.join(' | ')}`);
+  assert.ok(lines.some(line => line.includes('Weekly') && line.includes('85 %')), `expected weekly usage window to render: ${lines.join(' | ')}`);
   assert.ok(!lines.some(line => line.startsWith('5h ')), `did not expect a bare 5h continuation line: ${lines.join(' | ')}`);
 });
 

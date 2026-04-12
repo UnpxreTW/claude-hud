@@ -188,10 +188,10 @@ export function renderSessionLine(ctx: RenderContext): string {
               barWidth,
               forceLabel: true,
             });
-            parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
+            parts.push(`${label(t('label.usage'), colors)}  ${fiveHourPart}`);
             parts.push(sevenDayPart);
           } else {
-            parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
+            parts.push(`${label(t('label.usage'), colors)}  ${fiveHourPart}`);
           }
         }
       }
@@ -272,16 +272,16 @@ function formatContextValue(ctx: RenderContext, percent: number, mode: 'percent'
 
   if (mode === 'both') {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${String(percent).padStart(3)} % (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return `${String(percent).padStart(3)} %`;
   }
 
   if (mode === 'remaining') {
-    return `${Math.max(0, 100 - percent)}%`;
+    return `${String(Math.max(0, 100 - percent)).padStart(3)} %`;
   }
 
-  return `${percent}%`;
+  return `${String(percent).padStart(3)} %`;
 }
 
 function formatUsagePercent(percent: number | null, colors?: RenderContext['config']['colors']): string {
@@ -289,7 +289,7 @@ function formatUsagePercent(percent: number | null, colors?: RenderContext['conf
     return label('--', colors);
   }
   const color = getQuotaColor(percent, colors);
-  return `${color}${percent}%${RESET}`;
+  return `${color}${String(percent).padStart(3)} %${RESET}`;
 }
 
 function formatUsageWindowPart({
@@ -317,12 +317,12 @@ function formatUsageWindowPart({
     const body = reset
       ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${reset} / ${windowLabel})`
       : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
-    return forceLabel ? `${styledLabel} ${body}` : body;
+    return forceLabel ? `${styledLabel}  ${body}` : body;
   }
 
   return reset
-    ? `${styledLabel} ${usageDisplay} (${t('format.resetsIn')} ${reset})`
-    : `${styledLabel} ${usageDisplay}`;
+    ? `${styledLabel}  ${usageDisplay} (${t('format.resetsIn')} ${reset})`
+    : `${styledLabel}  ${usageDisplay}`;
 }
 
 function formatResetTime(resetAt: Date | null): string {

@@ -20,7 +20,7 @@ export function renderUsageLine(ctx) {
         const resetTime = ctx.usageData.fiveHour === 100
             ? formatResetTime(ctx.usageData.fiveHourResetAt)
             : formatResetTime(ctx.usageData.sevenDayResetAt);
-        return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
+        return `${usageLabel}  ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
     }
     const threshold = display?.usageThreshold ?? 0;
     const fiveHour = ctx.usageData.fiveHour;
@@ -42,7 +42,7 @@ export function renderUsageLine(ctx) {
             barWidth,
             forceLabel: true,
         });
-        return `${usageLabel} ${weeklyOnlyPart}`;
+        return `${usageLabel}  ${weeklyOnlyPart}`;
     }
     const fiveHourPart = formatUsageWindowPart({
         label: "5h",
@@ -62,16 +62,16 @@ export function renderUsageLine(ctx) {
             barWidth,
             forceLabel: true,
         });
-        return `${usageLabel} ${fiveHourPart} | ${sevenDayPart}`;
+        return `${usageLabel}  ${fiveHourPart} | ${sevenDayPart}`;
     }
-    return `${usageLabel} ${fiveHourPart}`;
+    return `${usageLabel}  ${fiveHourPart}`;
 }
 function formatUsagePercent(percent, colors) {
     if (percent === null) {
         return label("--", colors);
     }
     const color = getQuotaColor(percent, colors);
-    return `${color}${percent}%${RESET}`;
+    return `${color}${String(percent).padStart(3)} %${RESET}`;
 }
 function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, forceLabel = false, }) {
     const usageDisplay = formatUsagePercent(percent, colors);
@@ -81,11 +81,11 @@ function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, u
         const body = reset
             ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
-        return forceLabel ? `${styledLabel} ${body}` : body;
+        return forceLabel ? `${styledLabel}  ${body}` : body;
     }
     return reset
-        ? `${styledLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
-        : `${styledLabel} ${usageDisplay}`;
+        ? `${styledLabel}  ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+        : `${styledLabel}  ${usageDisplay}`;
 }
 function formatResetTime(resetAt) {
     if (!resetAt)
