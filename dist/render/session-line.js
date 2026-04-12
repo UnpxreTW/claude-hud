@@ -24,6 +24,11 @@ export function renderSessionLine(ctx) {
     const bar = coloredBar(percent, barWidth, colors);
     const parts = [];
     const display = ctx.config?.display;
+    // Custom line (static user-defined text) — rendered first
+    const customLine = display?.customLine;
+    if (customLine) {
+        parts.push(customColor(customLine, colors));
+    }
     const contextValueMode = display?.contextValue ?? 'percent';
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
@@ -198,7 +203,7 @@ export function renderSessionLine(ctx) {
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        parts.push(label(`⏱️ 執行時間：${ctx.sessionDuration}`, colors));
     }
     const costEstimate = renderCostEstimate(ctx);
     if (costEstimate) {
@@ -206,11 +211,6 @@ export function renderSessionLine(ctx) {
     }
     if (ctx.extraLabel) {
         parts.push(label(ctx.extraLabel, colors));
-    }
-    // Custom line (static user-defined text)
-    const customLine = display?.customLine;
-    if (customLine) {
-        parts.push(customColor(customLine, colors));
     }
     let line = parts.join(' | ');
     // Token breakdown at high context
@@ -278,21 +278,10 @@ function formatResetTime(resetAt) {
     if (!resetAt)
         return '';
     const now = new Date();
-    const diffMs = resetAt.getTime() - now.getTime();
-    if (diffMs <= 0)
-        return '';
-    const diffMins = Math.ceil(diffMs / 60000);
-    if (diffMins < 60)
-        return `${diffMins}m`;
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    if (hours >= 24) {
-        const days = Math.floor(hours / 24);
-        const remHours = hours % 24;
-        if (remHours > 0)
-            return `${days}d ${remHours}h`;
-        return `${days}d`;
-    }
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    if (resetAt.getTime() <= now.getTime())
+        return '即將重置';
+    const hours = String(resetAt.getHours()).padStart(2, '0');
+    const minutes = String(resetAt.getMinutes()).padStart(2, '0');
+    return `於 ${hours}:${minutes} 重置`;
 }
 //# sourceMappingURL=session-line.js.map

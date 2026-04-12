@@ -1078,7 +1078,7 @@ test('renderUsageLine translates labels when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('用量'));
-    assert.ok(line.includes('重置剩余'));
+    assert.ok(line.includes('於') && line.includes('重置'));
   } finally {
     setLanguage('en');
   }
@@ -1146,8 +1146,10 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
   };
 
   const line = stripAnsi(renderSessionLine(ctx));
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
   assert.ok(line.includes('Weekly 85%'), `should include 7d label and percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  assert.ok(line.includes(`於 ${hh}:${mm} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
@@ -1193,8 +1195,10 @@ test('renderSessionLine shows 5hr reset countdown', () => {
     sevenDayResetAt: null,
   };
   const line = renderSessionLine(ctx);
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
   assert.ok(line.includes('5h'), 'should include 5h label');
-  assert.ok(line.includes('2h'), 'should include reset countdown');
+  assert.ok(line.includes(`於 ${hh}:${mm} 重置`), 'should include reset clock time');
 });
 
 test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
@@ -1211,8 +1215,9 @@ test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('(resets in 6d 7h)'), `expected bar-mode reset wording, got: ${plain}`);
-  assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
+  assert.ok(plain.includes(`於 ${hh}:${mm} 重置`), `expected bar-mode reset clock time, got: ${plain}`);
 });
 
 test('renderUsageLine shows 7d reset countdown in text-only mode', () => {
@@ -1229,9 +1234,11 @@ test('renderUsageLine shows 7d reset countdown in text-only mode', () => {
   };
 
   const line = stripAnsi(renderUsageLine(ctx));
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
   assert.ok(line.includes('5h 45%'), `should include 5h text-only usage: ${line}`);
   assert.ok(line.includes('Weekly 85%'), `should include 7d text-only usage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  assert.ok(line.includes(`於 ${hh}:${mm} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
 });
 
 test('renderUsageLine translates weekly label when Chinese is enabled', () => {
@@ -1249,7 +1256,7 @@ test('renderUsageLine translates weekly label when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('重置剩余'));
+    assert.ok(line.includes('於') && line.includes('重置'));
   } finally {
     setLanguage('en');
   }
@@ -1271,7 +1278,9 @@ test('renderUsageLine shows 7d reset countdown in bar mode when above threshold'
   const line = stripAnsi(renderUsageLine(ctx));
   assert.ok(line.includes('45%'), `should include 5h percentage in bar mode: ${line}`);
   assert.ok(line.includes('85%'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in bar mode: ${line}`);
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
+  assert.ok(line.includes(`於 ${hh}:${mm} 重置`), `should include 7d reset clock time in bar mode: ${line}`);
   assert.ok(line.includes('|'), `should render both usage windows above the threshold: ${line}`);
 });
 
@@ -1305,8 +1314,10 @@ test('renderSessionLine displays limit reached warning', () => {
     sevenDayResetAt: null,
   };
   const line = renderSessionLine(ctx);
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
   assert.ok(line.includes('Limit reached'), 'should show limit reached');
-  assert.ok(line.includes('resets'), 'should show reset time');
+  assert.ok(line.includes(`於 ${hh}:${mm} 重置`), 'should show reset clock time');
 });
 
 test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
@@ -1322,9 +1333,10 @@ test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  const mm = String(resetTime.getMinutes()).padStart(2, '0');
   assert.ok(plain.includes('Limit reached'), 'should show limit reached');
-  assert.ok(/resets \d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
-  assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
+  assert.ok(plain.includes(`於 ${hh}:${mm} 重置`), `expected clock time reset format, got: ${plain}`);
 });
 
 test('renderSessionLine displays -- for null usage values', () => {

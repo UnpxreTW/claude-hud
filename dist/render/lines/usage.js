@@ -91,21 +91,10 @@ function formatResetTime(resetAt) {
     if (!resetAt)
         return "";
     const now = new Date();
-    const diffMs = resetAt.getTime() - now.getTime();
-    if (diffMs <= 0)
-        return "";
-    const diffMins = Math.ceil(diffMs / 60000);
-    if (diffMins < 60)
-        return `${diffMins}m`;
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    if (hours >= 24) {
-        const days = Math.floor(hours / 24);
-        const remHours = hours % 24;
-        if (remHours > 0)
-            return `${days}d ${remHours}h`;
-        return `${days}d`;
-    }
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    if (resetAt.getTime() <= now.getTime())
+        return "即將重置";
+    const hours = String(resetAt.getHours()).padStart(2, "0");
+    const minutes = String(resetAt.getMinutes()).padStart(2, "0");
+    return `於 ${hours}:${minutes} 重置`;
 }
 //# sourceMappingURL=usage.js.map
