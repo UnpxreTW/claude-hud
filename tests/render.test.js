@@ -555,7 +555,7 @@ test('label color overrides apply across shared secondary text surfaces', () => 
   const expected = '\x1b[38;2;171;205;239m';
   assert.ok(renderIdentityLine(ctx).includes(`${expected}Context\x1b[0m`));
   assert.ok(renderUsageLine(ctx)?.includes(`${expected}Usage\x1b[0m`));
-  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md | 1 rules\x1b[0m`));
+  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}參考：2 CLAUDE.md | 1 rules\x1b[0m`));
   assert.ok(renderMemoryLine({ ...ctx, config: { ...ctx.config, lineLayout: 'expanded', display: { ...ctx.config.display, showMemoryUsage: true } } })?.includes(`${expected}Approx RAM\x1b[0m`));
   assert.ok(renderToolsLine(ctx)?.includes(`${expected}: src/index.ts\x1b[0m`));
   assert.ok(renderAgentsLine(ctx)?.includes(`${expected}[haiku]\x1b[0m`));
@@ -568,7 +568,7 @@ test('renderEnvironmentLine shows output style when enabled', () => {
   ctx.config.display.showConfigCounts = false;
   ctx.config.display.showOutputStyle = true;
 
-  assert.ok(renderEnvironmentLine(ctx)?.includes('style: tech-leader'));
+  assert.ok(renderEnvironmentLine(ctx)?.includes('參考：style: tech-leader'));
 });
 
 test('renderEnvironmentLine appends output style after config counts', () => {

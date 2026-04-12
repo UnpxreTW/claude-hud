@@ -37,5 +37,5 @@ export function renderEnvironmentLine(ctx: RenderContext): string | null {
     return null;
   }
 
-  return label(parts.join(" | "), ctx.config?.colors);
+  return label(`參考：${parts.join(" | ")}`, ctx.config?.colors);
 }
