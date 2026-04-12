@@ -1,7 +1,6 @@
 import type { RenderContext } from "../../types.js";
-import { isLimitReached } from "../../types.js";
 import { getProviderLabel } from "../../stdin.js";
-import { critical, label, getQuotaColor, quotaBar, RESET } from "../colors.js";
+import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
 
@@ -22,14 +21,6 @@ export function renderUsageLine(ctx: RenderContext): string | null {
   }
 
   const usageLabel = label(t("label.usage"), colors);
-
-  if (isLimitReached(ctx.usageData)) {
-    const resetTime =
-      ctx.usageData.fiveHour === 100
-        ? formatResetTime(ctx.usageData.fiveHourResetAt)
-        : formatResetTime(ctx.usageData.sevenDayResetAt);
-    return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
-  }
 
   const threshold = display?.usageThreshold ?? 0;
   const fiveHour = ctx.usageData.fiveHour;

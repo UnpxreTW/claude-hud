@@ -1294,7 +1294,7 @@ test('renderUsageLine shows weekly-only usage without a ghost 5h section', () =>
   assert.ok(!line.includes('|'), `should not render a separator for a missing 5h window: ${line}`);
 });
 
-test('renderSessionLine displays limit reached warning', () => {
+test('renderSessionLine displays normal bar at 100% usage', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + 3600000); // 1 hour from now
   ctx.usageData = {
@@ -1305,11 +1305,12 @@ test('renderSessionLine displays limit reached warning', () => {
     sevenDayResetAt: null,
   };
   const line = renderSessionLine(ctx);
-  assert.ok(line.includes('Limit reached'), 'should show limit reached');
-  assert.ok(line.includes('resets'), 'should show reset time');
+  assert.ok(!line.includes('Limit reached'), 'should not show limit reached warning');
+  assert.ok(line.includes('100%'), 'should show 100% usage');
+  assert.ok(line.includes('Usage'), 'should show Usage label');
 });
 
-test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
+test('renderUsageLine shows normal bar at 100% with reset time in days', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (151 * 3600000) + (59 * 60000)); // 6d 7h 59m from now
   ctx.usageData = {
@@ -1322,8 +1323,9 @@ test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('Limit reached'), 'should show limit reached');
-  assert.ok(/resets \d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
+  assert.ok(!plain.includes('Limit reached'), 'should not show limit reached warning');
+  assert.ok(plain.includes('100%'), 'should show 100% usage');
+  assert.ok(/\d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
@@ -1349,7 +1351,7 @@ test('renderSessionLine omits usage when usageData is null', () => {
   assert.ok(!line.includes('Weekly'), 'should not include 7d label');
 });
 
-test('renderSessionLine uses custom critical colors for limit-reached usage state', () => {
+test('renderSessionLine shows normal 100% bar with custom colors instead of limit-reached', () => {
   const ctx = baseContext();
   ctx.config.colors = {
     context: 'green',
@@ -1366,8 +1368,9 @@ test('renderSessionLine uses custom critical colors for limit-reached usage stat
     sevenDayResetAt: null,
   };
 
-  const criticalLine = renderSessionLine(ctx);
-  assert.ok(criticalLine.includes('\x1b[35m⚠ Limit reached'), `expected custom critical color, got: ${JSON.stringify(criticalLine)}`);
+  const line = renderSessionLine(ctx);
+  assert.ok(!line.includes('Limit reached'), 'should not show limit reached warning');
+  assert.ok(line.includes('100%'), 'should show 100% usage');
 });
 
 test('renderUsageLine uses custom usage palette overrides', () => {
