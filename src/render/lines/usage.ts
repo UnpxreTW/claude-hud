@@ -24,29 +24,13 @@ export function renderUsageLine(ctx: RenderContext): string | null {
 
   const threshold = display?.usageThreshold ?? 0;
   const fiveHour = ctx.usageData.fiveHour;
-  const sevenDay = ctx.usageData.sevenDay;
 
-  const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
-  if (effectiveUsage < threshold) {
+  if ((fiveHour ?? 0) < threshold) {
     return null;
   }
 
   const usageBarEnabled = display?.usageBarEnabled ?? true;
-  const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
   const barWidth = getAdaptiveBarWidth();
-
-  if (fiveHour === null && sevenDay !== null) {
-    const weeklyOnlyPart = formatUsageWindowPart({
-      label: t("label.weekly"),
-      percent: sevenDay,
-      resetAt: ctx.usageData.sevenDayResetAt,
-      colors,
-      usageBarEnabled,
-      barWidth,
-      forceLabel: true,
-    });
-    return `${usageLabel} ${weeklyOnlyPart}`;
-  }
 
   const fiveHourPart = formatUsageWindowPart({
     label: "5h",
@@ -56,19 +40,6 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     usageBarEnabled,
     barWidth,
   });
-
-  if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-    const sevenDayPart = formatUsageWindowPart({
-      label: t("label.weekly"),
-      percent: sevenDay,
-      resetAt: ctx.usageData.sevenDayResetAt,
-      colors,
-      usageBarEnabled,
-      barWidth,
-      forceLabel: true,
-    });
-    return `${usageLabel} ${fiveHourPart} | ${sevenDayPart}`;
-  }
 
   return `${usageLabel} ${fiveHourPart}`;
 }
