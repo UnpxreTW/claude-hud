@@ -146,8 +146,11 @@ export function renderSessionLine(ctx: RenderContext): string {
     if (isLimitReached(ctx.usageData)) {
       const resetTime = ctx.usageData.fiveHour === 100
         ? formatResetTime(ctx.usageData.fiveHourResetAt)
-        : formatResetTime(ctx.usageData.sevenDayResetAt);
-      parts.push(critical(`⚠ ${t('status.limitReached')}${resetTime ? ` (${t('format.resets')} ${resetTime})` : ''}`, colors));
+        : formatWeeklyResetDate(ctx.usageData.sevenDayResetAt);
+      const resetSuffix = ctx.usageData.fiveHour === 100
+        ? (resetTime ? ` (${t('format.resets')} ${resetTime})` : '')
+        : (resetTime ? ` (${resetTime})` : '');
+      parts.push(critical(`⚠ ${t('status.limitReached')}${resetSuffix}`, colors));
     } else {
       const usageThreshold = display?.usageThreshold ?? 0;
       const fiveHour = ctx.usageData.fiveHour;
@@ -161,6 +164,7 @@ export function renderSessionLine(ctx: RenderContext): string {
             label: t('label.weekly'),
             percent: sevenDay,
             resetAt: ctx.usageData.sevenDayResetAt,
+            resetDisplay: formatWeeklyResetDate(ctx.usageData.sevenDayResetAt),
             colors,
             usageBarEnabled,
             barWidth,
@@ -183,6 +187,7 @@ export function renderSessionLine(ctx: RenderContext): string {
               label: t('label.weekly'),
               percent: sevenDay,
               resetAt: ctx.usageData.sevenDayResetAt,
+              resetDisplay: formatWeeklyResetDate(ctx.usageData.sevenDayResetAt),
               colors,
               usageBarEnabled,
               barWidth,
@@ -296,6 +301,7 @@ function formatUsageWindowPart({
   label: windowLabel,
   percent,
   resetAt,
+  resetDisplay,
   colors,
   usageBarEnabled,
   barWidth,
@@ -304,24 +310,39 @@ function formatUsageWindowPart({
   label: string;
   percent: number | null;
   resetAt: Date | null;
+  resetDisplay?: string;
   colors?: RenderContext['config']['colors'];
   usageBarEnabled: boolean;
   barWidth: number;
   forceLabel?: boolean;
 }): string {
   const usageDisplay = formatUsagePercent(percent, colors);
-  const reset = formatResetTime(resetAt);
   const styledLabel = label(windowLabel, colors);
+  let resetText = '';
+  if (resetDisplay) {
+    resetText = resetDisplay;
+  } else {
+    const reset = formatResetTime(resetAt);
+    if (reset) resetText = `${reset} / ${windowLabel}`;
+  }
 
   if (usageBarEnabled) {
-    const body = reset
-      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${reset} / ${windowLabel})`
+    const body = resetText
+      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${resetText})`
       : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
     return forceLabel ? `${styledLabel} ${body}` : body;
   }
 
-  return reset
-    ? `${styledLabel} ${usageDisplay} (${t('format.resetsIn')} ${reset})`
+  if (!resetDisplay) {
+    const reset = formatResetTime(resetAt);
+    const fallbackReset = reset ? `${t('format.resetsIn')} ${reset}` : '';
+    return fallbackReset
+      ? `${styledLabel} ${usageDisplay} (${fallbackReset})`
+      : `${styledLabel} ${usageDisplay}`;
+  }
+
+  return resetText
+    ? `${styledLabel} ${usageDisplay} (${resetText})`
     : `${styledLabel} ${usageDisplay}`;
 }
 
@@ -345,4 +366,12 @@ function formatResetTime(resetAt: Date | null): string {
   }
 
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatWeeklyResetDate(resetAt: Date | null): string {
+  if (!resetAt) return '';
+  const month = resetAt.getMonth() + 1;
+  const day = resetAt.getDate();
+  const hh = String(resetAt.getHours()).padStart(2, '0');
+  return `${month} 月 ${day} 號 ${hh}:00 重置`;
 }
