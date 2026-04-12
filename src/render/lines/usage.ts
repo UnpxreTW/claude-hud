@@ -27,7 +27,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     const resetTime =
       ctx.usageData.fiveHour === 100
         ? formatResetTime(ctx.usageData.fiveHourResetAt)
-        : formatResetTime(ctx.usageData.sevenDayResetAt);
+        : formatWeeklyResetTime(ctx.usageData.sevenDayResetAt);
     return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
   }
 
@@ -53,6 +53,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
       usageBarEnabled,
       barWidth,
       forceLabel: true,
+      resetFormatter: formatWeeklyResetTime,
     });
     return `${usageLabel} ${weeklyOnlyPart}`;
   }
@@ -75,6 +76,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
       usageBarEnabled,
       barWidth,
       forceLabel: true,
+      resetFormatter: formatWeeklyResetTime,
     });
     return `${usageLabel} ${fiveHourPart} | ${sevenDayPart}`;
   }
@@ -101,6 +103,7 @@ function formatUsageWindowPart({
   usageBarEnabled,
   barWidth,
   forceLabel = false,
+  resetFormatter = formatResetTime,
 }: {
   label: string;
   percent: number | null;
@@ -109,9 +112,10 @@ function formatUsageWindowPart({
   usageBarEnabled: boolean;
   barWidth: number;
   forceLabel?: boolean;
+  resetFormatter?: (resetAt: Date | null) => string;
 }): string {
   const usageDisplay = formatUsagePercent(percent, colors);
-  const reset = formatResetTime(resetAt);
+  const reset = resetFormatter(resetAt);
   const styledLabel = label(windowLabel, colors);
 
   if (usageBarEnabled) {
@@ -146,4 +150,12 @@ function formatResetTime(resetAt: Date | null): string {
   }
 
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatWeeklyResetTime(resetAt: Date | null): string {
+  if (!resetAt) return "";
+  const month = resetAt.getMonth() + 1;
+  const day = resetAt.getDate();
+  const hours = String(resetAt.getHours()).padStart(2, "0");
+  return `${month} 月 ${day} 號 ${hours}:00 重置`;
 }

@@ -130,7 +130,7 @@ export function renderSessionLine(ctx) {
         if (isLimitReached(ctx.usageData)) {
             const resetTime = ctx.usageData.fiveHour === 100
                 ? formatResetTime(ctx.usageData.fiveHourResetAt)
-                : formatResetTime(ctx.usageData.sevenDayResetAt);
+                : formatWeeklyResetTime(ctx.usageData.sevenDayResetAt);
             parts.push(critical(`⚠ ${t('status.limitReached')}${resetTime ? ` (${t('format.resets')} ${resetTime})` : ''}`, colors));
         }
         else {
@@ -149,6 +149,7 @@ export function renderSessionLine(ctx) {
                         usageBarEnabled,
                         barWidth,
                         forceLabel: true,
+                        resetFormatter: formatWeeklyResetTime,
                     });
                     parts.push(weeklyOnlyPart);
                 }
@@ -171,6 +172,7 @@ export function renderSessionLine(ctx) {
                             usageBarEnabled,
                             barWidth,
                             forceLabel: true,
+                            resetFormatter: formatWeeklyResetTime,
                         });
                         parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
                         parts.push(sevenDayPart);
@@ -260,9 +262,9 @@ function formatUsagePercent(percent, colors) {
     const color = getQuotaColor(percent, colors);
     return `${color}${percent}%${RESET}`;
 }
-function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, forceLabel = false, }) {
+function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, forceLabel = false, resetFormatter = formatResetTime, }) {
     const usageDisplay = formatUsagePercent(percent, colors);
-    const reset = formatResetTime(resetAt);
+    const reset = resetFormatter(resetAt);
     const styledLabel = label(windowLabel, colors);
     if (usageBarEnabled) {
         const body = reset
@@ -294,5 +296,13 @@ function formatResetTime(resetAt) {
         return `${days}d`;
     }
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+function formatWeeklyResetTime(resetAt) {
+    if (!resetAt)
+        return '';
+    const month = resetAt.getMonth() + 1;
+    const day = resetAt.getDate();
+    const hours = String(resetAt.getHours()).padStart(2, '0');
+    return `${month} 月 ${day} 號 ${hours}:00 重置`;
 }
 //# sourceMappingURL=session-line.js.map
