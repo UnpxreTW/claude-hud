@@ -1,8 +1,7 @@
 import type { RenderContext } from '../types.js';
-import { isLimitReached } from '../types.js';
 import { getContextPercent, getBufferedPercent, getModelName, formatModelName, getProviderLabel, getTotalTokens } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
+import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 import { renderCostEstimate } from './lines/cost.js';
 import { t } from '../i18n/index.js';
@@ -149,21 +148,37 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   // Usage limits display (shown when enabled in config, respects usageThreshold)
   if (display?.showUsage !== false && ctx.usageData && !providerLabel) {
-    if (isLimitReached(ctx.usageData)) {
-      const resetTime = ctx.usageData.fiveHour === 100
-        ? formatResetTime(ctx.usageData.fiveHourResetAt)
-        : formatResetTime(ctx.usageData.sevenDayResetAt);
-      parts.push(critical(`⚠ ${t('status.limitReached')}${resetTime ? ` (${t('format.resets')} ${resetTime})` : ''}`, colors));
-    } else {
-      const usageThreshold = display?.usageThreshold ?? 0;
-      const fiveHour = ctx.usageData.fiveHour;
-      const sevenDay = ctx.usageData.sevenDay;
-      const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
+    const usageThreshold = display?.usageThreshold ?? 0;
+    const fiveHour = ctx.usageData.fiveHour;
+    const sevenDay = ctx.usageData.sevenDay;
+    const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
 
-      if (effectiveUsage >= usageThreshold) {
-        const usageBarEnabled = display?.usageBarEnabled ?? true;
-        if (fiveHour === null && sevenDay !== null) {
-          const weeklyOnlyPart = formatUsageWindowPart({
+    if (effectiveUsage >= usageThreshold) {
+      const usageBarEnabled = display?.usageBarEnabled ?? true;
+      if (fiveHour === null && sevenDay !== null) {
+        const weeklyOnlyPart = formatUsageWindowPart({
+          label: t('label.weekly'),
+          percent: sevenDay,
+          resetAt: ctx.usageData.sevenDayResetAt,
+          colors,
+          usageBarEnabled,
+          barWidth,
+          forceLabel: true,
+        });
+        parts.push(weeklyOnlyPart);
+      } else {
+        const fiveHourPart = formatUsageWindowPart({
+          label: '5h',
+          percent: fiveHour,
+          resetAt: ctx.usageData.fiveHourResetAt,
+          colors,
+          usageBarEnabled,
+          barWidth,
+        });
+
+        const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
+        if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
+          const sevenDayPart = formatUsageWindowPart({
             label: t('label.weekly'),
             percent: sevenDay,
             resetAt: ctx.usageData.sevenDayResetAt,
@@ -172,33 +187,10 @@ export function renderSessionLine(ctx: RenderContext): string {
             barWidth,
             forceLabel: true,
           });
-          parts.push(weeklyOnlyPart);
+          parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
+          parts.push(sevenDayPart);
         } else {
-          const fiveHourPart = formatUsageWindowPart({
-            label: '5h',
-            percent: fiveHour,
-            resetAt: ctx.usageData.fiveHourResetAt,
-            colors,
-            usageBarEnabled,
-            barWidth,
-          });
-
-          const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
-          if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-            const sevenDayPart = formatUsageWindowPart({
-              label: t('label.weekly'),
-              percent: sevenDay,
-              resetAt: ctx.usageData.sevenDayResetAt,
-              colors,
-              usageBarEnabled,
-              barWidth,
-              forceLabel: true,
-            });
-            parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
-            parts.push(sevenDayPart);
-          } else {
-            parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
-          }
+          parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
         }
       }
     }
