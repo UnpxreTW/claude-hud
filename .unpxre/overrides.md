@@ -7,10 +7,16 @@ upstream updates.
 ## General Rules
 
 - **Before applying any overrides, check for open PRs created by this sync
-  agent.** If any unresolved PR exists (not yet merged or closed), stop
-  and do not proceed with the sync. Create a GitHub Issue titled
-  `⏸ Sync paused: unresolved PR(s) pending` and assign to @UnpxreTW
-  listing the open PR(s), then exit
+  agent.** If any unresolved PR exists (not yet merged or closed), process
+  each one before continuing:
+  1. Read the PR's review comments and CI check results
+  2. If there are reviewer-requested changes or failing CI, check out the
+     PR branch and apply fixes, then push the updated commits
+  3. If the PR has no issues (approved, CI passing) but simply hasn't been
+     merged yet, skip it and move on
+  4. If a PR's underlying override is no longer applicable (e.g. upstream
+     resolved it), close the PR with a comment explaining why
+  After all open PRs have been processed, continue with the normal sync
 - Do not reference specific file paths — locate code by functionality
 - If an override target no longer exists, check upstream commit history first
 - If configurable via user config, prefer config over code modification and
