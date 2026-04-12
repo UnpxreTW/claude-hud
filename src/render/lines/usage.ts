@@ -41,7 +41,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     barWidth,
   });
 
-  return `${usageLabel} ${fiveHourPart}`;
+  return `${usageLabel}  ${fiveHourPart}`;
 }
 
 function formatUsagePercent(
@@ -52,7 +52,7 @@ function formatUsagePercent(
     return label("--", colors);
   }
   const color = getQuotaColor(percent, colors);
-  return `${color}${percent}%${RESET}`;
+  return `${color}${String(percent).padStart(3)} %${RESET}`;
 }
 
 function formatUsageWindowPart({
@@ -80,12 +80,12 @@ function formatUsageWindowPart({
     const body = reset
       ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
       : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
-    return forceLabel ? `${styledLabel} ${body}` : body;
+    return forceLabel ? `${styledLabel}  ${body}` : body;
   }
 
   return reset
-    ? `${styledLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
-    : `${styledLabel} ${usageDisplay}`;
+    ? `${styledLabel}  ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+    : `${styledLabel}  ${usageDisplay}`;
 }
 
 function formatResetTime(resetAt: Date | null): string {
