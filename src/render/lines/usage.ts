@@ -26,9 +26,12 @@ export function renderUsageLine(ctx: RenderContext): string | null {
   if (isLimitReached(ctx.usageData)) {
     const resetTime =
       ctx.usageData.fiveHour === 100
-        ? formatResetTime(ctx.usageData.fiveHourResetAt)
+        ? formatFiveHourResetClock(ctx.usageData.fiveHourResetAt)
         : formatResetTime(ctx.usageData.sevenDayResetAt);
-    return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
+    const resetSuffix = ctx.usageData.fiveHour === 100
+      ? (resetTime ? ` (${resetTime})` : "")
+      : (resetTime ? ` (${t("format.resets")} ${resetTime})` : "");
+    return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetSuffix}`, colors)}`;
   }
 
   const threshold = display?.usageThreshold ?? 0;
@@ -61,6 +64,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     label: "5h",
     percent: fiveHour,
     resetAt: ctx.usageData.fiveHourResetAt,
+    resetDisplay: formatFiveHourResetClock(ctx.usageData.fiveHourResetAt),
     colors,
     usageBarEnabled,
     barWidth,
@@ -97,6 +101,7 @@ function formatUsageWindowPart({
   label: windowLabel,
   percent,
   resetAt,
+  resetDisplay,
   colors,
   usageBarEnabled,
   barWidth,
@@ -105,24 +110,31 @@ function formatUsageWindowPart({
   label: string;
   percent: number | null;
   resetAt: Date | null;
+  resetDisplay?: string;
   colors?: RenderContext["config"]["colors"];
   usageBarEnabled: boolean;
   barWidth: number;
   forceLabel?: boolean;
 }): string {
   const usageDisplay = formatUsagePercent(percent, colors);
-  const reset = formatResetTime(resetAt);
   const styledLabel = label(windowLabel, colors);
+  let resetText = '';
+  if (resetDisplay) {
+    resetText = resetDisplay;
+  } else {
+    const reset = formatResetTime(resetAt);
+    if (reset) resetText = `${t("format.resetsIn")} ${reset}`;
+  }
 
   if (usageBarEnabled) {
-    const body = reset
-      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+    const body = resetText
+      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${resetText})`
       : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
     return forceLabel ? `${styledLabel} ${body}` : body;
   }
 
-  return reset
-    ? `${styledLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+  return resetText
+    ? `${styledLabel} ${usageDisplay} (${resetText})`
     : `${styledLabel} ${usageDisplay}`;
 }
 
@@ -146,4 +158,13 @@ function formatResetTime(resetAt: Date | null): string {
   }
 
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatFiveHourResetClock(resetAt: Date | null): string {
+  if (!resetAt) return '';
+  const now = new Date();
+  if (resetAt.getTime() <= now.getTime()) return '即將重置';
+  const hh = String(resetAt.getHours()).padStart(2, '0');
+  const mm = String(resetAt.getMinutes()).padStart(2, '0');
+  return `於 ${hh}:${mm} 重置`;
 }
