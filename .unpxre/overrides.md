@@ -6,6 +6,11 @@ upstream updates.
 
 ## General Rules
 
+- **Before applying any overrides, check for open PRs created by this sync
+  agent.** If any unresolved PR exists (not yet merged or closed), stop
+  and do not proceed with the sync. Create a GitHub Issue titled
+  `⏸ Sync paused: unresolved PR(s) pending` and assign to @UnpxreTW
+  listing the open PR(s), then exit
 - Do not reference specific file paths — locate code by functionality
 - If an override target no longer exists, check upstream commit history first
 - If configurable via user config, prefer config over code modification and
