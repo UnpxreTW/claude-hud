@@ -18,6 +18,11 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   const colors = ctx.config?.colors;
   const parts: string[] = [];
 
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
+
   if (display?.showModel !== false) {
     const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
     const providerLabel = getProviderLabel(ctx.stdin);
@@ -99,11 +104,6 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   const costEstimate = renderCostEstimate(ctx);
   if (costEstimate) {
     parts.push(costEstimate);
-  }
-
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   if (parts.length === 0) {

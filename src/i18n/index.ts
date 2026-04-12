@@ -1,10 +1,11 @@
 import type { Language, MessageKey, Messages } from "./types.js";
 import { en } from "./en.js";
 import { zh } from "./zh.js";
+import { zhTW } from "./zh-TW.js";
 
 export type { Language, MessageKey, Messages };
 
-const locales: Record<Language, Messages> = { en, zh };
+const locales: Record<Language, Messages> = { en, zh, "zh-TW": zhTW };
 
 let currentLanguage: Language = "en";
 
