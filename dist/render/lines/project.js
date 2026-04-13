@@ -14,6 +14,10 @@ export function renderProjectLine(ctx) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     const parts = [];
+    const customLine = display?.customLine;
+    if (customLine) {
+        parts.push(customColor(customLine, colors));
+    }
     if (display?.showModel !== false) {
         const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
         const providerLabel = getProviderLabel(ctx.stdin);
@@ -82,15 +86,11 @@ export function renderProjectLine(ctx) {
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        parts.push(label(`⏱️ 執行時間：${ctx.sessionDuration}`, colors));
     }
     const costEstimate = renderCostEstimate(ctx);
     if (costEstimate) {
         parts.push(costEstimate);
-    }
-    const customLine = display?.customLine;
-    if (customLine) {
-        parts.push(customColor(customLine, colors));
     }
     if (parts.length === 0) {
         return null;

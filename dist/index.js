@@ -91,12 +91,12 @@ export function formatSessionDuration(sessionStart, now = () => Date.now()) {
     const ms = now() - sessionStart.getTime();
     const mins = Math.floor(ms / 60000);
     if (mins < 1)
-        return "<1m";
+        return "< 1 分鐘";
     if (mins < 60)
-        return `${mins}m`;
+        return `${mins} 分鐘`;
     const hours = Math.floor(mins / 60);
     const remainingMins = mins % 60;
-    return `${hours}h ${remainingMins}m`;
+    return `${hours} 小時 ${remainingMins} 分鐘`;
 }
 const scriptPath = fileURLToPath(import.meta.url);
 const argvPath = process.argv[1];

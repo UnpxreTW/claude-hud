@@ -1235,26 +1235,31 @@ test('renderWeeklyUsageLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('Weekly  85 %'), `should include 7d text-only usage: ${line}`);
-  const hhW = String(resetTime.getHours()).padStart(2, '0');
-  const mmW = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhW}:${mmW} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
+  const month = resetTime.getMonth() + 1;
+  const day = resetTime.getDate();
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  assert.ok(line.includes(`${month} 月 ${day} 號 ${hh}:00 重置`), `should include 7d reset date in text-only mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', () => {
   const ctx = baseContext();
+  const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000));
   ctx.usageData = {
     planName: 'Pro',
     fiveHour: 45,
     sevenDay: 85,
     fiveHourResetAt: null,
-    sevenDayResetAt: new Date(Date.now() + (28 * 60 * 60 * 1000)),
+    sevenDayResetAt: resetTime,
   };
 
   setLanguage('zh');
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('於') && line.includes('重置'));
+    const m = resetTime.getMonth() + 1;
+    const d = resetTime.getDate();
+    const h = String(resetTime.getHours()).padStart(2, '0');
+    assert.ok(line.includes(`${m} 月 ${d} 號 ${h}:00 重置`));
   } finally {
     setLanguage('en');
   }
@@ -1274,9 +1279,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
-  const hhB = String(resetTime.getHours()).padStart(2, '0');
-  const mmB = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhB}:${mmB} 重置`), `should include 7d reset clock time in bar mode: ${line}`);
+  const month = resetTime.getMonth() + 1;
+  const day = resetTime.getDate();
+  const hh = String(resetTime.getHours()).padStart(2, '0');
+  assert.ok(line.includes(`${month} 月 ${day} 號 ${hh}:00 重置`), `should include 7d reset date in bar mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine shows weekly usage as independent line', () => {
