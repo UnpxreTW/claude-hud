@@ -134,7 +134,7 @@ export function quotaBar(percent: number, width: number = 10, colors?: Partial<H
   const filled = Math.round((safePercent / 100) * safeWidth);
   const empty = safeWidth - filled;
   const color = getQuotaColor(safePercent, colors);
-  return `${color}${'█'.repeat(filled)}${DIM}${'░'.repeat(empty)}${RESET}`;
+  return `${color}${'●'.repeat(filled)}${DIM}${'○'.repeat(empty)}${RESET}`;
 }
 
 export function coloredBar(percent: number, width: number = 10, colors?: Partial<HudColorOverrides>): string {
@@ -143,5 +143,5 @@ export function coloredBar(percent: number, width: number = 10, colors?: Partial
   const filled = Math.round((safePercent / 100) * safeWidth);
   const empty = safeWidth - filled;
   const color = getContextColor(safePercent, colors);
-  return `${color}${'█'.repeat(filled)}${DIM}${'░'.repeat(empty)}${RESET}`;
+  return `${color}${'●'.repeat(filled)}${DIM}${'○'.repeat(empty)}${RESET}`;
 }

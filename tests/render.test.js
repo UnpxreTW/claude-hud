@@ -1384,13 +1384,13 @@ test('renderUsageLine uses custom usage palette overrides', () => {
 
   const line = withTerminal(120, () => renderUsageLine(ctx));
   assert.ok(line, 'should render usage line');
-  assert.ok(line.includes('\x1b[36m███'), `expected custom usage bar color, got: ${JSON.stringify(line)}`);
+  assert.ok(line.includes('\x1b[36m●●●'), `expected custom usage bar color, got: ${JSON.stringify(line)}`);
   assert.ok(line.includes('\x1b[36m25%\x1b[0m'), `expected custom usage percentage color, got: ${JSON.stringify(line)}`);
 
   // Weekly usage is now a separate element; test it via renderWeeklyUsageLine
   const weeklyLine = withTerminal(120, () => renderWeeklyUsageLine(ctx));
   assert.ok(weeklyLine, 'should render weekly usage line');
-  assert.ok(weeklyLine.includes('\x1b[35m████████'), `expected custom usage warning color, got: ${JSON.stringify(weeklyLine)}`);
+  assert.ok(weeklyLine.includes('\x1b[35m●●●●●●●●'), `expected custom usage warning color, got: ${JSON.stringify(weeklyLine)}`);
   assert.ok(weeklyLine.includes('\x1b[35m80%\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(weeklyLine)}`);
 });
 
