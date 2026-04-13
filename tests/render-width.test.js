@@ -321,8 +321,8 @@ test('render does not strand a bare 5h continuation line in compact mode', () =>
     });
   });
 
-  assert.ok(lines.some(line => line.includes('Usage 5h 30%')), `expected usage window to keep its label: ${lines.join(' | ')}`);
-  assert.ok(lines.some(line => line.includes('Weekly 85%')), `expected weekly usage window to render: ${lines.join(' | ')}`);
+  assert.ok(lines.some(line => line.includes('Usage 5h  30 %')), `expected usage window to keep its label: ${lines.join(' | ')}`);
+  assert.ok(lines.some(line => line.includes('Weekly  85 %')), `expected weekly usage window to render: ${lines.join(' | ')}`);
   assert.ok(!lines.some(line => line.startsWith('5h ')), `did not expect a bare 5h continuation line: ${lines.join(' | ')}`);
 });
 

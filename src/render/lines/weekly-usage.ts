@@ -36,7 +36,7 @@ export function renderWeeklyUsageLine(ctx: RenderContext): string | null {
     const body = reset
       ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
       : `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}`;
-    return `${weeklyLabel} ${body}`;
+    return `${weeklyLabel}  ${body}`;
   }
 
   return reset
@@ -52,7 +52,7 @@ function formatUsagePercent(
     return label("--", colors);
   }
   const color = getQuotaColor(percent, colors);
-  return `${color}${percent}%${RESET}`;
+  return `${color}${String(percent).padStart(3)} %${RESET}`;
 }
 
 function formatResetTime(resetAt: Date | null): string {
