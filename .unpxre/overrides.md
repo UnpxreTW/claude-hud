@@ -289,3 +289,39 @@ line rendering if applicable.
 1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
    `⚠ Override 11: limit-reached logic not found` and assign to @UnpxreTW
+
+---
+
+### 12. Add zh-TW option to configure command
+
+Find the plugin's configure command (the guided configuration flow that
+lets users choose language, layout, presets, etc.).
+
+Add `zh-TW` (繁體中文) as a language option alongside the existing
+`en` and `zh` choices. The option should:
+- Display as: `繁體中文（台灣）`
+- Save as: `language: "zh-TW"`
+
+Update both the new user flow and the update config flow language
+questions to include this option.
+
+**If the configure command structure has changed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 12: configure command changed` and assign to @UnpxreTW
+
+---
+
+### 13. Add separators toggle to configure command
+
+Find the plugin's configure command. Add a "Separators" option to the
+Turn On / Turn Off questions so users can enable or disable the
+separator line between info lines and activity lines.
+
+- Display as: `Separators` — horizontal line between info and activity
+- Config key: `showSeparators: true/false`
+
+**If the configure command structure has changed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 13: configure command changed` and assign to @UnpxreTW
