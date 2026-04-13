@@ -325,3 +325,37 @@ separator line between info lines and activity lines.
 1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
    `⚠ Override 13: configure command changed` and assign to @UnpxreTW
+
+---
+
+### 14. Clear resetsIn translation for zh-TW
+
+In the zh-TW locale file, set `format.resetsIn` to an empty string `""`.
+
+The reset time values already contain the full descriptive text
+(e.g. `於 14:30 重置`, `4 月 15 號 09:00 重置`), so the `resetsIn`
+prefix is redundant and would result in duplicated text.
+
+**If the i18n key has been removed or renamed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 14: format.resetsIn key changed` and assign to @UnpxreTW
+
+---
+
+### 15. Replace parentheses with separator for reset time display
+
+Find where the reset time is appended to the usage display line.
+The original wraps the reset time in parentheses:
+`(resetsIn resetTime)`
+
+Replace the parentheses with a `│` separator:
+`│ resetTime`
+
+This applies to all usage lines that show reset time (five-hour usage,
+weekly usage, and the compact session line if applicable).
+
+**If the usage line assembly logic has changed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 15: usage line assembly changed` and assign to @UnpxreTW
