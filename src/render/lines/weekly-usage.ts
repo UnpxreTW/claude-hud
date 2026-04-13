@@ -30,17 +30,17 @@ export function renderWeeklyUsageLine(ctx: RenderContext): string | null {
   const usageBarEnabled = display?.usageBarEnabled ?? true;
 
   const usageDisplay = formatUsagePercent(sevenDay, colors);
-  const reset = formatResetTime(ctx.usageData.sevenDayResetAt);
+  const reset = formatWeeklyResetTime(ctx.usageData.sevenDayResetAt);
 
   if (usageBarEnabled) {
     const body = reset
-      ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+      ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} (${reset})`
       : `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}`;
     return `${weeklyLabel} ${body}`;
   }
 
   return reset
-    ? `${weeklyLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+    ? `${weeklyLabel} ${usageDisplay} (${reset})`
     : `${weeklyLabel} ${usageDisplay}`;
 }
 
@@ -55,24 +55,10 @@ function formatUsagePercent(
   return `${color}${percent}%${RESET}`;
 }
 
-function formatResetTime(resetAt: Date | null): string {
+function formatWeeklyResetTime(resetAt: Date | null): string {
   if (!resetAt) return "";
-  const now = new Date();
-  const diffMs = resetAt.getTime() - now.getTime();
-  if (diffMs <= 0) return "";
-
-  const diffMins = Math.ceil(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    const remHours = hours % 24;
-    if (remHours > 0) return `${days}d ${remHours}h`;
-    return `${days}d`;
-  }
-
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  const month = resetAt.getMonth() + 1;
+  const day = resetAt.getDate();
+  const hh = String(resetAt.getHours()).padStart(2, "0");
+  return `${month} 月 ${day} 號 ${hh}:00 重置`;
 }

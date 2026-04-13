@@ -1079,7 +1079,11 @@ test('renderUsageLine translates labels when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('用量'));
-    assert.ok(line.includes('重置剩余'));
+    const resetTime_ch = ctx.usageData.sevenDayResetAt;
+    const m_ch = resetTime_ch.getMonth() + 1;
+    const d_ch = resetTime_ch.getDate();
+    const h_ch = String(resetTime_ch.getHours()).padStart(2, '0');
+    assert.ok(line.includes(`${m_ch} 月 ${d_ch} 號 ${h_ch}:00 重置`));
   } finally {
     setLanguage('en');
   }
@@ -1133,7 +1137,7 @@ test('renderSessionLine shows 7d when approaching limit (>=80%)', () => {
   assert.ok(line.includes('85%'), 'should include 7d percentage');
 });
 
-test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
+test('renderSessionLine shows 7d reset date in text-only mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000)); // 1d 4h from now
   ctx.config.display.sevenDayThreshold = 80;
@@ -1148,7 +1152,10 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(line.includes('Weekly 85%'), `should include 7d label and percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  const month = resetTime.getMonth() + 1;
+  const day = resetTime.getDate();
+  const hh_w = String(resetTime.getHours()).padStart(2, '0');
+  assert.ok(line.includes(`${month} 月 ${day} 號 ${hh_w}:00 重置`), `should include 7d reset date in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
@@ -1216,7 +1223,7 @@ test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
-test('renderWeeklyUsageLine shows 7d reset countdown in text-only mode', () => {
+test('renderWeeklyUsageLine shows 7d reset date in text-only mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000)); // 1d 4h from now
   ctx.config.display.usageBarEnabled = false;
@@ -1230,7 +1237,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('Weekly 85%'), `should include 7d text-only usage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  const month_wt = resetTime.getMonth() + 1;
+  const day_wt = resetTime.getDate();
+  const hh_wt = String(resetTime.getHours()).padStart(2, '0');
+  assert.ok(line.includes(`${month_wt} 月 ${day_wt} 號 ${hh_wt}:00 重置`), `should include 7d reset date in text-only mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', () => {
@@ -1247,13 +1257,17 @@ test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', ()
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('重置剩余'));
+    const resetTime_ch = ctx.usageData.sevenDayResetAt;
+    const m_ch = resetTime_ch.getMonth() + 1;
+    const d_ch = resetTime_ch.getDate();
+    const h_ch = String(resetTime_ch.getHours()).padStart(2, '0');
+    assert.ok(line.includes(`${m_ch} 月 ${d_ch} 號 ${h_ch}:00 重置`));
   } finally {
     setLanguage('en');
   }
 });
 
-test('renderWeeklyUsageLine shows 7d reset countdown in bar mode', () => {
+test('renderWeeklyUsageLine shows 7d reset date in bar mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000)); // 1d 4h from now
   ctx.config.display.usageBarEnabled = true;
@@ -1267,7 +1281,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('85%'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in bar mode: ${line}`);
+  const month_wb = resetTime.getMonth() + 1;
+  const day_wb = resetTime.getDate();
+  const hh_wb = String(resetTime.getHours()).padStart(2, '0');
+  assert.ok(line.includes(`${month_wb} 月 ${day_wb} 號 ${hh_wb}:00 重置`), `should include 7d reset date in bar mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine shows weekly usage as independent line', () => {

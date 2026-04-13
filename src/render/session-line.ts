@@ -164,6 +164,7 @@ export function renderSessionLine(ctx: RenderContext): string {
           usageBarEnabled,
           barWidth,
           forceLabel: true,
+          resetFormatter: formatWeeklyResetTime,
         });
         parts.push(weeklyOnlyPart);
       } else {
@@ -186,6 +187,7 @@ export function renderSessionLine(ctx: RenderContext): string {
             usageBarEnabled,
             barWidth,
             forceLabel: true,
+            resetFormatter: formatWeeklyResetTime,
           });
           parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
           parts.push(sevenDayPart);
@@ -292,6 +294,7 @@ function formatUsageWindowPart({
   usageBarEnabled,
   barWidth,
   forceLabel = false,
+  resetFormatter,
 }: {
   label: string;
   percent: number | null;
@@ -300,9 +303,10 @@ function formatUsageWindowPart({
   usageBarEnabled: boolean;
   barWidth: number;
   forceLabel?: boolean;
+  resetFormatter?: (resetAt: Date | null) => string;
 }): string {
   const usageDisplay = formatUsagePercent(percent, colors);
-  const reset = formatResetTime(resetAt);
+  const reset = (resetFormatter ?? formatResetTime)(resetAt);
   const styledLabel = label(windowLabel, colors);
 
   if (usageBarEnabled) {
@@ -312,6 +316,11 @@ function formatUsageWindowPart({
     return forceLabel ? `${styledLabel} ${body}` : body;
   }
 
+  if (resetFormatter) {
+    return reset
+      ? `${styledLabel} ${usageDisplay} (${reset})`
+      : `${styledLabel} ${usageDisplay}`;
+  }
   return reset
     ? `${styledLabel} ${usageDisplay} (${t('format.resetsIn')} ${reset})`
     : `${styledLabel} ${usageDisplay}`;
@@ -337,4 +346,12 @@ function formatResetTime(resetAt: Date | null): string {
   }
 
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatWeeklyResetTime(resetAt: Date | null): string {
+  if (!resetAt) return '';
+  const month = resetAt.getMonth() + 1;
+  const day = resetAt.getDate();
+  const hh = String(resetAt.getHours()).padStart(2, '0');
+  return `${month} 月 ${day} 號 ${hh}:00 重置`;
 }
