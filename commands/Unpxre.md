@@ -86,7 +86,7 @@ overwrite it entirely.
     "showUsage": true,
     "usageBarEnabled": true,
     "showDuration": true,
-    "showSessionName": true,
+    "showSessionName": false,
     "showSessionTokens": true,
     "customLine": "Unpxre"
   },
