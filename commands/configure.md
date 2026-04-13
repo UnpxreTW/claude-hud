@@ -78,6 +78,7 @@ Save as `language: "en"`, `language: "zh"`, or `language: "zh-TW"`.
   - "Session duration" - ⏱️ 5m
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
+  - "Separators" - horizontal line between info and activity
 
 ### Q5: Turn On (based on chosen preset)
 - header: "Turn On"
@@ -116,6 +117,7 @@ If user chooses "Enter custom text", use AskUserQuestion to get their text. Save
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
   - "Usage bar style" - ██░░ 25% visual bar (only if usageBarEnabled is true)
+  - "Separators" - horizontal line between info and activity (only if showSeparators is true)
 
 If more than 4 items ON, show Activity items (Tools, Agents, Todos, Project, Git) first.
 Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset to Minimal" in Q4.
@@ -133,6 +135,7 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
   - "Session duration" - ⏱️ 5m
+  - "Separators" - horizontal line between info and activity (only if showSeparators is false)
 
 ### Q3: Git Style (only if Git is currently enabled)
 - header: "Git Style"
@@ -254,6 +257,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Session duration | `display.showDuration` |
 | Session tokens | `display.showSessionTokens` |
 | Custom line | `display.customLine` |
+| Separators | `showSeparators` |
 
 **Always true (not configurable):**
 - `display.showModel: true`
