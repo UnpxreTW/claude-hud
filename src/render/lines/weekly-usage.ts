@@ -58,8 +58,9 @@ function formatUsagePercent(
 function formatResetTime(resetAt: Date | null): string {
   if (!resetAt) return "";
   const now = new Date();
-  if (resetAt.getTime() <= now.getTime()) return "即將重置";
+  if (resetAt.getTime() <= now.getTime()) return "";
+  const month = resetAt.getMonth() + 1;
+  const day = resetAt.getDate();
   const hours = String(resetAt.getHours()).padStart(2, "0");
-  const minutes = String(resetAt.getMinutes()).padStart(2, "0");
-  return `於 ${hours}:${minutes} 重置`;
+  return `${month} 月 ${day} 號 ${hours}:00 重置`;
 }

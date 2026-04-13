@@ -1148,9 +1148,10 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(line.includes('Weekly 85%'), `should include 7d label and percentage: ${line}`);
+  const monthW = resetTime.getMonth() + 1;
+  const dayW = resetTime.getDate();
   const hhW = String(resetTime.getHours()).padStart(2, '0');
-  const mmW = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhW}:${mmW} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
+  assert.ok(line.includes(`${monthW} 月 ${dayW} 號 ${hhW}:00 重置`), `should include 7d reset date in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
@@ -1235,9 +1236,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('Weekly 85%'), `should include 7d text-only usage: ${line}`);
+  const monthW = resetTime.getMonth() + 1;
+  const dayW = resetTime.getDate();
   const hhW = String(resetTime.getHours()).padStart(2, '0');
-  const mmW = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhW}:${mmW} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
+  assert.ok(line.includes(`${monthW} 月 ${dayW} 號 ${hhW}:00 重置`), `should include 7d reset date in text-only mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', () => {
@@ -1254,7 +1256,7 @@ test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', ()
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('於') && line.includes('重置'));
+    assert.ok(line.includes('月') && line.includes('號') && line.includes('重置'));
   } finally {
     setLanguage('en');
   }
@@ -1274,9 +1276,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('85%'), `should include 7d percentage: ${line}`);
+  const monthB = resetTime.getMonth() + 1;
+  const dayB = resetTime.getDate();
   const hhB = String(resetTime.getHours()).padStart(2, '0');
-  const mmB = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhB}:${mmB} 重置`), `should include 7d reset clock time in bar mode: ${line}`);
+  assert.ok(line.includes(`${monthB} 月 ${dayB} 號 ${hhB}:00 重置`), `should include 7d reset date in bar mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine shows weekly usage as independent line', () => {
