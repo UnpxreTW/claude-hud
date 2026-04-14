@@ -24,9 +24,14 @@ Claude Code 的即時狀態列插件 — 顯示上下文用量、工具活動、
 
 > ⚠️ 安裝完成後，請依照畫面提示執行 `/reload-plugins` 載入插件。
 
-**步驟 3：套用推薦設定**
+**步驟 3.1：套用推薦設定（Unpxre 預設）**
 ```
 /claude-hud:Unpxre
+```
+
+**步驟 3.2：或使用原版設定流程**
+```
+/claude-hud:setup
 ```
 
 完成！
@@ -68,14 +73,6 @@ Claude HUD 讓你即時掌握 Claude Code session 的狀態。
 | **上限量表** | 用量達 100% 時維持量表顯示 |
 
 完整的覆寫定義請參考 [.unpxre/overrides.md](.unpxre/overrides.md)。
-
-### 一鍵套用推薦設定
-
-```
-/claude-hud:Unpxre
-```
-
-包含 statusLine 設定 + 繁體中文 + 全功能啟用的預設配置。
 
 ---
 
