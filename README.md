@@ -52,8 +52,6 @@ Claude HUD 讓你即時掌握 Claude Code session 的狀態。
 | **代理追蹤** | 正在執行的 subagent 及其狀態 |
 | **待辦進度** | 即時追蹤任務完成度 |
 
-詳細的顯示範例與佈局說明請參考[上游文件](https://github.com/jarrodwatts/claude-hud#what-you-see)。
-
 ---
 
 ## 參考
