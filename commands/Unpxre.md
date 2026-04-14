@@ -82,13 +82,13 @@ overwrite it entirely.
     "showProject": true,
     "showConfigCounts": true,
     "showTokenBreakdown": false,
-    "showSpeed": true,
+    "showSpeed": false,
     "showUsage": true,
     "usageBarEnabled": true,
     "showDuration": true,
     "showSessionName": false,
     "showSessionTokens": true,
-    "customLine": "Unpxre"
+    "customLine": ""
   },
   "gitStatus": {
     "enabled": true,
