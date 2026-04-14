@@ -34,13 +34,13 @@ export function renderWeeklyUsageLine(ctx: RenderContext): string | null {
 
   if (usageBarEnabled) {
     const body = reset
-      ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+      ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} │ ${reset}`
       : `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}`;
     return `${weeklyLabel}  ${body}`;
   }
 
   return reset
-    ? `${weeklyLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+    ? `${weeklyLabel} ${usageDisplay} │ ${reset}`
     : `${weeklyLabel} ${usageDisplay}`;
 }
 
