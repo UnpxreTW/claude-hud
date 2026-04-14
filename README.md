@@ -22,6 +22,8 @@ Claude Code 的即時狀態列插件 — 顯示上下文用量、工具活動、
 /plugin install claude-hud
 ```
 
+> ⚠️ 安裝完成後，請依照畫面提示執行 `/reload-plugins` 載入插件。
+
 **步驟 3：設定狀態列**
 ```
 /claude-hud:setup
