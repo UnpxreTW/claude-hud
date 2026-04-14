@@ -6,7 +6,7 @@ Claude Code 的即時狀態列插件 — 顯示上下文用量、工具活動、
 
 [![License](https://img.shields.io/github/license/UnpxreTW/claude-hud)](LICENSE)
 
-![Claude HUD in action](claude-hud-preview-5-2.png)
+![Claude HUD in action](claude-hud-preview-unpxre.png)
 
 ## 安裝
 
@@ -46,6 +46,34 @@ Claude HUD 讓你即時掌握 Claude Code session 的狀態。
 | **待辦進度** | 即時追蹤任務完成度 |
 
 詳細的顯示範例與佈局說明請參考[上游文件](https://github.com/jarrodwatts/claude-hud#what-you-see)。
+
+---
+
+## 客製化內容
+
+此 Fork 基於上游版本進行以下調整：
+
+| 項目 | 說明 |
+|------|------|
+| **繁體中文（zh-TW）** | 新增繁體中文在地化語系 |
+| **量表字元** | `█░` → `●○` |
+| **每週用量獨立行** | 五小時與每週用量分開顯示 |
+| **重置時間格式** | 倒數改為時鐘格式（`於 HH:MM 重置`、`M 月 D 號 HH:00 重置`） |
+| **百分比對齊** | 固定寬度格式化，數字對齊 |
+| **分隔線** | configure 可開關分隔線 |
+| **customLine 前置** | 自訂文字移至狀態列最前方 |
+| **環境資訊前綴** | 加上「參考：」標題 |
+| **上限量表** | 用量達 100% 時維持量表顯示 |
+
+完整的覆寫定義請參考 [.unpxre/overrides.md](.unpxre/overrides.md)。
+
+### 一鍵套用推薦設定
+
+```
+/claude-hud:Unpxre
+```
+
+包含 statusLine 設定 + 繁體中文 + 全功能啟用的預設配置。
 
 ---
 
