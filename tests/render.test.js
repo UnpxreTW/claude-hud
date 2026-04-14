@@ -1150,7 +1150,7 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
   assert.ok(line.includes('Weekly  85 %'), `should include 7d label and percentage: ${line}`);
   const hhW = String(resetTime.getHours()).padStart(2, '0');
   const mmW = String(resetTime.getMinutes()).padStart(2, '0');
-  assert.ok(line.includes(`於 ${hhW}:${mmW} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
+  assert.ok(line.includes(`│ 於 ${hhW}:${mmW} 重置`), `should include 7d reset clock time in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
