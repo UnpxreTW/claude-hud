@@ -25,12 +25,12 @@ export function renderWeeklyUsageLine(ctx) {
     const reset = formatResetTime(ctx.usageData.sevenDayResetAt);
     if (usageBarEnabled) {
         const body = reset
-            ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+            ? `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay} │ ${reset}`
             : `${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}`;
         return `${weeklyLabel}  ${body}`;
     }
     return reset
-        ? `${weeklyLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+        ? `${weeklyLabel} ${usageDisplay} │ ${reset}`
         : `${weeklyLabel} ${usageDisplay}`;
 }
 function formatUsagePercent(percent, colors) {

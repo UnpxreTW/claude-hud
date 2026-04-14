@@ -259,12 +259,12 @@ function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, u
     const styledLabel = label(windowLabel, colors);
     if (usageBarEnabled) {
         const body = reset
-            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${reset} / ${windowLabel})`
+            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} │ ${reset}`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
         return forceLabel ? `${styledLabel}  ${body}` : body;
     }
     return reset
-        ? `${styledLabel} ${usageDisplay} (${t('format.resetsIn')} ${reset})`
+        ? `${styledLabel} ${usageDisplay} │ ${reset}`
         : `${styledLabel} ${usageDisplay}`;
 }
 function formatResetTime(resetAt) {
