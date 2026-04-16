@@ -17,7 +17,7 @@ export const zhTW: Messages = {
 
   // Format
   "format.resets": "重置於",
-  "format.resetsIn": "重置剩餘",
+  "format.resetsIn": "",
   "format.in": "輸入",
   "format.cache": "快取",
   "format.out": "輸出",
