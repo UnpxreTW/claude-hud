@@ -72,11 +72,14 @@ function baseContext() {
 function captureRenderLines(ctx) {
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = line => logs.push(stripAnsi(line));
+  process.stdout.write = chunk => { logs.push(stripAnsi(String(chunk))); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
   return logs;
 }
@@ -294,11 +297,14 @@ test('render expanded layout supports remaining-based context display', () => {
 
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = (line) => logs.push(line);
+  process.stdout.write = (chunk) => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
 
   // 12345/200k = 6.17% raw, scale ≈ 0.026, buffer ≈ 858 → 7% buffered → 93% remaining
@@ -314,11 +320,14 @@ test('render expanded layout supports combined context display', () => {
 
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = (line) => logs.push(line);
+  process.stdout.write = (chunk) => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
 
   assert.ok(
@@ -1467,11 +1476,14 @@ test('render adds separator line when showSeparators is true and activity exists
 
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = (line) => logs.push(line);
+  process.stdout.write = (chunk) => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
 
   assert.ok(logs.length > 1, 'should render multiple lines');
@@ -1484,11 +1496,14 @@ test('render omits separator when showSeparators is true but no activity', () =>
 
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = (line) => logs.push(line);
+  process.stdout.write = (chunk) => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
 
   assert.ok(!logs.some(l => l.includes('─')), 'should not include separator');
@@ -1500,11 +1515,14 @@ test('render preserves regular spaces instead of non-breaking spaces', () => {
 
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = (line) => logs.push(line);
+  process.stdout.write = (chunk) => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
 
   assert.ok(logs.length > 0, 'should render at least one line');

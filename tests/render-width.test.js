@@ -106,11 +106,14 @@ function withTerminal(columns, fn) {
 function captureRender(ctx) {
   const logs = [];
   const originalLog = console.log;
+  const originalWrite = process.stdout.write.bind(process.stdout);
   console.log = line => logs.push(line);
+  process.stdout.write = chunk => { logs.push(String(chunk)); return true; };
   try {
     render(ctx);
   } finally {
     console.log = originalLog;
+    process.stdout.write = originalWrite;
   }
   return logs.map(line => stripAnsi(line).replace(/\u00A0/g, ' '));
 }

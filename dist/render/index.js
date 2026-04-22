@@ -401,9 +401,14 @@ export function render(ctx) {
     }
     const physicalLines = lines.flatMap(line => line.split('\n'));
     const visibleLines = physicalLines.flatMap(line => wrapLineToWidth(line, terminalWidth));
-    for (const line of visibleLines) {
-        const outputLine = `${RESET}${line}`;
-        console.log(outputLine);
+    for (let i = 0; i < visibleLines.length; i += 1) {
+        const outputLine = `${RESET}${visibleLines[i]}`;
+        if (i === visibleLines.length - 1) {
+            process.stdout.write(outputLine);
+        }
+        else {
+            console.log(outputLine);
+        }
     }
 }
 //# sourceMappingURL=index.js.map
