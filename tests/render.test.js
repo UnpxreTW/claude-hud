@@ -1591,6 +1591,34 @@ test('renderUsageLine uses custom usage palette overrides', () => {
   assert.ok(line.includes('\x1b[35m80%\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(line)}`);
 });
 
+test('quotaBar and coloredBar use custom barFilled and barEmpty characters', () => {
+  const ctx = baseContext();
+  ctx.config.display.usageBarEnabled = true;
+  ctx.config.colors = {
+    ...ctx.config.colors,
+    barFilled: '●',
+    barEmpty: '○',
+  };
+  ctx.usageData = {
+    planName: 'Pro',
+    fiveHour: 50,
+    sevenDay: null,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+
+  const usageLine = withTerminal(120, () => renderUsageLine(ctx));
+  assert.ok(usageLine, 'should render usage line');
+  assert.ok(usageLine.includes('●'), `expected custom filled char in usage bar, got: ${JSON.stringify(usageLine)}`);
+  assert.ok(usageLine.includes('○'), `expected custom empty char in usage bar, got: ${JSON.stringify(usageLine)}`);
+  assert.ok(!usageLine.includes('█'), `should not contain default filled char, got: ${JSON.stringify(usageLine)}`);
+  assert.ok(!usageLine.includes('░'), `should not contain default empty char, got: ${JSON.stringify(usageLine)}`);
+
+  const identityLine = renderIdentityLine(ctx);
+  assert.ok(identityLine.includes('●'), `expected custom filled char in context bar, got: ${JSON.stringify(identityLine)}`);
+  assert.ok(identityLine.includes('○'), `expected custom empty char in context bar, got: ${JSON.stringify(identityLine)}`);
+});
+
 test('renderSessionLine hides usage when showUsage config is false (hybrid toggle)', () => {
   const ctx = baseContext();
   ctx.usageData = {
