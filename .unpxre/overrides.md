@@ -28,9 +28,20 @@ upstream updates.
 - If unresolvable, create a warning Issue for @UnpxreTW with details
 - **Each override must be applied in its own separate commit and PR** —
   do not bundle multiple overrides into a single PR
+- **Sequential workflow:** After creating a PR for an override, enable
+  auto-merge (squash) on the PR, then wait for CI to pass and the PR to
+  be automatically merged. Once merged, pull the latest `main` branch
+  before starting the next override. This prevents merge conflicts
+  between overrides that touch the same files
+- **Commit and PR titles must use the `override:` prefix** followed by a
+  short description — do not include the override number in the title
+  (e.g. `override: move customLine to front of status line`)
+- **Commit messages and PR descriptions must NOT contain session links,
+  build results, test output, or any metadata** — keep commits to a
+  one-line summary only, and PR descriptions to what changed and files
+  modified
 - **When modifying code behavior, also update any related test cases** to
-  match the new expected output. Run `npm run test:coverage` to verify
-  before committing
+  match the new expected output — CI will verify on push
 
 ---
 
@@ -182,7 +193,7 @@ Steps:
    - `status.limitReached`: `已達上限`
    - `status.allTodosComplete`: `全部完成`
    - `format.resets`: `重置於`
-   - `format.resetsIn`: `重置剩餘`
+   - `format.resetsIn`: `""` (empty — reset times already contain full text)
    - `format.in`: `輸入`
    - `format.cache`: `快取`
    - `format.out`: `輸出`
@@ -328,22 +339,7 @@ separator line between info lines and activity lines.
 
 ---
 
-### 14. Clear resetsIn translation for zh-TW
-
-In the zh-TW locale file, set `format.resetsIn` to an empty string `""`.
-
-The reset time values already contain the full descriptive text
-(e.g. `於 14:30 重置`, `4 月 15 號 09:00 重置`), so the `resetsIn`
-prefix is redundant and would result in duplicated text.
-
-**If the i18n key has been removed or renamed:**
-1. Check upstream commit history
-2. If unresolvable, create a GitHub Issue titled
-   `⚠ Override 14: format.resetsIn key changed` and assign to @UnpxreTW
-
----
-
-### 15. Replace parentheses with separator for reset time display
+### 14. Replace parentheses with separator for reset time display
 
 Find where the reset time is appended to the usage display line.
 The original wraps the reset time in parentheses:
@@ -358,4 +354,17 @@ weekly usage, and the compact session line if applicable).
 **If the usage line assembly logic has changed:**
 1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
-   `⚠ Override 15: usage line assembly changed` and assign to @UnpxreTW
+   `⚠ Override 14: usage line assembly changed` and assign to @UnpxreTW
+
+---
+
+### 15. Update CODEOWNERS to fork owner
+
+The upstream `.github/CODEOWNERS` sets `* @jarrodwatts`. Replace with
+`* @UnpxreTW` so that Code Owner review requests are directed to the
+fork maintainer.
+
+**If CODEOWNERS has been restructured or moved:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 15: CODEOWNERS not found` and assign to @UnpxreTW
