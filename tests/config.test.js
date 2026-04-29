@@ -654,3 +654,43 @@ test('mergeConfig rejects invalid hex strings', () => {
   assert.equal(config.colors.usage, DEFAULT_CONFIG.colors.usage);
   assert.equal(config.colors.warning, DEFAULT_CONFIG.colors.warning);
 });
+
+test('mergeConfig accepts valid single-character barFilled and barEmpty', () => {
+  const config = mergeConfig({
+    colors: { barFilled: '●', barEmpty: '○' },
+  });
+  assert.equal(config.colors.barFilled, '●');
+  assert.equal(config.colors.barEmpty, '○');
+});
+
+test('mergeConfig accepts surrogate-pair characters for bar chars', () => {
+  const config = mergeConfig({
+    colors: { barFilled: '🟢', barEmpty: '⚪' },
+  });
+  assert.equal(config.colors.barFilled, '🟢');
+  assert.equal(config.colors.barEmpty, '⚪');
+});
+
+test('mergeConfig rejects control characters for bar chars', () => {
+  const config = mergeConfig({
+    colors: { barFilled: '\n', barEmpty: '\x1b' },
+  });
+  assert.equal(config.colors.barFilled, DEFAULT_CONFIG.colors.barFilled);
+  assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
+});
+
+test('mergeConfig rejects multi-character strings for bar chars', () => {
+  const config = mergeConfig({
+    colors: { barFilled: 'ab', barEmpty: '##' },
+  });
+  assert.equal(config.colors.barFilled, DEFAULT_CONFIG.colors.barFilled);
+  assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
+});
+
+test('mergeConfig rejects non-string types for bar chars', () => {
+  const config = mergeConfig({
+    colors: { barFilled: 123, barEmpty: true },
+  });
+  assert.equal(config.colors.barFilled, DEFAULT_CONFIG.colors.barFilled);
+  assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
+});

@@ -246,7 +246,10 @@ function validateColorName(value: unknown): value is HudColorName {
 }
 
 function validateBarChar(value: unknown): value is string {
-  return typeof value === 'string' && value.length === 1;
+  if (typeof value !== 'string') return false;
+  if (/[\x00-\x1f\x7f]/.test(value)) return false;
+  const codePoints = [...value];
+  return codePoints.length === 1;
 }
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
