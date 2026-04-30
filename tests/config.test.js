@@ -663,27 +663,19 @@ test('mergeConfig accepts valid single-character barFilled and barEmpty', () => 
   assert.equal(config.colors.barEmpty, '○');
 });
 
-test('mergeConfig rejects wide emoji for bar chars', () => {
+test('mergeConfig accepts surrogate-pair emoji for bar chars', () => {
   const config = mergeConfig({
     colors: { barFilled: '🟢', barEmpty: '🔴' },
   });
-  assert.equal(config.colors.barFilled, DEFAULT_CONFIG.colors.barFilled);
-  assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
+  assert.equal(config.colors.barFilled, '🟢');
+  assert.equal(config.colors.barEmpty, '🔴');
 });
 
-test('mergeConfig rejects CJK wide characters for bar chars', () => {
+test('mergeConfig accepts CJK and Unicode symbols for bar chars', () => {
   const config = mergeConfig({
-    colors: { barFilled: '中', barEmpty: 'あ' },
+    colors: { barFilled: '中', barEmpty: '★' },
   });
-  assert.equal(config.colors.barFilled, DEFAULT_CONFIG.colors.barFilled);
-  assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
-});
-
-test('mergeConfig accepts narrow Unicode symbols for bar chars', () => {
-  const config = mergeConfig({
-    colors: { barFilled: '⚪', barEmpty: '★' },
-  });
-  assert.equal(config.colors.barFilled, '⚪');
+  assert.equal(config.colors.barFilled, '中');
   assert.equal(config.colors.barEmpty, '★');
 });
 

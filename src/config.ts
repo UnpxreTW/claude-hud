@@ -245,31 +245,10 @@ function validateColorName(value: unknown): value is HudColorName {
     || value === 'brightMagenta';
 }
 
-function isWideChar(codePoint: number): boolean {
-  return (
-    (codePoint >= 0x1100 && codePoint <= 0x115F) ||
-    (codePoint >= 0x2E80 && codePoint <= 0x303E) ||
-    (codePoint >= 0x3040 && codePoint <= 0x33BF) ||
-    (codePoint >= 0x3400 && codePoint <= 0x4DBF) ||
-    (codePoint >= 0x4E00 && codePoint <= 0xA4CF) ||
-    (codePoint >= 0xA960 && codePoint <= 0xA97C) ||
-    (codePoint >= 0xAC00 && codePoint <= 0xD7FF) ||
-    (codePoint >= 0xF900 && codePoint <= 0xFAFF) ||
-    (codePoint >= 0xFE30 && codePoint <= 0xFE6F) ||
-    (codePoint >= 0xFF01 && codePoint <= 0xFF60) ||
-    (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) ||
-    (codePoint >= 0x1F000 && codePoint <= 0x1FAFF) ||
-    (codePoint >= 0x20000 && codePoint <= 0x2FA1F)
-  );
-}
-
 function validateBarChar(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   if (/[\x00-\x1f\x7f-\x9f]/.test(value)) return false;
-  const codePoints = [...value];
-  if (codePoints.length !== 1) return false;
-  const cp = codePoints[0].codePointAt(0)!;
-  return !isWideChar(cp);
+  return [...value].length === 1;
 }
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
