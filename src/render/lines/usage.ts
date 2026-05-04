@@ -151,11 +151,7 @@ function formatUsageWindowPart({
     : label(windowLabel, colors);
   const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
 
-  const resetSuffix = reset
-    ? showResetLabel
-      ? `(${t(resetsKey)} ${reset})`
-      : `(${reset})`
-    : "";
+  const resetSuffix = reset ? `│ ${reset}` : "";
 
   if (usageBarEnabled) {
     const body = resetSuffix

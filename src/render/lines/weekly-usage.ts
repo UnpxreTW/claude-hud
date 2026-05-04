@@ -1,8 +1,7 @@
 import type { RenderContext } from "../../types.js";
 import { shouldHideUsage } from "../../stdin.js";
-import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
+import { getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
-import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
 import type { TimeFormatMode } from "../../config.js";
 import { formatResetTime } from "../format-reset-time.js";
@@ -28,8 +27,6 @@ export function renderWeeklyUsageLine(
 
   const sevenDay = ctx.usageData.sevenDay;
   const timeFormat: TimeFormatMode = display?.timeFormat ?? 'relative';
-  const showResetLabel = display?.showResetLabel ?? true;
-  const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
   const usageBarEnabled = display?.usageBarEnabled ?? true;
   const barWidth = getAdaptiveBarWidth();
 
@@ -39,11 +36,7 @@ export function renderWeeklyUsageLine(
   const padded = String(sevenDay).padStart(3, ' ');
   const usageDisplay = `${color}${padded} %${RESET}`;
 
-  const resetSuffix = reset
-    ? showResetLabel
-      ? `(${t(resetsKey)} ${reset})`
-      : `(${reset})`
-    : "";
+  const resetSuffix = reset ? `│ ${reset}` : "";
 
   if (usageBarEnabled) {
     const body = resetSuffix

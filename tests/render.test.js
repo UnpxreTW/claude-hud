@@ -1197,7 +1197,7 @@ test('renderUsageLine translates labels when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('用量'));
-    assert.ok(line.includes('重置剩余'));
+    assert.ok(line.includes('│'), 'should use separator for reset time');
   } finally {
     setLanguage('en');
   }
@@ -1305,7 +1305,7 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(line.includes('Weekly') && line.includes('85 %'), `should include 7d label and percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
@@ -1369,7 +1369,7 @@ test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('(resets in 6d 7h)'), `expected bar-mode reset wording, got: ${plain}`);
+  assert.ok(plain.includes('│ 6d 7h'), `expected bar-mode reset wording, got: ${plain}`);
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
@@ -1388,10 +1388,10 @@ test('renderWeeklyUsageLine shows 7d reset countdown in text-only mode', () => {
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('Weekly'), `should include weekly label: ${line}`);
   assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${line}`);
 });
 
-test('renderWeeklyUsageLine can hide reset label in text-only mode', () => {
+test('renderWeeklyUsageLine shows reset time with separator in text-only mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000));
   ctx.config.display.usageBarEnabled = false;
@@ -1405,8 +1405,7 @@ test('renderWeeklyUsageLine can hide reset label in text-only mode', () => {
   };
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('(1d 4h)'), `should include bare countdown when reset label is hidden: ${line}`);
-  assert.ok(!line.includes('resets in'), `should omit reset label when disabled: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should show reset time with separator: ${line}`);
 });
 
 test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', () => {
@@ -1423,7 +1422,7 @@ test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', ()
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('重置剩余'));
+    assert.ok(line.includes('│'), 'should use separator for reset time');
   } finally {
     setLanguage('en');
   }
@@ -1443,7 +1442,7 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode', () => {
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in bar mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in bar mode: ${line}`);
 });
 
 test('renderWeeklyUsageLine can hide reset label in bar mode', () => {
@@ -1460,8 +1459,7 @@ test('renderWeeklyUsageLine can hide reset label in bar mode', () => {
   };
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('(1d 4h)'), `should include bare countdown in bar mode: ${line}`);
-  assert.ok(!line.includes('resets in'), `should omit reset label in bar mode when disabled: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should show reset time with separator in bar mode: ${line}`);
 });
 
 test('renderUsageLine shows weekly-only usage without a ghost 5h section', () => {
@@ -1512,7 +1510,7 @@ test('renderUsageLine shows bar at 100% with reset countdown', () => {
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
   assert.ok(plain.includes('100 %'), 'should show 100% in bar');
-  assert.ok(/resets in \d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
+  assert.ok(/│ \d+d( \d+h)?/.test(plain), `expected day/hour reset format with separator, got: ${plain}`);
 });
 
 test('renderSessionLine displays -- for null usage values', () => {
@@ -2201,10 +2199,10 @@ test('renderUsageLine uses "resets in" preposition for default relative mode in 
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('resets in'), `should use "resets in" for relative mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `should use "resets in" for relative mode, got: ${plain}`);
 });
 
-test('renderUsageLine uses "resets at" when timeFormat is "absolute" (bar mode)', () => {
+test('renderUsageLine shows reset time with separator when timeFormat is "absolute" (bar mode)', () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
   ctx.config.display.timeFormat = 'absolute';
@@ -2216,8 +2214,7 @@ test('renderUsageLine uses "resets at" when timeFormat is "absolute" (bar mode)'
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('resets at'), `expected "resets at" in absolute bar mode, got: ${plain}`);
-  assert.ok(!plain.includes('resets in'), `should not say "resets in" for absolute mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `expected separator for reset time in absolute bar mode, got: ${plain}`);
 });
 
 test('renderUsageLine shows relative and absolute time when timeFormat is "both"', () => {
@@ -2235,7 +2232,7 @@ test('renderUsageLine shows relative and absolute time when timeFormat is "both"
   // "both" produces "Xh Ym, at HH:MM" — must contain relative part and " at " from i18n
   assert.match(plain, /\dh/, 'should contain relative duration hours');
   assert.ok(plain.includes(' at '), `should contain absolute "at" prefix, got: ${plain}`);
-  assert.ok(plain.includes('resets in'), `should use "resets in" preposition for both mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `should use "resets in" preposition for both mode, got: ${plain}`);
 });
 
 test('renderUsageLine at 100% shows bar with reset time in relative mode', () => {
@@ -2249,7 +2246,7 @@ test('renderUsageLine at 100% shows bar with reset time in relative mode', () =>
   };
   const plain = stripAnsi(renderUsageLine(ctx));
   assert.ok(plain.includes('100 %'), 'should show 100% in bar');
-  assert.ok(plain.includes('resets in'), `should use "resets in" preposition for relative mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `should use "resets in" preposition for relative mode, got: ${plain}`);
 });
 
 test('renderUsageLine at 100% shows bar with reset time in absolute mode', () => {
@@ -2264,5 +2261,5 @@ test('renderUsageLine at 100% shows bar with reset time in absolute mode', () =>
   };
   const plain = stripAnsi(renderUsageLine(ctx));
   assert.ok(plain.includes('100 %'), 'should show 100% in bar');
-  assert.ok(plain.includes('resets'), `should show reset time for absolute mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `should show reset time with separator for absolute mode, got: ${plain}`);
 });

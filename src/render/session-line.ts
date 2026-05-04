@@ -340,7 +340,7 @@ function formatCompactWindowPart(
   const reset = formatResetTime(resetAt, timeFormat);
   const styledLabel = label(`${windowLabel}:`, colors);
   return reset
-    ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+    ? `${styledLabel} ${usageDisplay} │ ${reset}`
     : `${styledLabel} ${usageDisplay}`;
 }
 
@@ -381,22 +381,13 @@ function formatUsageWindowPart({
   const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
 
   if (usageBarEnabled) {
-    // Relative mode keeps the upstream "(duration / windowLabel)" pattern (e.g. "2h 30m / 5h").
-    // Absolute/both modes use the preposition form instead — "(at 14:30 / 5h)" is incoherent.
-    const barReset = timeFormat === 'relative'
-      ? (reset ? `${reset} / ${windowLabel}` : null)
-      : (reset ? (showResetLabel ? `${t(resetsKey)} ${reset}` : reset) : null);
-    const body = barReset
-      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${barReset})`
+    const body = reset
+      ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} │ ${reset}`
       : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
     return forceLabel ? `${styledLabel} ${body}` : body;
   }
 
-  const resetSuffix = reset
-    ? showResetLabel
-      ? `(${t(resetsKey)} ${reset})`
-      : `(${reset})`
-    : '';
+  const resetSuffix = reset ? `│ ${reset}` : '';
 
   return resetSuffix
     ? `${styledLabel} ${usageDisplay} ${resetSuffix}`
