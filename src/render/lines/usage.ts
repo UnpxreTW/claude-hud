@@ -106,23 +106,6 @@ export function renderUsageLine(
     showResetLabel,
   });
 
-  if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-    const sevenDayPart = formatUsageWindowPart({
-      label: t("label.weekly"),
-      labelKey: "label.weekly",
-      percent: sevenDay,
-      resetAt: ctx.usageData.sevenDayResetAt,
-      colors,
-      usageBarEnabled,
-      barWidth,
-      timeFormat,
-      showResetLabel,
-      forceLabel: true,
-      alignLabels,
-    });
-    return `${usageLabel} ${fiveHourPart} | ${sevenDayPart}`;
-  }
-
   return `${usageLabel} ${fiveHourPart}`;
 }
 
