@@ -1483,7 +1483,7 @@ test('renderUsageLine shows weekly-only usage without a ghost 5h section', () =>
   assert.ok(!line.includes('|'), `should not render a separator for a missing 5h window: ${line}`);
 });
 
-test('renderSessionLine displays limit reached warning', () => {
+test('renderSessionLine shows bar at 100% usage instead of warning', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + 3600000); // 1 hour from now
   ctx.usageData = {
@@ -1493,12 +1493,12 @@ test('renderSessionLine displays limit reached warning', () => {
     fiveHourResetAt: resetTime,
     sevenDayResetAt: null,
   };
-  const line = renderSessionLine(ctx);
-  assert.ok(line.includes('Limit reached'), 'should show limit reached');
-  assert.ok(line.includes('resets'), 'should show reset time');
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes('100 %'), 'should show 100% usage');
+  assert.ok(!line.includes('Limit reached'), 'should not show limit reached warning');
 });
 
-test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
+test('renderUsageLine shows bar at 100% with reset countdown', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (151 * 3600000) + (59 * 60000)); // 6d 7h 59m from now
   ctx.usageData = {
@@ -1511,9 +1511,8 @@ test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('Limit reached'), 'should show limit reached');
+  assert.ok(plain.includes('100 %'), 'should show 100% in bar');
   assert.ok(/resets in \d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
-  assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
 test('renderSessionLine displays -- for null usage values', () => {
@@ -1538,7 +1537,7 @@ test('renderSessionLine omits usage when usageData is null', () => {
   assert.ok(!line.includes('Weekly'), 'should not include 7d label');
 });
 
-test('renderSessionLine uses custom critical colors for limit-reached usage state', () => {
+test('renderSessionLine shows 100% usage with custom colors', () => {
   const ctx = baseContext();
   ctx.config.colors = {
     context: 'green',
@@ -1555,8 +1554,8 @@ test('renderSessionLine uses custom critical colors for limit-reached usage stat
     sevenDayResetAt: null,
   };
 
-  const criticalLine = renderSessionLine(ctx);
-  assert.ok(criticalLine.includes('\x1b[35m⚠ Limit reached'), `expected custom critical color, got: ${JSON.stringify(criticalLine)}`);
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes('100 %'), 'should show 100% usage normally');
 });
 
 test('renderUsageLine uses custom usage palette overrides', () => {
@@ -2239,7 +2238,7 @@ test('renderUsageLine shows relative and absolute time when timeFormat is "both"
   assert.ok(plain.includes('resets in'), `should use "resets in" preposition for both mode, got: ${plain}`);
 });
 
-test('renderUsageLine limit-reached uses "resets in" for default relative mode', () => {
+test('renderUsageLine at 100% shows bar with reset time in relative mode', () => {
   const ctx = baseContext();
   ctx.usageData = {
     planName: 'Pro',
@@ -2249,11 +2248,11 @@ test('renderUsageLine limit-reached uses "resets in" for default relative mode',
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Limit reached'), 'should show limit reached');
+  assert.ok(plain.includes('100 %'), 'should show 100% in bar');
   assert.ok(plain.includes('resets in'), `should use "resets in" preposition for relative mode, got: ${plain}`);
 });
 
-test('renderUsageLine limit-reached uses "resets at" for absolute timeFormat', () => {
+test('renderUsageLine at 100% shows bar with reset time in absolute mode', () => {
   const ctx = baseContext();
   ctx.config.display.timeFormat = 'absolute';
   ctx.usageData = {
@@ -2264,7 +2263,6 @@ test('renderUsageLine limit-reached uses "resets at" for absolute timeFormat', (
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Limit reached'), 'should show limit reached');
-  assert.ok(plain.includes('resets at'), `should use "resets at" for absolute mode, got: ${plain}`);
-  assert.ok(!plain.includes('resets in'), `should not say "resets in" for absolute mode, got: ${plain}`);
+  assert.ok(plain.includes('100 %'), 'should show 100% in bar');
+  assert.ok(plain.includes('resets'), `should show reset time for absolute mode, got: ${plain}`);
 });
