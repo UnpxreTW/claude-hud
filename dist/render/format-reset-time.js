@@ -1,4 +1,4 @@
-import { t } from '../i18n/index.js';
+import { t, getLanguage } from '../i18n/index.js';
 /**
  * Formats a usage-window reset timestamp for display in the HUD.
  *
@@ -15,8 +15,9 @@ export function formatResetTime(resetAt, mode = 'relative') {
         return '';
     const now = new Date();
     const diffMs = resetAt.getTime() - now.getTime();
-    if (diffMs <= 0)
-        return '';
+    if (diffMs <= 0) {
+        return getLanguage() === 'zh-TW' ? '即將重置' : '';
+    }
     if (mode === 'relative') {
         return formatRelative(diffMs);
     }
@@ -43,6 +44,9 @@ function formatRelative(diffMs) {
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 function formatAbsolute(resetAt, now) {
+    if (getLanguage() === 'zh-TW') {
+        return formatAbsoluteZhTW(resetAt, now);
+    }
     // The "at" prefix is i18n-aware. Locales that bake the preposition into
     // "format.resets" (e.g. zh: "重置于") set "format.at" to "" so the time
     // is returned bare ("14:30") and the preposition is supplied by the caller.
@@ -55,5 +59,15 @@ function formatAbsolute(resetAt, now) {
     }
     const dateStr = resetAt.toLocaleDateString([], { month: 'short', day: 'numeric' });
     return `${prefix}${dateStr} ${timeStr}`;
+}
+function formatAbsoluteZhTW(resetAt, now) {
+    const hours = String(resetAt.getHours()).padStart(2, '0');
+    const minutes = String(resetAt.getMinutes()).padStart(2, '0');
+    if (resetAt.toDateString() === now.toDateString()) {
+        return `於 ${hours}:${minutes} 重置`;
+    }
+    const month = resetAt.getMonth() + 1;
+    const day = resetAt.getDate();
+    return `${month} 月 ${day} 號 ${hours}:00 重置`;
 }
 //# sourceMappingURL=format-reset-time.js.map

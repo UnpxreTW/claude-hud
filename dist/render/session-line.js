@@ -1,11 +1,10 @@
-import { isLimitReached } from '../types.js';
 import { getContextPercent, getBufferedPercent, getModelName, formatModelName, getProviderLabel, getTotalTokens, shouldHideUsage } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
+import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 import { renderCostEstimate } from './lines/cost.js';
 import { renderPromptCacheLine } from './lines/prompt-cache.js';
-import { t } from '../i18n/index.js';
+import { t, getLanguage } from '../i18n/index.js';
 import { formatResetTime } from './format-reset-time.js';
 const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
 /**
@@ -35,7 +34,12 @@ export function renderSessionLine(ctx) {
     const contextValueMode = display?.contextValue ?? 'percent';
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors, contextThresholds)}${contextValue}${RESET}`;
-    // Model and context bar (FIRST)
+    // Custom line (static user-defined text) — rendered FIRST
+    const customLine = display?.customLine;
+    if (customLine) {
+        parts.push(customColor(customLine, colors));
+    }
+    // Model and context bar
     const providerLabel = getProviderLabel(ctx.stdin);
     const modelQualifier = providerLabel ?? undefined;
     let modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
@@ -150,23 +154,7 @@ export function renderSessionLine(ctx) {
     if (display?.showUsage !== false && ctx.usageData && !shouldHideUsage(ctx.stdin)) {
         const usageCompact = display?.usageCompact ?? false;
         const showResetLabel = display?.showResetLabel ?? true;
-        if (isLimitReached(ctx.usageData)) {
-            const resetTime = ctx.usageData.fiveHour === 100
-                ? formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat)
-                : formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
-            if (usageCompact) {
-                parts.push(critical(`⚠ Limit${resetTime ? ` (${resetTime})` : ''}`, colors));
-            }
-            else {
-                const resetSuffix = resetTime
-                    ? showResetLabel
-                        ? ` (${t(resetsKey)} ${resetTime})`
-                        : ` (${resetTime})`
-                    : '';
-                parts.push(critical(`⚠ ${t('status.limitReached')}${resetSuffix}`, colors));
-            }
-        }
-        else {
+        {
             const usageThreshold = display?.usageThreshold ?? 0;
             const fiveHour = ctx.usageData.fiveHour;
             const sevenDay = ctx.usageData.sevenDay;
@@ -249,7 +237,8 @@ export function renderSessionLine(ctx) {
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        const durationPrefix = getLanguage() === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+        parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
     }
     const promptCacheLine = renderPromptCacheLine(ctx);
     if (promptCacheLine) {
@@ -267,11 +256,6 @@ export function renderSessionLine(ctx) {
     }
     if (ctx.extraLabel) {
         parts.push(label(ctx.extraLabel, colors));
-    }
-    // Custom line (static user-defined text)
-    const customLine = display?.customLine;
-    if (customLine) {
-        parts.push(customColor(customLine, colors));
     }
     let line = parts.join(' | ');
     // Token breakdown at high context
@@ -305,21 +289,21 @@ function formatContextValue(ctx, percent, mode) {
     }
     if (mode === 'both') {
         if (size > 0) {
-            return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+            return `${String(percent).padStart(3, ' ')} % (${formatTokens(totalTokens)}/${formatTokens(size)})`;
         }
-        return `${percent}%`;
+        return `${String(percent).padStart(3, ' ')} %`;
     }
     if (mode === 'remaining') {
-        return `${Math.max(0, 100 - percent)}%`;
+        return `${String(Math.max(0, 100 - percent)).padStart(3, ' ')} %`;
     }
-    return `${percent}%`;
+    return `${String(percent).padStart(3, ' ')} %`;
 }
 function formatCompactWindowPart(windowLabel, percent, resetAt, timeFormat, colors) {
     const usageDisplay = formatUsagePercent(percent, colors);
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(`${windowLabel}:`, colors);
     return reset
-        ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+        ? `${styledLabel} ${usageDisplay} │ ${reset}`
         : `${styledLabel} ${usageDisplay}`;
 }
 function formatUsagePercent(percent, colors) {
@@ -327,7 +311,8 @@ function formatUsagePercent(percent, colors) {
         return label('--', colors);
     }
     const color = getQuotaColor(percent, colors);
-    return `${color}${percent}%${RESET}`;
+    const padded = String(percent).padStart(3, ' ');
+    return `${color}${padded} %${RESET}`;
 }
 function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, }) {
     const usageDisplay = formatUsagePercent(percent, colors);
@@ -336,21 +321,12 @@ function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, u
     // "resets in X" for relative/both; "resets X" for absolute (avoids "resets in at 14:30")
     const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
     if (usageBarEnabled) {
-        // Relative mode keeps the upstream "(duration / windowLabel)" pattern (e.g. "2h 30m / 5h").
-        // Absolute/both modes use the preposition form instead — "(at 14:30 / 5h)" is incoherent.
-        const barReset = timeFormat === 'relative'
-            ? (reset ? `${reset} / ${windowLabel}` : null)
-            : (reset ? (showResetLabel ? `${t(resetsKey)} ${reset}` : reset) : null);
-        const body = barReset
-            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${barReset})`
+        const body = reset
+            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} │ ${reset}`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
         return forceLabel ? `${styledLabel} ${body}` : body;
     }
-    const resetSuffix = reset
-        ? showResetLabel
-            ? `(${t(resetsKey)} ${reset})`
-            : `(${reset})`
-        : '';
+    const resetSuffix = reset ? `│ ${reset}` : '';
     return resetSuffix
         ? `${styledLabel} ${usageDisplay} ${resetSuffix}`
         : `${styledLabel} ${usageDisplay}`;

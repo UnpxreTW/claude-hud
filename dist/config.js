@@ -6,6 +6,7 @@ export const DEFAULT_ELEMENT_ORDER = [
     'project',
     'context',
     'usage',
+    'weeklyUsage',
     'promptCache',
     'memory',
     'environment',
@@ -106,7 +107,7 @@ function validateContextValue(value) {
     return value === 'percent' || value === 'tokens' || value === 'remaining' || value === 'both';
 }
 function validateLanguage(value) {
-    return value === 'en' || value === 'zh';
+    return value === 'en' || value === 'zh' || value === 'zh-TW';
 }
 function validateModelFormat(value) {
     return value === 'full' || value === 'compact' || value === 'short';

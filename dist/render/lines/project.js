@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { getModelName, formatModelName, getProviderLabel } from '../../stdin.js';
 import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, critical as criticalColor, label, model as modelColor, project as projectColor, red, green, yellow, dim, custom as customColor } from '../colors.js';
-import { t } from '../../i18n/index.js';
+import { t, getLanguage } from '../../i18n/index.js';
 import { renderCostEstimate } from './cost.js';
 const CONTROL_AND_BIDI_PATTERN = /[\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069\u206A-\u206F]/g;
 function hyperlink(uri, text) {
@@ -52,6 +52,10 @@ export function renderProjectLine(ctx) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     const parts = [];
+    const customLine = display?.customLine;
+    if (customLine) {
+        parts.push(customColor(customLine, colors));
+    }
     if (display?.showModel !== false) {
         const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
         const providerLabel = getProviderLabel(ctx.stdin);
@@ -127,7 +131,8 @@ export function renderProjectLine(ctx) {
         parts.push(label(ctx.extraLabel, colors));
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        const durationPrefix = getLanguage() === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+        parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
     }
     const costEstimate = renderCostEstimate(ctx);
     if (costEstimate) {
@@ -138,10 +143,6 @@ export function renderProjectLine(ctx) {
         if (speed !== null) {
             parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
         }
-    }
-    const customLine = display?.customLine;
-    if (customLine) {
-        parts.push(customColor(customLine, colors));
     }
     if (parts.length === 0) {
         return null;
