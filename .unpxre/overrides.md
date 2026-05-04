@@ -54,6 +54,8 @@ multiple display segments (model name, project path, git info, etc.) and joins
 them with a separator.
 
 Move `customLine` so it is rendered as the **first** segment of that line.
+This applies to both compact mode (session-line renderer) and expanded mode
+(project-line renderer).
 
 **If `customLine` no longer exists or the status line structure has changed
 significantly:**
@@ -67,24 +69,19 @@ significantly:**
 ### 2. Localize session duration label and format
 
 **Label:** Find where the session duration is displayed on the main status line.
-Change the label to include `執行時間：` prefix (keep the ⏱️ emoji).
-Note: there must be exactly one space between the emoji and `執行時間`.
+When the current language is `zh-TW`, change the label to use
+`⏱️ 執行時間：` prefix (one space between emoji and text).
+For other languages, keep the original label unchanged.
 
 **Format:** Find the function that formats session duration into a
 human-readable string (e.g. `<1m`, `5m`, `1h 30m`).
 
-First, check if the duration format is configurable via user config. If a
-locale or format option already exists:
-- Use it instead of modifying the formatting function directly
-- Create a GitHub Issue titled
-  `ℹ Override 2: duration format is now configurable` and assign to @UnpxreTW
-  so the override can be replaced with a config setting
-- Still apply the Chinese format for this sync via config if possible
-
-If no config option exists, replace the format with Chinese units:
+When the current language is `zh-TW`, replace the format with Chinese units:
 - Under 1 minute: `< 1 分鐘` (space before and after `1`)
 - Minutes only: `{n} 分鐘` (space between number and unit)
 - Hours and minutes: `{h} 小時 {m} 分鐘` (space between each number and unit)
+
+For other languages, keep the original English format unchanged.
 
 **If the duration display or formatting function no longer exists:**
 1. Check upstream commit history for changes
@@ -93,28 +90,18 @@ If no config option exists, replace the format with Chinese units:
 
 ---
 
-### 3. Increase terminal width fallback
+### 3. Set terminal width fallback via config
 
-The statusline runs in pipe mode where `process.stdout.columns` and
-`process.env.COLUMNS` are both undefined. The terminal width detection
-falls back to a default constant. The original default is too small,
-causing lines to be excessively truncated.
+Upstream supports `maxWidth` in the HUD config. Set `"maxWidth": 120` in
+the Unpxre default config (`commands/Unpxre.md`) so the statusline uses
+120 columns when terminal width detection fails.
 
-Find the terminal width detection chain — trace from the main render
-function to where it obtains the terminal width. Locate the fallback
-constant used when all detection sources fail. Change its value to `120`.
+**No code modification needed** — this is handled purely via config.
 
-First, check if this fallback is configurable via user config. If so:
-- Use it instead of modifying the constant
-- Create a GitHub Issue titled
-  `ℹ Override 3: terminal width fallback is now configurable`
-  and assign to @UnpxreTW
-
-**If the terminal width detection logic has been significantly
-restructured or the fallback constant no longer exists:**
-1. Check upstream commit history for changes
+If upstream removes or renames the `maxWidth` setting:
+1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
-   `⚠ Override 3: terminal width fallback not found` and assign to @UnpxreTW
+   `⚠ Override 3: maxWidth config removed` and assign to @UnpxreTW
 
 ---
 
@@ -127,20 +114,16 @@ Split weekly usage out into its own independent HUD element so it is always
 visible as a separate line regardless of threshold.
 
 Steps:
-1. Add a new element type (e.g. `weeklyUsage`) to the HUD element type
-   definition
-2. Create a render function for weekly usage. The output format should
-   follow the same pattern as the existing five-hour usage rendering:
-   label, bar, percentage, and reset time — using the same bar function,
-   color scheme, and layout spacing as the original
+1. Add `weeklyUsage` to the HUD element type definition
+2. Create a render function for weekly usage in `weekly-usage.ts`.
+   The output format should follow the same pattern as the existing
+   five-hour usage rendering: label, bar, percentage, and reset time
 3. Remove weekly usage rendering from the original usage element so it
    only handles five-hour usage
 4. Export and register the new render function in the render coordinator's
    element-to-renderer mapping
-5. Update the default element order to:
-   `[project, usage, weeklyUsage, context, ...]`
-   — placing `weeklyUsage` after `usage` and before `context`, which
-   naturally breaks the context+usage same-line combining logic
+5. Add `weeklyUsage` to the `KNOWN_ELEMENTS` set and default element
+   order, placing it after `usage`
 
 First, check if upstream has already separated weekly usage into its own
 element. If so, skip this override and create a GitHub Issue titled
@@ -186,17 +169,22 @@ Steps:
    - `label.weekly`: `每週使用量`
    - `label.context`: `上下文佔用`
    - `label.approxRam`: `記憶體用量`
+   - `label.promptCache`: `快取`
    - `label.rules`: `規則`
    - `label.hooks`: `hooks`
    - `label.estimatedCost`: `估算`
    - `label.cost`: `費用`
+   - `label.tokens`: `令牌`
    - `status.limitReached`: `已達上限`
    - `status.allTodosComplete`: `全部完成`
+   - `status.expired`: `已過期`
    - `format.resets`: `重置於`
    - `format.resetsIn`: `""` (empty — reset times already contain full text)
+   - `format.at`: `""` (empty — zh-TW uses custom absolute formatter)
    - `format.in`: `輸入`
    - `format.cache`: `快取`
    - `format.out`: `輸出`
+   - `format.tok`: `令牌`
    - `format.tokPerSec`: `tok/s`
    - `init.initializing`: `[claude-hud] 正在初始化...`
    - `init.macosNote`: `[claude-hud] 注意：在 macOS 上，您可能需要重啟 Claude Code 才能顯示 HUD。`
@@ -228,14 +216,10 @@ a space and `%`:
 - Triple digit: `100 %` (no leading space)
 
 This applies to:
-- Five-hour usage percentage
-- Weekly usage percentage
-- Context usage percentage (all display modes that show `%`)
-
-**Bar spacing:** Find all places where label, bar, and percentage are
-assembled on the same line. Ensure exactly **two spaces** between label
-and bar, and exactly **one space** between bar and percentage (the
-percentage string itself already contains a leading space from padding).
+- Five-hour usage percentage (in usage.ts and session-line.ts)
+- Weekly usage percentage (in weekly-usage.ts)
+- Context usage percentage (in identity.ts and session-line.ts,
+  all display modes that show `%`)
 
 **If percentage formatting or spacing has changed or is now configurable:**
 1. Check upstream commit history
@@ -243,28 +227,33 @@ percentage string itself already contains a leading space from padding).
 
 ---
 
-### 8. Format five-hour reset time as clock time
+### 8. Format five-hour reset time as clock time (zh-TW)
 
-Find where the five-hour usage reset time is formatted. The original
-displays a countdown (e.g. `resets in 2h 30m`). Replace with actual
-clock time:
-- Before reset: `於 HH:MM 重置` (24-hour format, zero-padded)
+Find the reset time formatting module (e.g. `format-reset-time.ts`).
+Add a zh-TW branch in the absolute time formatter:
+- Same-day reset: `於 HH:MM 重置` (24-hour format, zero-padded)
 - At or past reset time: `即將重置`
 - No data: empty string
 
-**If the reset time formatting has changed or is now configurable:**
+Also set `timeFormat: "absolute"` in the Unpxre default config so the
+upstream formatting system routes to the absolute path.
+
+**If the reset time formatting module has changed significantly:**
 1. Check upstream commit history
 2. Create a GitHub Issue with details and assign to @UnpxreTW
 
 ---
 
-### 9. Format weekly reset time with date
+### 9. Format weekly reset time with date (zh-TW)
 
-Find where the weekly usage reset time is formatted. Replace with:
-- `{month} 月 {day} 號 HH:00 重置` (hour zero-padded, no minutes)
+In the same zh-TW branch of the absolute time formatter:
+- Cross-day reset: `{month} 月 {day} 號 HH:00 重置` (hour zero-padded,
+  no minutes)
 - No data: empty string
 
-**If the reset time formatting has changed or is now configurable:**
+This is handled by the same zh-TW formatter added in Override 8.
+
+**If the reset time formatting module has changed significantly:**
 1. Check upstream commit history
 2. Create a GitHub Issue with details and assign to @UnpxreTW
 
@@ -286,7 +275,7 @@ line rendering if applicable.
 **If the limit-reached logic has already been removed or restructured:**
 1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
-   `⚠ Override 11: limit-reached logic not found` and assign to @UnpxreTW
+   `⚠ Override 10: limit-reached logic not found` and assign to @UnpxreTW
 
 ---
 
@@ -336,7 +325,9 @@ Replace the parentheses with a `│` separator:
 `│ resetTime`
 
 This applies to all usage lines that show reset time (five-hour usage,
-weekly usage, and the compact session line if applicable).
+weekly usage, and the compact session line if applicable). Remove the
+`showResetLabel` / `resetsKey` logic — always show bare time with
+separator.
 
 **If the usage line assembly logic has changed:**
 1. Check upstream commit history
@@ -355,3 +346,43 @@ fork maintainer.
 1. Check upstream commit history
 2. If unresolvable, create a GitHub Issue titled
    `⚠ Override 14: CODEOWNERS not found` and assign to @UnpxreTW
+
+---
+
+### 15. Restrict @claude workflow trigger to fork owner
+
+The upstream `.github/workflows/claude.yml` allows any user to trigger
+Claude by mentioning `@claude`. Add a user login check so only
+`@UnpxreTW` can trigger the workflow.
+
+For each trigger condition, add
+`github.event.{comment,review,issue}.user.login == 'UnpxreTW'`
+before the `contains(..., '@claude')` check.
+
+**If the workflow trigger conditions have changed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 15: claude.yml trigger format changed` and assign to @UnpxreTW
+
+---
+
+### 16. Add Unpxre one-click setup command
+
+Maintain `commands/Unpxre.md` — a setup command that configures
+statusLine and writes the recommended config in one step.
+
+The Unpxre default config should include:
+- `language: "zh-TW"`
+- `lineLayout: "expanded"`
+- `showSeparators: true`
+- `maxWidth: 120`
+- `timeFormat: "absolute"`
+- Full feature set enabled (tools, agents, todos, usage, etc.)
+- Git with dirty + file stats
+
+Register the command in `plugin.json` under the `commands` array.
+
+**If the plugin command system or config format has changed:**
+1. Check upstream commit history
+2. If unresolvable, create a GitHub Issue titled
+   `⚠ Override 16: plugin command system changed` and assign to @UnpxreTW
