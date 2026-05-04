@@ -219,7 +219,7 @@ function validateContextValue(value: unknown): value is ContextValueMode {
 }
 
 function validateLanguage(value: unknown): value is Language {
-  return value === 'en' || value === 'zh';
+  return value === 'en' || value === 'zh' || value === 'zh-TW';
 }
 
 function validateModelFormat(value: unknown): value is ModelFormatMode {
