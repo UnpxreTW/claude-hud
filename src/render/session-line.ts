@@ -44,7 +44,13 @@ export function renderSessionLine(ctx: RenderContext): string {
   const contextValue = formatContextValue(ctx, percent, contextValueMode);
   const contextValueDisplay = `${getContextColor(percent, colors, contextThresholds)}${contextValue}${RESET}`;
 
-  // Model and context bar (FIRST)
+  // Custom line (static user-defined text) — rendered FIRST
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
+
+  // Model and context bar
   const providerLabel = getProviderLabel(ctx.stdin);
   const modelQualifier = providerLabel ?? undefined;
   let modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
@@ -285,12 +291,6 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   if (ctx.extraLabel) {
     parts.push(label(ctx.extraLabel, colors));
-  }
-
-  // Custom line (static user-defined text)
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   let line = parts.join(' | ');

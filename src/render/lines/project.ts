@@ -60,6 +60,11 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   const colors = ctx.config?.colors;
   const parts: string[] = [];
 
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
+
   if (display?.showModel !== false) {
     const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
     const providerLabel = getProviderLabel(ctx.stdin);
@@ -154,11 +159,6 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     if (speed !== null) {
       parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
     }
-  }
-
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   if (parts.length === 0) {
