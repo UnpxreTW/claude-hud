@@ -332,16 +332,16 @@ function formatContextValue(ctx: RenderContext, percent: number, mode: 'percent'
 
   if (mode === 'both') {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${String(percent).padStart(3, ' ')} % (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return `${String(percent).padStart(3, ' ')} %`;
   }
 
   if (mode === 'remaining') {
-    return `${Math.max(0, 100 - percent)}%`;
+    return `${String(Math.max(0, 100 - percent)).padStart(3, ' ')} %`;
   }
 
-  return `${percent}%`;
+  return `${String(percent).padStart(3, ' ')} %`;
 }
 
 function formatCompactWindowPart(
@@ -364,7 +364,8 @@ function formatUsagePercent(percent: number | null, colors?: RenderContext['conf
     return label('--', colors);
   }
   const color = getQuotaColor(percent, colors);
-  return `${color}${percent}%${RESET}`;
+  const padded = String(percent).padStart(3, ' ');
+  return `${color}${padded} %${RESET}`;
 }
 
 function formatUsageWindowPart({

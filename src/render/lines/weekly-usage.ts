@@ -36,7 +36,8 @@ export function renderWeeklyUsageLine(
   const weeklyLabel = progressLabel("label.weekly", colors, alignLabels);
   const reset = formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
   const color = getQuotaColor(sevenDay, colors);
-  const usageDisplay = `${color}${sevenDay}%${RESET}`;
+  const padded = String(sevenDay).padStart(3, ' ');
+  const usageDisplay = `${color}${padded} %${RESET}`;
 
   const resetSuffix = reset
     ? showResetLabel

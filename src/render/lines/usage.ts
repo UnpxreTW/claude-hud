@@ -132,7 +132,8 @@ function formatUsagePercent(
     return label("--", colors);
   }
   const color = getQuotaColor(percent, colors);
-  return `${color}${percent}%${RESET}`;
+  const padded = String(percent).padStart(3, ' ');
+  return `${color}${padded} %${RESET}`;
 }
 
 function formatUsageWindowPart({
