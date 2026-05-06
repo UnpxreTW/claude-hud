@@ -49,9 +49,9 @@ export interface HudColorOverrides {
 
 export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'project',
-  'context',
   'usage',
   'weeklyUsage',
+  'context',
   'promptCache',
   'memory',
   'environment',

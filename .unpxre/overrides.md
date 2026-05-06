@@ -123,7 +123,10 @@ Steps:
 4. Export and register the new render function in the render coordinator's
    element-to-renderer mapping
 5. Add `weeklyUsage` to the `KNOWN_ELEMENTS` set and default element
-   order, placing it after `usage`
+   order, placing it after `usage` and before `context`, making the
+   default order `[project, usage, weeklyUsage, context, ...]` — this
+   breaks the `['context', 'usage']` merge group so all three render
+   as separate lines
 
 First, check if upstream has already separated weekly usage into its own
 element. If so, skip this override and create a GitHub Issue titled

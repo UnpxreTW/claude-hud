@@ -4,9 +4,9 @@ import * as os from 'node:os';
 import { getHudPluginDir } from './claude-config-dir.js';
 export const DEFAULT_ELEMENT_ORDER = [
     'project',
-    'context',
     'usage',
     'weeklyUsage',
+    'context',
     'promptCache',
     'memory',
     'environment',
