@@ -190,6 +190,9 @@ Steps:
    - `init.macosNote`: `[claude-hud] 注意：在 macOS 上，您可能需要重啟 Claude Code 才能顯示 HUD。`
 3. Register `zh-TW` in the locale registry
 4. Update the language validation to accept `zh-TW`
+5. **Session tokens 分隔符：** 在 session tokens 顯示中（expanded 和
+   compact 模式），當語言為 `zh-TW` 時，將項目間的逗號 `, ` 改為
+   空格 ` `。例如 `(輸入: 7k 輸出: 28k)` 而非 `(輸入: 7k, 輸出: 28k)`
 
 Note: `label.usage` and `label.weekly` are intentionally different from
 direct translation — they describe the specific rate limit windows
