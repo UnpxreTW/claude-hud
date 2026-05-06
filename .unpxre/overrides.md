@@ -174,7 +174,7 @@ Steps:
    - `label.hooks`: `hooks`
    - `label.estimatedCost`: `估算`
    - `label.cost`: `費用`
-   - `label.tokens`: `令牌`
+   - `label.tokens`: `Tokens` (不翻譯)
    - `status.limitReached`: `已達上限`
    - `status.allTodosComplete`: `全部完成`
    - `status.expired`: `已過期`
@@ -184,7 +184,7 @@ Steps:
    - `format.in`: `輸入`
    - `format.cache`: `快取`
    - `format.out`: `輸出`
-   - `format.tok`: `令牌`
+   - `format.tok`: `tok` (不翻譯)
    - `format.tokPerSec`: `tok/s`
    - `init.initializing`: `[claude-hud] 正在初始化...`
    - `init.macosNote`: `[claude-hud] 注意：在 macOS 上，您可能需要重啟 Claude Code 才能顯示 HUD。`
