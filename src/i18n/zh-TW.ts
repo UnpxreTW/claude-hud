@@ -11,7 +11,7 @@ export const zhTW: Messages = {
   "label.hooks": "hooks",
   "label.estimatedCost": "估算",
   "label.cost": "費用",
-  "label.tokens": "令牌",
+  "label.tokens": "Tokens",
 
   // Status
   "status.limitReached": "已達上限",
@@ -25,7 +25,7 @@ export const zhTW: Messages = {
   "format.in": "輸入",
   "format.cache": "快取",
   "format.out": "輸出",
-  "format.tok": "令牌",
+  "format.tok": "tok",
   "format.tokPerSec": "tok/s",
 
   // Init
