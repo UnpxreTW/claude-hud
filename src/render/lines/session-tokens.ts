@@ -1,6 +1,6 @@
 import type { RenderContext } from '../../types.js';
 import { label } from '../colors.js';
-import { t } from '../../i18n/index.js';
+import { t, getLanguage } from '../../i18n/index.js';
 
 function formatTokens(n: number): string {
   if (n >= 1000000) {
@@ -38,5 +38,6 @@ export function renderSessionTokensLine(ctx: RenderContext): string | null {
     parts.push(`${t('format.cache')}: ${formatTokens(tokens.cacheCreationTokens + tokens.cacheReadTokens)}`);
   }
 
-  return label(`${t('label.tokens')} ${formatTokens(total)} (${parts.join(', ')})`, colors);
+  const sep = getLanguage() === 'zh-TW' ? ' ' : ', ';
+  return label(`${t('label.tokens')} ${formatTokens(total)} (${parts.join(sep)})`, colors);
 }

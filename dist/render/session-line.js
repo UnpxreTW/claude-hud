@@ -233,7 +233,8 @@ export function renderSessionLine(ctx) {
         const st = ctx.transcript.sessionTokens;
         const total = st.inputTokens + st.outputTokens + st.cacheCreationTokens + st.cacheReadTokens;
         if (total > 0) {
-            parts.push(label(`${t('format.tok')}: ${formatTokens(total)} (${t('format.in')}: ${formatTokens(st.inputTokens)}, ${t('format.out')}: ${formatTokens(st.outputTokens)})`, colors));
+            const tokSep = getLanguage() === 'zh-TW' ? ' ' : ', ';
+            parts.push(label(`${t('format.tok')}: ${formatTokens(total)} (${t('format.in')}: ${formatTokens(st.inputTokens)}${tokSep}${t('format.out')}: ${formatTokens(st.outputTokens)})`, colors));
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {

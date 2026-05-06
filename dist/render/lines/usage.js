@@ -76,7 +76,7 @@ function formatCompactWindowPart(windowLabel, percent, resetAt, timeFormat, colo
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(`${windowLabel}:`, colors);
     return reset
-        ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+        ? `${styledLabel} ${usageDisplay} │ ${reset}`
         : `${styledLabel} ${usageDisplay}`;
 }
 function formatUsagePercent(percent, colors) {
