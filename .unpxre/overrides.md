@@ -383,14 +383,30 @@ before the `contains(..., '@claude')` check.
 Maintain `commands/Unpxre.md` — a setup command that configures
 statusLine and writes the recommended config in one step.
 
-The Unpxre default config should include:
+The command uses `AskUserQuestion` to let the user choose between
+two presets before writing config:
+
+**Full preset (完整版):**
 - `language: "zh-TW"`
 - `lineLayout: "expanded"`
 - `showSeparators: true`
 - `maxWidth: 120`
 - `timeFormat: "absolute"`
-- Full feature set enabled (tools, agents, todos, usage, etc.)
+- Full feature set enabled (tools, agents, todos, usage, duration,
+  sessionTokens, configCounts, etc.)
 - Git with dirty + file stats
+
+**Lite preset (精簡版):**
+- `language: "zh-TW"`
+- `lineLayout: "expanded"`
+- `showSeparators: false`
+- `maxWidth: 120`
+- `timeFormat: "absolute"`
+- Line 1 retained (model, project, git branch + dirty)
+- Context and 5h usage merged onto same line via `mergeGroups`
+- Weekly usage follows upstream threshold rules
+- Everything else hidden (tools, agents, todos, configCounts,
+  sessionTokens, duration, speed, fileStats)
 
 Register the command in `plugin.json` under the `commands` array.
 

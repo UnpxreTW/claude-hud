@@ -1,6 +1,6 @@
 ---
-description: One-click setup with Unpxre's recommended settings (statusLine + zh-TW + full features)
-allowed-tools: Bash, Read, Write, Edit
+description: One-click setup with Unpxre's recommended settings (statusLine + zh-TW, full/lite presets)
+allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 ---
 
 # Unpxre Recommended Setup
@@ -62,11 +62,30 @@ statusLine config, preserving all existing settings:
 **JSON safety**: Use a real JSON serializer, not string concatenation.
 The saved JSON must contain `\\$(NF-1)` and `\\$0` (escaped backslashes).
 
-## Step 5: Write config.json
+## Step 5: Choose Preset
 
-Write the following to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/claude-hud/config.json`.
+Use AskUserQuestion to let the user choose a preset:
+
+- header: "配置風格"
+- question: "選擇 HUD 配置風格："
+- multiSelect: false
+- options:
+  - label: "完整版 (Full)"
+    description: "全功能：工具、代理、待辦、設定計數、Session tokens、執行時間、Git 檔案統計"
+  - label: "精簡版 (Lite)"
+    description: "精簡顯示：第一行保留，上下文與用量合併同一行，其餘隱藏"
+
+If the user cancels, stop and say: 設定已取消。
+
+## Step 6: Write config.json
+
+Write the chosen config to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/claude-hud/config.json`.
 Create the directory if it does not exist. If config.json already exists,
 overwrite it entirely.
+
+### Full config (完整版)
+
+Use this config if the user chose "完整版 (Full)" in Step 5:
 
 ```json
 {
@@ -101,9 +120,47 @@ overwrite it entirely.
 }
 ```
 
+### Lite config (精簡版)
+
+Use this config if the user chose "精簡版 (Lite)" in Step 5:
+
+```json
+{
+  "lineLayout": "expanded",
+  "showSeparators": false,
+  "language": "zh-TW",
+  "display": {
+    "showModel": true,
+    "showContextBar": true,
+    "showTools": false,
+    "showAgents": false,
+    "showTodos": false,
+    "showProject": true,
+    "showConfigCounts": false,
+    "showTokenBreakdown": false,
+    "showSpeed": false,
+    "showUsage": true,
+    "usageBarEnabled": true,
+    "showDuration": false,
+    "showSessionName": false,
+    "showSessionTokens": false,
+    "customLine": "",
+    "timeFormat": "absolute",
+    "mergeGroups": [["context", "usage"]]
+  },
+  "maxWidth": 120,
+  "gitStatus": {
+    "enabled": true,
+    "showDirty": true,
+    "showAheadBehind": false,
+    "showFileStats": false
+  }
+}
+```
+
 ## Done
 
 After both files are written successfully, say:
 
-> Setup complete. Restart Claude Code to see the HUD.
-> To change settings later, run `/claude-hud:configure`.
+> 已套用「{選擇的版本名稱}」設定。重新啟動 Claude Code 即可看到 HUD。
+> 如需調整設定，請執行 `/claude-hud:configure`。
