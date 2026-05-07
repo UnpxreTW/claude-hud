@@ -94,7 +94,6 @@ export interface HudConfig {
     showTokenBreakdown: boolean;
     showUsage: boolean;
     usageBarEnabled: boolean;
-    showResetLabel: boolean;
     usageCompact: boolean;
     showTools: boolean;
     showAgents: boolean;
@@ -152,7 +151,6 @@ export const DEFAULT_CONFIG: HudConfig = {
     showTokenBreakdown: true,
     showUsage: true,
     usageBarEnabled: true,
-    showResetLabel: true,
     usageCompact: false,
     showTools: false,
     showAgents: false,
@@ -469,9 +467,6 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     usageBarEnabled: typeof migrated.display?.usageBarEnabled === 'boolean'
       ? migrated.display.usageBarEnabled
       : DEFAULT_CONFIG.display.usageBarEnabled,
-    showResetLabel: typeof migrated.display?.showResetLabel === 'boolean'
-      ? migrated.display.showResetLabel
-      : DEFAULT_CONFIG.display.showResetLabel,
     usageCompact: typeof migrated.display?.usageCompact === 'boolean'
       ? migrated.display.usageCompact
       : DEFAULT_CONFIG.display.usageCompact,
