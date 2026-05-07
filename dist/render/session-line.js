@@ -30,7 +30,6 @@ export function renderSessionLine(ctx) {
     const bar = coloredBar(percent, barWidth, colors, contextThresholds);
     const parts = [];
     const timeFormat = display?.timeFormat ?? 'relative';
-    const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
     const contextValueMode = display?.contextValue ?? 'percent';
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors, contextThresholds)}${contextValue}${RESET}`;
@@ -153,7 +152,6 @@ export function renderSessionLine(ctx) {
     // Usage limits display (shown when enabled in config, respects usageThreshold)
     if (display?.showUsage !== false && ctx.usageData && !shouldHideUsage(ctx.stdin)) {
         const usageCompact = display?.usageCompact ?? false;
-        const showResetLabel = display?.showResetLabel ?? true;
         {
             const usageThreshold = display?.usageThreshold ?? 0;
             const fiveHour = ctx.usageData.fiveHour;
@@ -189,7 +187,6 @@ export function renderSessionLine(ctx) {
                         usageBarEnabled,
                         barWidth,
                         timeFormat,
-                        showResetLabel,
                         forceLabel: true,
                     });
                     parts.push(weeklyOnlyPart);
@@ -203,7 +200,6 @@ export function renderSessionLine(ctx) {
                         usageBarEnabled,
                         barWidth,
                         timeFormat,
-                        showResetLabel,
                     });
                     const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
                     if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
@@ -215,7 +211,6 @@ export function renderSessionLine(ctx) {
                             usageBarEnabled,
                             barWidth,
                             timeFormat,
-                            showResetLabel,
                             forceLabel: true,
                         });
                         parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
@@ -315,12 +310,10 @@ function formatUsagePercent(percent, colors) {
     const padded = String(percent).padStart(3, ' ');
     return `${color}${padded} %${RESET}`;
 }
-function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, }) {
+function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', forceLabel = false, }) {
     const usageDisplay = formatUsagePercent(percent, colors);
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(windowLabel, colors);
-    // "resets in X" for relative/both; "resets X" for absolute (avoids "resets in at 14:30")
-    const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
     if (usageBarEnabled) {
         const body = reset
             ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} │ ${reset}`

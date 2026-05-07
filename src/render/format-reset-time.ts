@@ -21,6 +21,13 @@ export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 're
     return getLanguage() === 'zh-TW' ? '即將重置' : '';
   }
 
+  if (getLanguage() === 'zh-TW') {
+    const abs = formatAbsoluteZhTW(resetAt, now);
+    if (mode === 'relative') return formatRelativeZhTW(diffMs);
+    if (mode === 'absolute') return abs;
+    return `${abs}（${formatRelativeZhTW(diffMs)}）`;
+  }
+
   if (mode === 'relative') {
     return formatRelative(diffMs);
   }
@@ -31,8 +38,6 @@ export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 're
     return absolute;
   }
 
-  // 'both' — comma separator avoids nested parentheses when the caller
-  // wraps the result in its own (...) parenthetical
   return `${formatRelative(diffMs)}, ${absolute}`;
 }
 
@@ -55,19 +60,29 @@ function formatRelative(diffMs: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
-function formatAbsolute(resetAt: Date, now: Date): string {
-  if (getLanguage() === 'zh-TW') {
-    return formatAbsoluteZhTW(resetAt, now);
+function formatRelativeZhTW(diffMs: number): string {
+  const diffMins = Math.ceil(diffMs / 60000);
+
+  if (diffMins < 1) return '< 1 分鐘';
+  if (diffMins < 60) return `${diffMins} 分鐘`;
+
+  const hours = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return remHours > 0 ? `${days} 天 ${remHours} 小時` : `${days} 天`;
   }
 
-  // The "at" prefix is i18n-aware. Locales that bake the preposition into
-  // "format.resets" (e.g. zh: "重置于") set "format.at" to "" so the time
-  // is returned bare ("14:30") and the preposition is supplied by the caller.
+  return mins > 0 ? `${hours} 小時 ${mins} 分鐘` : `${hours} 小時`;
+}
+
+function formatAbsolute(resetAt: Date, now: Date): string {
   const at = t('format.at');
   const prefix = at ? `${at} ` : '';
   const timeStr = resetAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Show the date only when the reset falls on a different calendar day
   if (resetAt.toDateString() === now.toDateString()) {
     return `${prefix}${timeStr}`;
   }
@@ -86,5 +101,5 @@ function formatAbsoluteZhTW(resetAt: Date, now: Date): string {
 
   const month = resetAt.getMonth() + 1;
   const day = resetAt.getDate();
-  return `${month} 月 ${day} 號 ${hours}:00 重置`;
+  return `${month} 月 ${day} 號 ${hours}:${minutes} 重置`;
 }

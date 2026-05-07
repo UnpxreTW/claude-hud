@@ -59,7 +59,6 @@ export interface HudConfig {
         showTokenBreakdown: boolean;
         showUsage: boolean;
         usageBarEnabled: boolean;
-        showResetLabel: boolean;
         usageCompact: boolean;
         showTools: boolean;
         showAgents: boolean;

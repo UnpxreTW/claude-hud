@@ -233,16 +233,24 @@ This applies to:
 
 ---
 
-### 8. Format five-hour reset time as clock time (zh-TW)
+### 8. Format reset time in Chinese for zh-TW (all modes)
 
 Find the reset time formatting module (e.g. `format-reset-time.ts`).
-Add a zh-TW branch in the absolute time formatter:
-- Same-day reset: `於 HH:MM 重置` (24-hour format, zero-padded)
-- At or past reset time: `即將重置`
-- No data: empty string
+When the language is `zh-TW`, intercept **all three** `timeFormat` modes
+(`relative`, `absolute`, `both`) before the upstream formatting logic,
+so the zh-TW format is always used regardless of the user's `timeFormat`
+setting.
 
-Also set `timeFormat: "absolute"` in the Unpxre default config so the
-upstream formatting system routes to the absolute path.
+**zh-TW formats:**
+
+| Mode | Format | Example |
+|------|--------|---------|
+| `relative` | 中文倒數 | `2 小時 30 分鐘`、`1 天 4 小時`、`< 1 分鐘` |
+| `absolute` (same-day) | 時鐘時間 | `於 14:30 重置` |
+| `absolute` (cross-day) | 日期 + 時鐘 | `5 月 10 號 14:30 重置` |
+| `both` | 絕對 + 括號倒數 | `於 14:30 重置（2 小時 30 分鐘）` |
+| 過期 | | `即將重置` |
+| 無資料 | | empty string |
 
 **If the reset time formatting module has changed significantly:**
 1. Check upstream commit history
@@ -250,12 +258,10 @@ upstream formatting system routes to the absolute path.
 
 ---
 
-### 9. Format weekly reset time with date (zh-TW)
+### 9. (Merged into Override 8)
 
-In the same zh-TW branch of the absolute time formatter:
-- Cross-day reset: `{month} 月 {day} 號 HH:00 重置` (hour zero-padded,
-  no minutes)
-- No data: empty string
+Override 9 was previously a separate rule for weekly reset date format.
+It is now part of Override 8's cross-day branch (`M 月 D 號 HH:MM 重置`).
 
 This is handled by the same zh-TW formatter added in Override 8.
 
