@@ -29,8 +29,6 @@ export function renderUsageLine(
 
   const usageLabel = progressLabel("label.usage", colors, alignLabels);
   const timeFormat: TimeFormatMode = display?.timeFormat ?? 'relative';
-  const showResetLabel = display?.showResetLabel ?? true;
-  const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
   const usageCompact = display?.usageCompact ?? false;
 
   const threshold = display?.usageThreshold ?? 0;
@@ -71,7 +69,6 @@ export function renderUsageLine(
       usageBarEnabled,
       barWidth,
       timeFormat,
-      showResetLabel,
       forceLabel: true,
       alignLabels,
     });
@@ -86,7 +83,6 @@ export function renderUsageLine(
     usageBarEnabled,
     barWidth,
     timeFormat,
-    showResetLabel,
   });
 
   return `${usageLabel} ${fiveHourPart}`;
@@ -128,7 +124,6 @@ function formatUsageWindowPart({
   usageBarEnabled,
   barWidth,
   timeFormat = 'relative',
-  showResetLabel,
   forceLabel = false,
   alignLabels = false,
 }: {
@@ -140,7 +135,6 @@ function formatUsageWindowPart({
   usageBarEnabled: boolean;
   barWidth: number;
   timeFormat?: TimeFormatMode;
-  showResetLabel: boolean;
   forceLabel?: boolean;
   alignLabels?: boolean;
 }): string {
@@ -149,7 +143,6 @@ function formatUsageWindowPart({
   const styledLabel = labelKey
     ? progressLabel(labelKey, colors, alignLabels)
     : label(windowLabel, colors);
-  const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
 
   const resetSuffix = reset ? `│ ${reset}` : "";
 
