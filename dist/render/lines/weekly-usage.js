@@ -3,7 +3,7 @@ import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { progressLabel } from "./label-align.js";
 import { formatResetTime } from "../format-reset-time.js";
-export function renderUsageLine(ctx, alignLabels = false) {
+export function renderWeeklyUsageLine(ctx, alignLabels = false) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     if (display?.showUsage === false)
@@ -12,21 +12,18 @@ export function renderUsageLine(ctx, alignLabels = false) {
         return null;
     if (shouldHideUsage(ctx.stdin))
         return null;
-    const fiveHour = ctx.usageData.fiveHour;
-    if (fiveHour === null)
+    const sevenDay = ctx.usageData.sevenDay;
+    if (sevenDay === null)
         return null;
-    const threshold = display?.usageThreshold ?? 0;
-    if (fiveHour < threshold)
-        return null;
-    const usageLabel = progressLabel("label.usage", colors, alignLabels);
+    const usageLabel = progressLabel("label.weekly", colors, alignLabels);
     const timeFormat = display?.timeFormat ?? 'relative';
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const barWidth = getAdaptiveBarWidth();
-    const usageDisplay = formatUsagePercent(fiveHour, colors);
-    const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
+    const usageDisplay = formatUsagePercent(sevenDay, colors);
+    const reset = formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
     if (usageBarEnabled) {
         const resetSuffix = reset ? ` │ ${reset}` : '';
-        return `${usageLabel} ${quotaBar(fiveHour, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
+        return `${usageLabel} ${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
     }
     const resetSuffix = reset ? ` │ ${reset}` : '';
     return `${usageLabel} ${usageDisplay}${resetSuffix}`;
@@ -38,4 +35,4 @@ function formatUsagePercent(percent, colors) {
     const padded = String(percent).padStart(3, ' ');
     return `${color}${padded} %${RESET}`;
 }
-//# sourceMappingURL=usage.js.map
+//# sourceMappingURL=weekly-usage.js.map

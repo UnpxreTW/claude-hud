@@ -101,6 +101,7 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
     const sessionDuration = formatSessionDuration(
       transcript.sessionStart,
       deps.now,
+      config.language,
     );
     const claudeCodeVersion = config.display.showClaudeCodeVersion
       ? await deps.getClaudeCodeVersion()
@@ -144,6 +145,7 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
 export function formatSessionDuration(
   sessionStart?: Date,
   now: () => number = () => Date.now(),
+  language?: string,
 ): string {
   if (!sessionStart) {
     return "";
@@ -151,6 +153,14 @@ export function formatSessionDuration(
 
   const ms = now() - sessionStart.getTime();
   const mins = Math.floor(ms / 60000);
+
+  if (language === 'zh-TW') {
+    if (mins < 1) return "< 1 分鐘";
+    if (mins < 60) return `${mins} 分鐘`;
+    const hours = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    return remainingMins > 0 ? `${hours} 小時 ${remainingMins} 分鐘` : `${hours} 小時`;
+  }
 
   if (mins < 1) return "<1m";
   if (mins < 60) return `${mins}m`;

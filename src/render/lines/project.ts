@@ -68,6 +68,11 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     parts.push(modelColor(`[${modelDisplay}]`, colors));
   }
 
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
+
   let projectPart: string | null = null;
   if (display?.showProject !== false && ctx.stdin.cwd) {
     const segments = ctx.stdin.cwd.split(/[/\\]/).filter(Boolean);
@@ -157,7 +162,8 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+    const durationPrefix = ctx.config?.language === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+    parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
   }
 
   const costEstimate = renderCostEstimate(ctx);
@@ -170,11 +176,6 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     if (speed !== null) {
       parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
     }
-  }
-
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   if (parts.length === 0) {

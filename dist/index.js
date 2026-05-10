@@ -67,7 +67,7 @@ export async function main(overrides = {}) {
         }
         const extraCmd = deps.parseExtraCmdArg();
         const extraLabel = extraCmd ? await deps.runExtraCmd(extraCmd) : null;
-        const sessionDuration = formatSessionDuration(transcript.sessionStart, deps.now);
+        const sessionDuration = formatSessionDuration(transcript.sessionStart, deps.now, config.language);
         const claudeCodeVersion = config.display.showClaudeCodeVersion
             ? await deps.getClaudeCodeVersion()
             : undefined;
@@ -101,12 +101,21 @@ export async function main(overrides = {}) {
         deps.log("[claude-hud] Error:", error instanceof Error ? error.message : "Unknown error");
     }
 }
-export function formatSessionDuration(sessionStart, now = () => Date.now()) {
+export function formatSessionDuration(sessionStart, now = () => Date.now(), language) {
     if (!sessionStart) {
         return "";
     }
     const ms = now() - sessionStart.getTime();
     const mins = Math.floor(ms / 60000);
+    if (language === 'zh-TW') {
+        if (mins < 1)
+            return "< 1 分鐘";
+        if (mins < 60)
+            return `${mins} 分鐘`;
+        const hours = Math.floor(mins / 60);
+        const remainingMins = mins % 60;
+        return remainingMins > 0 ? `${hours} 小時 ${remainingMins} 分鐘` : `${hours} 小時`;
+    }
     if (mins < 1)
         return "<1m";
     if (mins < 60)
