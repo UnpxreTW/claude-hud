@@ -4,6 +4,14 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-unpxre.5] - 2026-05-10
+
+### Fixed
+- Sync `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` to `0.1.0-unpxre.5` so Claude Code's `/plugin` reports the latest version correctly. The previous `.4` release only bumped `package.json`, leaving the marketplace metadata stuck at `.3` and clients unable to pull the new release.
+
+### Changed
+- CI now enforces three-way version consistency between `package.json`, `.claude-plugin/plugin.json`, and `.claude-plugin/marketplace.json` via a new `version-consistency` job (#70).
+
 ## [0.0.12] - 2026-04-04
 
 ### Added
@@ -168,7 +176,7 @@ All notable changes to Claude HUD will be documented in this file.
 - Reconvert Date objects when reading from usage API cache (#45)
 
 ### Credits
-- Ideas from [#30](https://github.com/jarrodwatts/claude-hud/pull/30) ([@r-firpo](https://github.com/r-firpo)), [#43](https://github.com/jarrodwatts/claude-hud/pull/43) ([@yansircc](https://github.com/yansircc)), [#49](https://github.com/jarrodwatts/claude-hud/pull/49) ([@StephenJoshii](https://github.com/StephenJoshii)) informed the autocompact solution
+- Ideas from [#30](https://github.com/jarrodwatts/claude-hud/pull/30) ([@r-firpo](https://github.com/r-firpo)), [#43](https://github.com/jarrodwatts/claude-hud/pull/43) ([@yansircc](https://github.com/yansircc)) , [#49](https://github.com/jarrodwatts/claude-hud/pull/49) ([@StephenJoshii](https://github.com/StephenJoshii)) informed the autocompact solution
 
 ### Dependencies
 - Bump @types/node from 25.0.3 to 25.0.6 (#61)
