@@ -129,6 +129,7 @@ Use this config if the user chose "精簡版 (Lite)" in Step 5:
   "lineLayout": "expanded",
   "showSeparators": false,
   "language": "zh-TW",
+  "elementOrder": ["project", "context", "usage", "weeklyUsage"],
   "display": {
     "showModel": true,
     "showContextBar": true,
@@ -141,7 +142,7 @@ Use this config if the user chose "精簡版 (Lite)" in Step 5:
     "showSpeed": false,
     "showUsage": true,
     "usageBarEnabled": true,
-    "showDuration": false,
+    "showDuration": true,
     "showSessionName": false,
     "showSessionTokens": false,
     "customLine": "",
@@ -153,7 +154,7 @@ Use this config if the user chose "精簡版 (Lite)" in Step 5:
     "enabled": true,
     "showDirty": true,
     "showAheadBehind": false,
-    "showFileStats": false
+    "showFileStats": true
   }
 }
 ```
