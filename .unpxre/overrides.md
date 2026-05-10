@@ -383,6 +383,16 @@ before the `contains(..., '@claude')` check.
 Maintain `commands/Unpxre.md` — a setup command that configures
 statusLine and writes the recommended config in one step.
 
+The statusLine command template MUST include COLUMNS width detection
+(matching upstream setup.md):
+```
+cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}');
+export COLUMNS=$(( ${cols:-120} > 4 ? ${cols:-120} - 4 : 1 ));
+```
+This is required because Claude Code pipes stdout, making
+`process.stdout.columns` unavailable. Without this, the HUD falls
+back to `maxWidth` config and cannot adapt to real terminal width.
+
 The command uses `AskUserQuestion` to let the user choose between
 two presets before writing config:
 
