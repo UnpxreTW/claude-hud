@@ -21,3 +21,21 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:coverage
+
+  version-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify version consistency across three manifests
+        run: |
+          pkg=$(jq -r .version package.json)
+          plugin=$(jq -r .version .claude-plugin/plugin.json)
+          mkt=$(jq -r .metadata.version .claude-plugin/marketplace.json)
+          echo "package.json:                    $pkg"
+          echo ".claude-plugin/plugin.json:      $plugin"
+          echo ".claude-plugin/marketplace.json: $mkt"
+          if [ "$pkg" != "$plugin" ] || [ "$pkg" != "$mkt" ]; then
+            echo "::error::Version mismatch — all three manifests must declare the same version. See RELEASING.md."
+            exit 1
+          fi
+          echo "All three version manifests agree."
