@@ -1,14 +1,13 @@
 import type { RenderContext } from "../../types.js";
-import { isLimitReached } from "../../types.js";
 import { shouldHideUsage } from "../../stdin.js";
-import { critical, label, getQuotaColor, quotaBar, RESET } from "../colors.js";
+import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
 import type { TimeFormatMode } from "../../config.js";
 import { formatResetTime } from "../format-reset-time.js";
 
-export function renderUsageLine(
+export function renderWeeklyUsageLine(
   ctx: RenderContext,
   alignLabels = false,
 ): string | null {
@@ -19,26 +18,24 @@ export function renderUsageLine(
   if (!ctx.usageData) return null;
   if (shouldHideUsage(ctx.stdin)) return null;
 
-  const fiveHour = ctx.usageData.fiveHour;
-  if (fiveHour === null) return null;
+  const sevenDay = ctx.usageData.sevenDay;
+  if (sevenDay === null) return null;
 
-  const threshold = display?.usageThreshold ?? 0;
-  if (fiveHour < threshold) return null;
-
-  const usageLabel = progressLabel("label.usage", colors, alignLabels);
+  const usageLabel = progressLabel("label.weekly", colors, alignLabels);
   const timeFormat: TimeFormatMode = display?.timeFormat ?? 'relative';
   const usageBarEnabled = display?.usageBarEnabled ?? true;
   const barWidth = getAdaptiveBarWidth();
 
-  const color = getQuotaColor(fiveHour, colors);
-  const usageDisplay = `${color}${fiveHour}%${RESET}`;
-  const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
+  const color = getQuotaColor(sevenDay, colors);
+  const padded = String(sevenDay).padStart(3, ' ');
+  const usageDisplay = `${color}${padded} %${RESET}`;
+  const reset = formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
 
   if (usageBarEnabled) {
-    const resetSuffix = reset ? ` (${reset})` : '';
-    return `${usageLabel} ${quotaBar(fiveHour, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
+    const resetSuffix = reset ? ` ${label('│', colors)} ${reset}` : '';
+    return `${usageLabel} ${quotaBar(sevenDay, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
   }
 
-  const resetSuffix = reset ? ` (${reset})` : '';
+  const resetSuffix = reset ? ` ${label('│', colors)} ${reset}` : '';
   return `${usageLabel} ${usageDisplay}${resetSuffix}`;
 }
