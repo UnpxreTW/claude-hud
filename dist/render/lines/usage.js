@@ -27,10 +27,10 @@ export function renderUsageLine(ctx, alignLabels = false) {
     const usageDisplay = `${color}${padded} %${RESET}`;
     const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
     if (usageBarEnabled) {
-        const resetSuffix = reset ? ` (${reset})` : '';
+        const resetSuffix = reset ? ` │ ${reset}` : '';
         return `${usageLabel} ${quotaBar(fiveHour, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
     }
-    const resetSuffix = reset ? ` (${reset})` : '';
+    const resetSuffix = reset ? ` │ ${reset}` : '';
     return `${usageLabel} ${usageDisplay}${resetSuffix}`;
 }
 //# sourceMappingURL=usage.js.map

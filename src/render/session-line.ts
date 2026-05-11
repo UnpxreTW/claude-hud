@@ -174,7 +174,7 @@ export function renderSessionLine(ctx: RenderContext): string {
       const padded = String(fiveHour).padStart(3, ' ');
       const usageDisplay = `${color}${padded} %${RESET}`;
       const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
-      const resetSuffix = reset ? ` (${reset})` : '';
+      const resetSuffix = reset ? ` │ ${reset}` : '';
 
       if (usageBarEnabled) {
         parts.push(`${label(t('label.usage'), colors)} ${quotaBar(fiveHour, barWidth, colors)} ${usageDisplay}${resetSuffix}`);
