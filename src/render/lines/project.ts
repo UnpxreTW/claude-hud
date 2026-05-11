@@ -5,7 +5,7 @@ import type { RenderContext } from '../../types.js';
 import { getModelName, formatModelName, getProviderLabel } from '../../stdin.js';
 import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, critical as criticalColor, label, model as modelColor, project as projectColor, red, green, yellow, dim, custom as customColor } from '../colors.js';
-import { t } from '../../i18n/index.js';
+import { t, getLanguage } from '../../i18n/index.js';
 import { renderCostEstimate } from './cost.js';
 import { normalizeAddedDirs, sanitize as sanitizeDisplayText, basenameOf, truncateBasename, MAX_RENDERED_ADDED_DIRS } from './added-dirs.js';
 
@@ -157,7 +157,8 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+    const durationPrefix = getLanguage() === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+    parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
   }
 
   const costEstimate = renderCostEstimate(ctx);
