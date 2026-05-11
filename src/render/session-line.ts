@@ -171,7 +171,8 @@ export function renderSessionLine(ctx: RenderContext): string {
     if (fiveHour !== null && fiveHour >= usageThreshold) {
       const usageBarEnabled = display?.usageBarEnabled ?? true;
       const color = getQuotaColor(fiveHour, colors);
-      const usageDisplay = `${color}${fiveHour}%${RESET}`;
+      const padded = String(fiveHour).padStart(3, ' ');
+      const usageDisplay = `${color}${padded} %${RESET}`;
       const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
       const resetSuffix = reset ? ` (${reset})` : '';
 
@@ -244,6 +245,10 @@ function formatTokens(n: number): string {
   return n.toString();
 }
 
+function padPercent(n: number): string {
+  return `${String(n).padStart(3, ' ')} %`;
+}
+
 function formatContextValue(ctx: RenderContext, percent: number, mode: 'percent' | 'tokens' | 'remaining' | 'both'): string {
   const totalTokens = getTotalTokens(ctx.stdin);
   const size = ctx.stdin.context_window?.context_window_size ?? 0;
@@ -257,15 +262,15 @@ function formatContextValue(ctx: RenderContext, percent: number, mode: 'percent'
 
   if (mode === 'both') {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${padPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return padPercent(percent);
   }
 
   if (mode === 'remaining') {
-    return `${Math.max(0, 100 - percent)}%`;
+    return padPercent(Math.max(0, 100 - percent));
   }
 
-  return `${percent}%`;
+  return padPercent(percent);
 }
 
