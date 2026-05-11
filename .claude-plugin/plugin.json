@@ -8,10 +8,11 @@
   },
   "commands": [
     "./commands/setup.md",
-    "./commands/configure.md"
+    "./commands/configure.md",
+    "./commands/Unpxre.md"
   ],
-  "homepage": "https://github.com/jarrodwatts/claude-hud",
-  "repository": "https://github.com/jarrodwatts/claude-hud",
+  "homepage": "https://github.com/UnpxreTW/claude-hud",
+  "repository": "https://github.com/UnpxreTW/claude-hud",
   "license": "MIT",
   "keywords": ["hud", "monitoring", "statusline", "context", "tools", "agents", "todos", "claude-code"]
 }
