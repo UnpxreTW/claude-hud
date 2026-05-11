@@ -35,10 +35,10 @@ export function renderUsageLine(
   const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
 
   if (usageBarEnabled) {
-    const resetSuffix = reset ? ` (${reset})` : '';
+    const resetSuffix = reset ? ` │ ${reset}` : '';
     return `${usageLabel} ${quotaBar(fiveHour, barWidth, colors)} ${usageDisplay}${resetSuffix}`;
   }
 
-  const resetSuffix = reset ? ` (${reset})` : '';
+  const resetSuffix = reset ? ` │ ${reset}` : '';
   return `${usageLabel} ${usageDisplay}${resetSuffix}`;
 }
