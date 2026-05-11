@@ -64,7 +64,12 @@ export function renderSessionLine(ctx: RenderContext): string {
     parts.push(contextValueDisplay);
   }
 
-  // Project path + git status (SECOND)
+  const customLine = display?.customLine;
+  if (customLine) {
+    parts.push(customColor(customLine, colors));
+  }
+
+  // Project path + git status
   let projectPart: string | null = null;
   if (display?.showProject !== false && ctx.stdin.cwd) {
     // Split by both Unix (/) and Windows (\) separators for cross-platform support
@@ -287,12 +292,6 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   if (ctx.extraLabel) {
     parts.push(label(ctx.extraLabel, colors));
-  }
-
-  // Custom line (static user-defined text)
-  const customLine = display?.customLine;
-  if (customLine) {
-    parts.push(customColor(customLine, colors));
   }
 
   let line = parts.join(' | ');
