@@ -70,6 +70,10 @@ function formatTokens(n: number): string {
   return n.toString();
 }
 
+function padPercent(n: number): string {
+  return `${String(n).padStart(3, ' ')} %`;
+}
+
 function formatContextValue(
   ctx: RenderContext,
   percent: number,
@@ -87,14 +91,14 @@ function formatContextValue(
 
   if (mode === "both") {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${padPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return padPercent(percent);
   }
 
   if (mode === "remaining") {
-    return `${Math.max(0, 100 - percent)}%`;
+    return padPercent(Math.max(0, 100 - percent));
   }
 
-  return `${percent}%`;
+  return padPercent(percent);
 }

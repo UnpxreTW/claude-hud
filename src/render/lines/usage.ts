@@ -31,7 +31,8 @@ export function renderUsageLine(
   const barWidth = getAdaptiveBarWidth();
 
   const color = getQuotaColor(fiveHour, colors);
-  const usageDisplay = `${color}${fiveHour}%${RESET}`;
+  const padded = String(fiveHour).padStart(3, ' ');
+  const usageDisplay = `${color}${padded} %${RESET}`;
   const reset = formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat);
 
   if (usageBarEnabled) {
