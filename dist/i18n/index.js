@@ -1,6 +1,7 @@
 import { en } from "./en.js";
 import { zh } from "./zh.js";
-const locales = { en, zh };
+import { zhTW } from "./zh-TW.js";
+const locales = { en, zh, "zh-TW": zhTW };
 let currentLanguage = "en";
 export function setLanguage(lang) {
     currentLanguage = lang;
