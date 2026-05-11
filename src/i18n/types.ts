@@ -29,4 +29,4 @@ export type MessageKey =
 
 export type Messages = Record<MessageKey, string>;
 
-export type Language = "en" | "zh";
+export type Language = "en" | "zh" | "zh-TW";
