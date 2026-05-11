@@ -264,7 +264,8 @@ export function renderSessionLine(ctx: RenderContext): string {
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+    const durationPrefix = ctx.config?.language === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+    parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
   }
 
   const promptCacheLine = renderPromptCacheLine(ctx);
