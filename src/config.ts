@@ -19,7 +19,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both';
-export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos';
+export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'weeklyUsage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos';
 
 export type AddedDirsLayout = 'inline' | 'line';
 export type HudColorName =
@@ -56,6 +56,7 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'addedDirs',
   'context',
   'usage',
+  'weeklyUsage',
   'promptCache',
   'memory',
   'environment',

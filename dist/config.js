@@ -7,6 +7,7 @@ export const DEFAULT_ELEMENT_ORDER = [
     'addedDirs',
     'context',
     'usage',
+    'weeklyUsage',
     'promptCache',
     'memory',
     'environment',
