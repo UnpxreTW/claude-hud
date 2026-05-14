@@ -14,9 +14,13 @@ const locales: Record<string, Messages> = {
 
 type CanonicalLanguage = "en" | "zh-Hans" | "zh-TW";
 
+// Resolve short language tags to canonical BCP 47 forms per CLDR likely subtags.
+// https://www.unicode.org/cldr/charts/latest/supplemental/likely_subtags.html
+//   zh   → zh-Hans (CLDR: zh → zh-Hans-CN)
+//   zh-TW → zh-TW  (CLDR: zh-TW → zh-Hant-TW, Phase 2 will adopt full form)
 const CANONICAL: Record<Language, CanonicalLanguage> = {
-  en: "en",
-  zh: "zh-Hans",
+  "en": "en",
+  "zh": "zh-Hans",
   "zh-Hans": "zh-Hans",
   "zh-TW": "zh-TW",
 };

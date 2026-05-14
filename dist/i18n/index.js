@@ -7,9 +7,13 @@ const locales = {
     "zh-Hans": zh,
     "zh-TW": zhTW,
 };
+// Resolve short language tags to canonical BCP 47 forms per CLDR likely subtags.
+// https://www.unicode.org/cldr/charts/latest/supplemental/likely_subtags.html
+//   zh   → zh-Hans (CLDR: zh → zh-Hans-CN)
+//   zh-TW → zh-TW  (CLDR: zh-TW → zh-Hant-TW, Phase 2 will adopt full form)
 const CANONICAL = {
-    en: "en",
-    zh: "zh-Hans",
+    "en": "en",
+    "zh": "zh-Hans",
     "zh-Hans": "zh-Hans",
     "zh-TW": "zh-TW",
 };
