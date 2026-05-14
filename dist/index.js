@@ -10,7 +10,7 @@ import { getMemoryUsage } from "./memory.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot } from "./external-usage.js";
-import { setLanguage, getLanguage, t } from "./i18n/index.js";
+import { setLanguage, getCanonicalLanguage, t } from "./i18n/index.js";
 export { getUsageFromExternalSnapshot } from "./external-usage.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
@@ -107,7 +107,7 @@ export function formatSessionDuration(sessionStart, now = () => Date.now()) {
     }
     const ms = now() - sessionStart.getTime();
     const mins = Math.floor(ms / 60000);
-    if (getLanguage() === 'zh-TW') {
+    if (getCanonicalLanguage() === 'zh-Hant-TW') {
         if (mins < 1)
             return "< 1 分鐘";
         if (mins < 60)

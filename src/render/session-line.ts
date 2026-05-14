@@ -5,7 +5,7 @@ import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model 
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 import { renderCostEstimate } from './lines/cost.js';
 import { renderPromptCacheLine } from './lines/prompt-cache.js';
-import { t } from '../i18n/index.js';
+import { t, getCanonicalLanguage } from '../i18n/index.js';
 import type { TimeFormatMode } from '../config.js';
 import { formatResetTime } from './format-reset-time.js';
 
@@ -189,13 +189,13 @@ export function renderSessionLine(ctx: RenderContext): string {
     const st = ctx.transcript.sessionTokens;
     const total = st.inputTokens + st.outputTokens + st.cacheCreationTokens + st.cacheReadTokens;
     if (total > 0) {
-      const tokenSep = ctx.config?.language === 'zh-TW' ? ' ' : ', ';
+      const tokenSep = getCanonicalLanguage() === 'zh-Hant-TW' ? ' ' : ', ';
       parts.push(label(`${t('format.tok')}: ${formatTokens(total)} (${t('format.in')}: ${formatTokens(st.inputTokens)}${tokenSep}${t('format.out')}: ${formatTokens(st.outputTokens)})`, colors));
     }
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    const durationPrefix = ctx.config?.language === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+    const durationPrefix = getCanonicalLanguage() === 'zh-Hant-TW' ? '⏱️ 執行時間：' : '⏱️  ';
     parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
   }
 

@@ -97,7 +97,7 @@ Use this config if the user chose "完整版 (Full)" in Step 5:
 {
   "lineLayout": "expanded",
   "showSeparators": true,
-  "language": "zh-TW",
+  "language": "zh-Hant-TW",
   "display": {
     "showModel": true,
     "showContextBar": true,
@@ -138,7 +138,7 @@ Use this config if the user chose "精簡版 (Lite)" in Step 5:
 {
   "lineLayout": "expanded",
   "showSeparators": false,
-  "language": "zh-TW",
+  "language": "zh-Hant-TW",
   "elementOrder": ["project", "context", "usage", "weeklyUsage"],
   "display": {
     "showModel": true,

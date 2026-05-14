@@ -1,5 +1,5 @@
 import type { TimeFormatMode } from '../config.js';
-import { t, getLanguage } from '../i18n/index.js';
+import { t, getCanonicalLanguage } from '../i18n/index.js';
 
 export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 'relative'): string {
   if (!resetAt) return '';
@@ -7,10 +7,10 @@ export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 're
   const now = new Date();
   const diffMs = resetAt.getTime() - now.getTime();
   if (diffMs <= 0) {
-    return getLanguage() === 'zh-TW' ? '即將重置' : '';
+    return getCanonicalLanguage() === 'zh-Hant-TW' ? '即將重置' : '';
   }
 
-  if (getLanguage() === 'zh-TW') {
+  if (getCanonicalLanguage() === 'zh-Hant-TW') {
     const abs = formatAbsoluteZhTW(resetAt, now);
     if (mode === 'relative') return formatRelativeZhTW(diffMs);
     if (mode === 'absolute') return abs;
