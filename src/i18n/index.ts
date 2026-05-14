@@ -5,7 +5,21 @@ import { zhTW } from "./zh-TW.js";
 
 export type { Language, MessageKey, Messages };
 
-const locales: Record<Language, Messages> = { en, zh, "zh-TW": zhTW };
+const locales: Record<string, Messages> = {
+  en,
+  zh,
+  "zh-Hans": zh,
+  "zh-TW": zhTW,
+};
+
+type CanonicalLanguage = "en" | "zh-Hans" | "zh-TW";
+
+const CANONICAL: Record<Language, CanonicalLanguage> = {
+  en: "en",
+  zh: "zh-Hans",
+  "zh-Hans": "zh-Hans",
+  "zh-TW": "zh-TW",
+};
 
 let currentLanguage: Language = "en";
 
@@ -17,6 +31,16 @@ export function getLanguage(): Language {
   return currentLanguage;
 }
 
+export function getCanonicalLanguage(): CanonicalLanguage {
+  return CANONICAL[currentLanguage] ?? "en";
+}
+
+export function isCjkLanguage(): boolean {
+  const canon = getCanonicalLanguage();
+  return canon === "zh-Hans" || canon === "zh-TW";
+}
+
 export function t(key: MessageKey): string {
-  return locales[currentLanguage][key] ?? locales.en[key] ?? key;
+  const canon = getCanonicalLanguage();
+  return locales[canon]?.[key] ?? locales.en[key] ?? key;
 }

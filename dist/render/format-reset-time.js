@@ -1,13 +1,13 @@
-import { t, getLanguage } from '../i18n/index.js';
+import { t, getCanonicalLanguage } from '../i18n/index.js';
 export function formatResetTime(resetAt, mode = 'relative') {
     if (!resetAt)
         return '';
     const now = new Date();
     const diffMs = resetAt.getTime() - now.getTime();
     if (diffMs <= 0) {
-        return getLanguage() === 'zh-TW' ? '即將重置' : '';
+        return getCanonicalLanguage() === 'zh-TW' ? '即將重置' : '';
     }
-    if (getLanguage() === 'zh-TW') {
+    if (getCanonicalLanguage() === 'zh-TW') {
         const abs = formatAbsoluteZhTW(resetAt, now);
         if (mode === 'relative')
             return formatRelativeZhTW(diffMs);

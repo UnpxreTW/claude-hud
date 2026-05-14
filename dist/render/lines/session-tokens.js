@@ -1,5 +1,5 @@
 import { label } from '../colors.js';
-import { t, getLanguage } from '../../i18n/index.js';
+import { t, getCanonicalLanguage } from '../../i18n/index.js';
 function formatTokens(n) {
     if (n >= 1000000) {
         return `${(n / 1000000).toFixed(1)}M`;
@@ -30,7 +30,7 @@ export function renderSessionTokensLine(ctx) {
     if (tokens.cacheCreationTokens > 0 || tokens.cacheReadTokens > 0) {
         parts.push(`${t('format.cache')}: ${formatTokens(tokens.cacheCreationTokens + tokens.cacheReadTokens)}`);
     }
-    const separator = getLanguage() === 'zh-TW' ? ' ' : ', ';
+    const separator = getCanonicalLanguage() === 'zh-TW' ? ' ' : ', ';
     return label(`${t('label.tokens')} ${formatTokens(total)} (${parts.join(separator)})`, colors);
 }
 //# sourceMappingURL=session-tokens.js.map
