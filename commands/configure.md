@@ -61,7 +61,17 @@ Questions: **Turn Off → Turn On → Git Style → Layout/Reset → Language �
   - "中文" - Show HUD labels and status text in Simplified Chinese
   - "繁體中文（台灣）" - Show HUD labels and status text in Traditional Chinese
 
-Save as `language: "en"`, `language: "zh"`, or `language: "zh-TW"`.
+Save as `language: "en"`, `language: "zh"` (or `"zh-Hans"`), or `language: "zh-TW"`.
+
+**Language display name resolution:**
+When showing the current language to the user, resolve the config value
+to a display name using this table:
+
+| Config value | Display name |
+|---|---|
+| `en` | English |
+| `zh`, `zh-Hans` | 中文 |
+| `zh-TW` | 繁體中文（台灣） |
 
 ### Q4: Turn Off (based on chosen preset)
 - header: "Turn Off"
@@ -165,7 +175,7 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
 
 ### Q5: Language
 - header: "Language"
-- question: "Update HUD label language? (current: '{English, 中文, or 繁體中文}')"
+- question: "Update HUD label language? (current: '{resolve display name from table above}')"
 - multiSelect: false
 - options:
   - "Keep current" - No change
@@ -223,11 +233,11 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 
 ## Language Mapping
 
-| Option | Config |
-|--------|--------|
-| English (Recommended) | `language: "en"` |
-| 中文 | `language: "zh"` |
-| 繁體中文（台灣） | `language: "zh-TW"` |
+| Option | Config (saved) | Aliases (also accepted) |
+|--------|--------|--------|
+| English (Recommended) | `language: "en"` | — |
+| 中文 | `language: "zh"` | `"zh-Hans"` |
+| 繁體中文（台灣） | `language: "zh-TW"` | — |
 
 ---
 
