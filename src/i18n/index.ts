@@ -1,14 +1,14 @@
 import type { Language, MessageKey, Messages } from "./types.js";
 import { en } from "./en.js";
-import { zh } from "./zh.js";
+import { zhHans } from "./zh-Hans.js";
 import { zhTW } from "./zh-TW.js";
 
 export type { Language, MessageKey, Messages };
 
 const locales: Record<string, Messages> = {
   en,
-  zh,
-  "zh-Hans": zh,
+  zh: zhHans,
+  "zh-Hans": zhHans,
   "zh-TW": zhTW,
 };
 

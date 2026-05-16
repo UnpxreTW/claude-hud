@@ -1,10 +1,10 @@
 import { en } from "./en.js";
-import { zh } from "./zh.js";
+import { zhHans } from "./zh-Hans.js";
 import { zhTW } from "./zh-TW.js";
 const locales = {
     en,
-    zh,
-    "zh-Hans": zh,
+    zh: zhHans,
+    "zh-Hans": zhHans,
     "zh-TW": zhTW,
 };
 // Resolve short language tags to canonical BCP 47 forms.
