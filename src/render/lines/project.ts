@@ -161,9 +161,13 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     parts.push(label(ctx.extraLabel, colors));
   }
 
-  if (display?.showDuration !== false && ctx.sessionDuration) {
-    const durationPrefix = getLanguage() === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
-    parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
+  if (display?.showDuration !== false) {
+    if (ctx.sessionDuration) {
+      const durationPrefix = getLanguage() === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+      parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
+    } else {
+      parts.push(label('⏱️ --', colors));
+    }
   }
 
   const costEstimate = renderCostEstimate(ctx);

@@ -175,9 +175,14 @@ export function renderSessionLine(ctx) {
             parts.push(label(`${t('format.tok')}: ${formatTokens(total)} (${t('format.in')}: ${formatTokens(st.inputTokens)}${tokenSep}${t('format.out')}: ${formatTokens(st.outputTokens)})`, colors));
         }
     }
-    if (display?.showDuration !== false && ctx.sessionDuration) {
-        const durationPrefix = ctx.config?.language === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
-        parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
+    if (display?.showDuration !== false) {
+        if (ctx.sessionDuration) {
+            const durationPrefix = ctx.config?.language === 'zh-TW' ? '⏱️ 執行時間：' : '⏱️  ';
+            parts.push(label(`${durationPrefix}${ctx.sessionDuration}`, colors));
+        }
+        else {
+            parts.push(label('⏱️ --', colors));
+        }
     }
     const promptCacheLine = renderPromptCacheLine(ctx);
     if (promptCacheLine) {
