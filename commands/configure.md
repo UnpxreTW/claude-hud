@@ -61,7 +61,7 @@ Questions: **Turn Off → Turn On → Git Style → Layout/Reset → Language �
   - "中文" - Show HUD labels and status text in Simplified Chinese
   - "繁體中文（台灣）" - Show HUD labels and status text in Traditional Chinese
 
-Save as `language: "en"`, `language: "zh"` (or `"zh-Hans"`), or `language: "zh-TW"`.
+Save as `language: "en"`, `language: "zh-Hans"`, or `language: "zh-TW"`.
 
 **Language display name resolution:**
 When showing the current language to the user, resolve the config value
@@ -185,7 +185,7 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
 
 If user chooses "Keep current", leave `language` unchanged.
 If user chooses "English (Recommended)", save `language: "en"`.
-If user chooses "中文", save `language: "zh"`.
+If user chooses "中文", save `language: "zh-Hans"`.
 If user chooses "繁體中文（台灣）", save `language: "zh-TW"`.
 
 ### Q6: Custom Line (optional)
@@ -236,7 +236,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Option | Config (saved) | Aliases (also accepted) |
 |--------|--------|--------|
 | English (Recommended) | `language: "en"` | — |
-| 中文 | `language: "zh"` | `"zh-Hans"` |
+| 中文 | `language: "zh-Hans"` | `"zh"` |
 | 繁體中文（台灣） | `language: "zh-TW"` | — |
 
 ---
