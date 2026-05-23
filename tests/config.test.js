@@ -254,6 +254,21 @@ test('mergeConfig preserves customLine and truncates long values', () => {
   assert.equal(config.display.customLine, customLine.slice(0, 80));
 });
 
+test('mergeConfig defaults customLinePosition to last', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.customLinePosition, 'last');
+});
+
+test('mergeConfig preserves explicit customLinePosition', () => {
+  const config = mergeConfig({ display: { customLinePosition: 'first' } });
+  assert.equal(config.display.customLinePosition, 'first');
+});
+
+test('mergeConfig falls back to last for invalid customLinePosition', () => {
+  const config = mergeConfig({ display: { customLinePosition: 'middle' } });
+  assert.equal(config.display.customLinePosition, 'last');
+});
+
 test('mergeConfig defaults modelFormat to full', () => {
   const config = mergeConfig({});
   assert.equal(config.display.modelFormat, 'full');

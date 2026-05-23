@@ -20,6 +20,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
+export type CustomLinePosition = 'first' | 'last';
 export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'sessionTime';
 
 export type AddedDirsLayout = 'inline' | 'line';
@@ -134,6 +135,7 @@ export interface HudConfig {
     modelFormat: ModelFormatMode;
     modelOverride: string;
     customLine: string;
+    customLinePosition: CustomLinePosition;
     timeFormat: TimeFormatMode;
   };
   colors: HudColorOverrides;
@@ -201,6 +203,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     modelFormat: 'full',
     modelOverride: '',
     customLine: '',
+    customLinePosition: 'last',
     timeFormat: 'relative',
   },
   colors: {
@@ -263,6 +266,10 @@ function validateTimeFormat(value: unknown): value is TimeFormatMode {
     || value === 'both'
     || value === 'elapsed'
     || value === 'elapsedAndAbsolute';
+}
+
+function validateCustomLinePosition(value: unknown): value is CustomLinePosition {
+  return value === 'first' || value === 'last';
 }
 
 function validateColorName(value: unknown): value is HudColorName {
@@ -617,6 +624,9 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     customLine: typeof migrated.display?.customLine === 'string'
       ? migrated.display.customLine.slice(0, 80)
       : DEFAULT_CONFIG.display.customLine,
+    customLinePosition: validateCustomLinePosition(migrated.display?.customLinePosition)
+      ? migrated.display.customLinePosition
+      : DEFAULT_CONFIG.display.customLinePosition,
     timeFormat: validateTimeFormat(migrated.display?.timeFormat)
       ? migrated.display.timeFormat
       : DEFAULT_CONFIG.display.timeFormat,

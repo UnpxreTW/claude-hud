@@ -259,6 +259,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Session start date | `display.showSessionStartDate` |
 | Last response time | `display.showLastResponseAt` |
 | Custom line | `display.customLine` |
+| Custom line position | `display.customLinePosition` |
 
 **Always true (not configurable):**
 - `display.showModel: true`

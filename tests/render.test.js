@@ -473,6 +473,28 @@ test('renderSessionLine includes customLine when configured', () => {
   assert.ok(line.includes('Ship it'));
 });
 
+test('renderSessionLine places customLine before model badge when position is first', () => {
+  const ctx = baseContext();
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'first';
+  const line = stripAnsi(renderSessionLine(ctx));
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx >= 0, 'should include custom line');
+  assert.ok(modelIdx >= 0, 'should include model badge');
+  assert.ok(customIdx < modelIdx, `custom line (${customIdx}) should appear before model badge (${modelIdx})`);
+});
+
+test('renderSessionLine places customLine at end when position is last', () => {
+  const ctx = baseContext();
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'last';
+  const line = stripAnsi(renderSessionLine(ctx));
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx > modelIdx, 'custom line should appear after model badge when position is last');
+});
+
 test('renderSessionLine applies modelFormat compact', () => {
   const ctx = baseContext();
   ctx.stdin.model = { display_name: 'Opus 4.6 (1M context)' };
@@ -570,6 +592,30 @@ test('renderProjectLine includes customLine when configured', () => {
   ctx.config.display.customLine = 'Stay sharp';
   const line = stripAnsi(renderProjectLine(ctx) ?? '');
   assert.ok(line.includes('Stay sharp'));
+});
+
+test('renderProjectLine places customLine before model badge when position is first', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'first';
+  const line = stripAnsi(renderProjectLine(ctx) ?? '');
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx >= 0, 'should include custom line');
+  assert.ok(modelIdx >= 0, 'should include model badge');
+  assert.ok(customIdx < modelIdx, `custom line (${customIdx}) should appear before model badge (${modelIdx})`);
+});
+
+test('renderProjectLine places customLine at end when position is last', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'last';
+  const line = stripAnsi(renderProjectLine(ctx) ?? '');
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx > modelIdx, 'custom line should appear after model badge when position is last');
 });
 
 test('renderProjectLine applies modelFormat compact (strips context suffix)', () => {

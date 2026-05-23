@@ -55,6 +55,12 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   const colors = ctx.config?.colors;
   const parts: string[] = [];
 
+  const customLine = display?.customLine;
+  const customLinePosition = display?.customLinePosition ?? 'last';
+  if (customLine && customLinePosition === 'first') {
+    parts.push(customColor(customLine, colors));
+  }
+
   if (display?.showModel !== false) {
     const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
     const providerLabel = getProviderLabel(ctx.stdin);
@@ -172,8 +178,7 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     }
   }
 
-  const customLine = display?.customLine;
-  if (customLine) {
+  if (customLine && customLinePosition === 'last') {
     parts.push(customColor(customLine, colors));
   }
 
