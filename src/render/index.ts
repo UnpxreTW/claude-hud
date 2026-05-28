@@ -401,6 +401,8 @@ function renderElementLine(
       return display?.showTodos === false ? null : renderTodosLine(ctx);
     case 'sessionTime':
       return renderSessionTimeLine(ctx);
+    case 'sessionTokens':
+      return display?.showSessionTokens === false ? null : renderSessionTokensLine(ctx);
   }
 }
 
@@ -517,14 +519,6 @@ export function render(ctx: RenderContext): void {
   if (lineLayout === 'expanded') {
     const renderedLines = renderExpanded(ctx, terminalWidth);
     lines = renderedLines.map(({ line }) => line);
-
-    // Session token usage (cumulative)
-    if (ctx.config?.display?.showSessionTokens) {
-      const sessionTokensLine = renderSessionTokensLine(ctx);
-      if (sessionTokensLine) {
-        lines.push(sessionTokensLine);
-      }
-    }
 
     if (showSeparators) {
       const firstActivityIndex = renderedLines.findIndex(({ isActivity }) => isActivity);
