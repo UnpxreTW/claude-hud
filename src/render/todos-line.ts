@@ -27,7 +27,8 @@ export function renderTodosLine(ctx: RenderContext): string | null {
   return `${yellow("▸")} ${content} ${progress}`;
 }
 
-function truncateContent(content: string, maxLen: number = 50): string {
+function truncateContent(content: string | null | undefined, maxLen: number = 50): string {
+  if (!content) return "";
   if (content.length <= maxLen) return content;
   return content.slice(0, maxLen - 3) + "...";
 }

@@ -12,6 +12,7 @@ export const en = {
     "label.tokens": "Tokens",
     "label.sessionStarted": "Started",
     "label.lastReply": "Last reply",
+    "label.advisor": "Advisor",
     // Status
     "status.limitReached": "Limit reached",
     "status.allTodosComplete": "All todos complete",

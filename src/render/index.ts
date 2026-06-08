@@ -526,6 +526,8 @@ export function render(ctx: RenderContext): void {
       }
     }
 
+    // Advisor is rendered inline on the project line; see renderProjectLine.
+
     if (showSeparators) {
       const firstActivityIndex = renderedLines.findIndex(({ isActivity }) => isActivity);
       if (firstActivityIndex > 0) {

@@ -20,6 +20,8 @@ export function renderTodosLine(ctx) {
     return `${yellow("▸")} ${content} ${progress}`;
 }
 function truncateContent(content, maxLen = 50) {
+    if (!content)
+        return "";
     if (content.length <= maxLen)
         return content;
     return content.slice(0, maxLen - 3) + "...";

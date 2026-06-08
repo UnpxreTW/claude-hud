@@ -205,9 +205,9 @@ function isAllUsageZero(usage: ContextWindow["current_usage"]): boolean {
  * Returns true when context window data looks like a Claude Code reporting
  * glitch rather than a genuine zero-usage state.
  *
- * We only treat a zero-percent frame as suspicious when accumulated totals are
- * non-zero and `current_usage` is still empty. If `current_usage` already shows
- * non-zero token counters, keep the live frame instead of restoring stale cache.
+ * We treat a zero-percent frame as suspicious when `current_usage` is empty.
+ * Fresh sessions are protected by a cache miss; post-compact resets are
+ * protected by the compact-boundary guard in applyContextWindowFallback.
  */
 function isSuspiciousZero(contextWindow: ContextWindow): boolean {
   const usedPercentage = contextWindow.used_percentage ?? 0;
@@ -219,9 +219,7 @@ function isSuspiciousZero(contextWindow: ContextWindow): boolean {
     return false;
   }
 
-  const totalInputTokens = contextWindow.total_input_tokens ?? 0;
-  const totalOutputTokens = contextWindow.total_output_tokens ?? 0;
-  return totalInputTokens > 0 || totalOutputTokens > 0;
+  return true;
 }
 
 /**

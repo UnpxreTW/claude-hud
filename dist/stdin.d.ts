@@ -10,8 +10,8 @@ type ReadStdinOptions = {
 };
 export declare function readStdin(stream?: StdinStream, options?: ReadStdinOptions): Promise<StdinData | null>;
 export declare function getTotalTokens(stdin: StdinData): number;
-export declare function getContextPercent(stdin: StdinData): number;
-export declare function getBufferedPercent(stdin: StdinData): number;
+export declare function getContextPercent(stdin: StdinData, autoCompactWindow?: number | null): number;
+export declare function getBufferedPercent(stdin: StdinData, autoCompactWindow?: number | null): number;
 export declare function getModelName(stdin: StdinData): string;
 export declare function isBedrockModelId(modelId?: string): boolean;
 export declare function isVertexModelId(modelId?: string): boolean;

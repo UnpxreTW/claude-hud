@@ -20,6 +20,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
+export type CustomLinePosition = 'first' | 'last';
 export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'sessionTime';
 
 export type AddedDirsLayout = 'inline' | 'line';
@@ -134,7 +135,17 @@ export interface HudConfig {
     modelFormat: ModelFormatMode;
     modelOverride: string;
     customLine: string;
+    customLinePosition: CustomLinePosition;
     timeFormat: TimeFormatMode;
+    // Show the advisor model when `/advisor` is configured for the session.
+    // The model ID is read from the transcript (see TranscriptData.advisorModel)
+    // so it reflects the actual current choice, not a global default.
+    showAdvisor: boolean;
+    // Optional manual override for the displayed advisor name. When set,
+    // suppresses transcript-driven detection — useful if the user wants a
+    // shorter label or transcript has not been written yet.
+    advisorOverride: string;
+    autoCompactWindow: number | null;
   };
   colors: HudColorOverrides;
 }
@@ -201,7 +212,11 @@ export const DEFAULT_CONFIG: HudConfig = {
     modelFormat: 'full',
     modelOverride: '',
     customLine: '',
+    customLinePosition: 'last',
     timeFormat: 'relative',
+    showAdvisor: false,
+    advisorOverride: '',
+    autoCompactWindow: null,
   },
   colors: {
     context: 'green',
@@ -263,6 +278,10 @@ function validateTimeFormat(value: unknown): value is TimeFormatMode {
     || value === 'both'
     || value === 'elapsed'
     || value === 'elapsedAndAbsolute';
+}
+
+function validateCustomLinePosition(value: unknown): value is CustomLinePosition {
+  return value === 'first' || value === 'last';
 }
 
 function validateColorName(value: unknown): value is HudColorName {
@@ -430,6 +449,13 @@ function validateDurationSeconds(value: unknown, fallback: number): number {
 function validateNonNegativeInteger(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
     return fallback;
+  }
+  return value;
+}
+
+function validateAutoCompactWindow(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+    return null;
   }
   return value;
 }
@@ -617,9 +643,19 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     customLine: typeof migrated.display?.customLine === 'string'
       ? migrated.display.customLine.slice(0, 80)
       : DEFAULT_CONFIG.display.customLine,
+    customLinePosition: validateCustomLinePosition(migrated.display?.customLinePosition)
+      ? migrated.display.customLinePosition
+      : DEFAULT_CONFIG.display.customLinePosition,
     timeFormat: validateTimeFormat(migrated.display?.timeFormat)
       ? migrated.display.timeFormat
       : DEFAULT_CONFIG.display.timeFormat,
+    showAdvisor: typeof migrated.display?.showAdvisor === 'boolean'
+      ? migrated.display.showAdvisor
+      : DEFAULT_CONFIG.display.showAdvisor,
+    advisorOverride: typeof migrated.display?.advisorOverride === 'string'
+      ? migrated.display.advisorOverride.slice(0, 80)
+      : DEFAULT_CONFIG.display.advisorOverride,
+    autoCompactWindow: validateAutoCompactWindow(migrated.display?.autoCompactWindow),
   };
 
   const colors = {

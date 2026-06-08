@@ -254,6 +254,21 @@ test('mergeConfig preserves customLine and truncates long values', () => {
   assert.equal(config.display.customLine, customLine.slice(0, 80));
 });
 
+test('mergeConfig defaults customLinePosition to last', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.customLinePosition, 'last');
+});
+
+test('mergeConfig preserves explicit customLinePosition', () => {
+  const config = mergeConfig({ display: { customLinePosition: 'first' } });
+  assert.equal(config.display.customLinePosition, 'first');
+});
+
+test('mergeConfig falls back to last for invalid customLinePosition', () => {
+  const config = mergeConfig({ display: { customLinePosition: 'middle' } });
+  assert.equal(config.display.customLinePosition, 'last');
+});
+
 test('mergeConfig defaults modelFormat to full', () => {
   const config = mergeConfig({});
   assert.equal(config.display.modelFormat, 'full');
@@ -811,4 +826,35 @@ test('mergeConfig independently validates barFilled and barEmpty', () => {
   const config = mergeConfig({ colors: { barFilled: '█', barEmpty: '‮' } });
   assert.equal(config.colors.barFilled, '█');
   assert.equal(config.colors.barEmpty, DEFAULT_CONFIG.colors.barEmpty);
+});
+
+test('mergeConfig defaults showAdvisor to false', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showAdvisor, false);
+  assert.equal(DEFAULT_CONFIG.display.showAdvisor, false);
+});
+
+test('mergeConfig preserves explicit showAdvisor=true', () => {
+  const config = mergeConfig({ display: { showAdvisor: true } });
+  assert.equal(config.display.showAdvisor, true);
+});
+
+test('mergeConfig defaults advisorOverride to empty string', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.advisorOverride, '');
+});
+
+test('mergeConfig preserves explicit advisorOverride and caps at 80 chars', () => {
+  const config = mergeConfig({ display: { advisorOverride: 'Opus 4.7 (custom)' } });
+  assert.equal(config.display.advisorOverride, 'Opus 4.7 (custom)');
+
+  const longValue = 'x'.repeat(120);
+  const capped = mergeConfig({ display: { advisorOverride: longValue } });
+  assert.equal(capped.display.advisorOverride.length, 80);
+});
+
+test('mergeConfig rejects non-string advisorOverride and non-boolean showAdvisor', () => {
+  const config = mergeConfig({ display: { showAdvisor: 'yes', advisorOverride: 42 } });
+  assert.equal(config.display.showAdvisor, false);
+  assert.equal(config.display.advisorOverride, '');
 });

@@ -81,7 +81,11 @@ export const DEFAULT_CONFIG = {
         modelFormat: 'full',
         modelOverride: '',
         customLine: '',
+        customLinePosition: 'last',
         timeFormat: 'relative',
+        showAdvisor: false,
+        advisorOverride: '',
+        autoCompactWindow: null,
     },
     colors: {
         context: 'green',
@@ -133,6 +137,9 @@ function validateTimeFormat(value) {
         || value === 'both'
         || value === 'elapsed'
         || value === 'elapsedAndAbsolute';
+}
+function validateCustomLinePosition(value) {
+    return value === 'first' || value === 'last';
 }
 function validateColorName(value) {
     return value === 'dim'
@@ -278,6 +285,12 @@ function validateDurationSeconds(value, fallback) {
 function validateNonNegativeInteger(value, fallback) {
     if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
         return fallback;
+    }
+    return value;
+}
+function validateAutoCompactWindow(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+        return null;
     }
     return value;
 }
@@ -440,9 +453,19 @@ export function mergeConfig(userConfig) {
         customLine: typeof migrated.display?.customLine === 'string'
             ? migrated.display.customLine.slice(0, 80)
             : DEFAULT_CONFIG.display.customLine,
+        customLinePosition: validateCustomLinePosition(migrated.display?.customLinePosition)
+            ? migrated.display.customLinePosition
+            : DEFAULT_CONFIG.display.customLinePosition,
         timeFormat: validateTimeFormat(migrated.display?.timeFormat)
             ? migrated.display.timeFormat
             : DEFAULT_CONFIG.display.timeFormat,
+        showAdvisor: typeof migrated.display?.showAdvisor === 'boolean'
+            ? migrated.display.showAdvisor
+            : DEFAULT_CONFIG.display.showAdvisor,
+        advisorOverride: typeof migrated.display?.advisorOverride === 'string'
+            ? migrated.display.advisorOverride.slice(0, 80)
+            : DEFAULT_CONFIG.display.advisorOverride,
+        autoCompactWindow: validateAutoCompactWindow(migrated.display?.autoCompactWindow),
     };
     const colors = {
         context: validateColorValue(migrated.colors?.context)

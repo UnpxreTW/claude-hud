@@ -122,7 +122,11 @@ function getNativePercent(stdin) {
     }
     return null;
 }
-export function getContextPercent(stdin) {
+export function getContextPercent(stdin, autoCompactWindow) {
+    if (typeof autoCompactWindow === 'number' && autoCompactWindow > 0) {
+        const totalTokens = getTotalTokens(stdin);
+        return Math.min(100, Math.round((totalTokens / autoCompactWindow) * 100));
+    }
     // Prefer native percentage (v2.1.6+) - accurate and matches /context
     const native = getNativePercent(stdin);
     if (native !== null) {
@@ -136,7 +140,11 @@ export function getContextPercent(stdin) {
     const totalTokens = getTotalTokens(stdin);
     return Math.min(100, Math.round((totalTokens / size) * 100));
 }
-export function getBufferedPercent(stdin) {
+export function getBufferedPercent(stdin, autoCompactWindow) {
+    if (typeof autoCompactWindow === 'number' && autoCompactWindow > 0) {
+        const totalTokens = getTotalTokens(stdin);
+        return Math.min(100, Math.round((totalTokens / autoCompactWindow) * 100));
+    }
     // Prefer native percentage (v2.1.6+) so the HUD matches Claude Code's
     // own context output. The buffered fallback only approximates older versions.
     const native = getNativePercent(stdin);

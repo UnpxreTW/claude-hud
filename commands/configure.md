@@ -80,6 +80,7 @@ Save as `language: "en"` or `language: "zh-Hans"`.
   - "Session duration" - ⏱️ 5m
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
+  - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
 
 ### Q5: Turn On (based on chosen preset)
 - header: "Turn On"
@@ -117,6 +118,7 @@ If user chooses "Enter custom text", use AskUserQuestion to get their text. Save
   - "Git status" - git:(main*) branch indicator
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
+  - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
   - "Usage bar style" - ██░░ 25% visual bar (only if usageBarEnabled is true)
   - "Compact usage" - 5h: 25% (1h 30m) shorter format (only if usageCompact is false)
 
@@ -137,6 +139,7 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
   - "Session duration" - ⏱️ 5m
+  - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
 
 ### Q3: Git Style (only if Git is currently enabled)
 - header: "Git Style"
@@ -192,7 +195,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 
 **Full** (everything ON):
 - Activity: Tools ON, Agents ON, Todos ON
-- Info: Counts ON, Tokens ON, Usage ON, Duration ON, Session Name ON, Session Tokens ON
+- Info: Counts ON, Tokens ON, Usage ON, Duration ON, Session Name ON, Session Tokens ON, Advisor ON
 - Git: ON (with dirty indicator, no ahead/behind)
 
 **Essential** (activity + git):
@@ -258,7 +261,9 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Session tokens | `display.showSessionTokens` |
 | Session start date | `display.showSessionStartDate` |
 | Last response time | `display.showLastResponseAt` |
+| Advisor model | `display.showAdvisor` |
 | Custom line | `display.customLine` |
+| Custom line position | `display.customLinePosition` |
 
 **Always true (not configurable):**
 - `display.showModel: true`

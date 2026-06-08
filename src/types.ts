@@ -127,6 +127,11 @@ export interface TranscriptData {
   sessionTokens?: SessionTokenUsage;
   lastCompactBoundaryAt?: Date;
   lastCompactPostTokens?: number;
+  // Advisor model ID for the current session, captured from the top-level
+  // `advisorModel` field that Claude Code stamps onto every assistant record
+  // after `/advisor` is set (e.g. "claude-opus-4-7"). undefined when /advisor
+  // is off or no assistant turn has happened yet.
+  advisorModel?: string;
 }
 
 export interface RenderContext {

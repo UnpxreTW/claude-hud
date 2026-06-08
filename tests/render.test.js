@@ -18,6 +18,7 @@ import { renderIdentityLine } from '../dist/render/lines/identity.js';
 import { renderEnvironmentLine } from '../dist/render/lines/environment.js';
 import { renderSessionTokensLine } from '../dist/render/lines/session-tokens.js';
 import { renderSessionTimeLine } from '../dist/render/lines/session-time.js';
+import { renderAdvisorLine, prettifyAdvisorId } from '../dist/render/lines/advisor.js';
 import { getContextColor, getQuotaColor } from '../dist/render/colors.js';
 import { setLanguage } from '../dist/i18n/index.js';
 
@@ -156,6 +157,22 @@ test('renderSessionLine suppresses token breakdown below raised contextCriticalT
   ctx.stdin.context_window.current_usage.input_tokens = 147000;
   const line = renderSessionLine(ctx);
   assert.ok(!line.includes('in:'), 'expected no token breakdown at 90% when critical threshold is 95');
+});
+
+test('renderSessionLine token display uses autoCompactWindow as denominator when set', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({
+    lineLayout: 'compact',
+    display: { contextValue: 'both', autoCompactWindow: 200000, showTokenBreakdown: false },
+  });
+  // 70.6k tokens against a 1M model window, but auto-compact window is 200k.
+  ctx.stdin.context_window.context_window_size = 1000000;
+  ctx.stdin.context_window.current_usage.input_tokens = 70600;
+  const line = stripAnsi(renderSessionLine(ctx));
+  // Should match /context: 35% (71k/200k), not 7% (71k/1.0M).
+  assert.ok(line.includes('35%'), `expected 35% in: ${line}`);
+  assert.ok(line.includes('/200k'), `expected /200k denominator in: ${line}`);
+  assert.ok(!line.includes('/1.0M'), `expected full window not shown in: ${line}`);
 });
 
 test('renderIdentityLine token breakdown honours contextCriticalThreshold', () => {
@@ -473,6 +490,28 @@ test('renderSessionLine includes customLine when configured', () => {
   assert.ok(line.includes('Ship it'));
 });
 
+test('renderSessionLine places customLine before model badge when position is first', () => {
+  const ctx = baseContext();
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'first';
+  const line = stripAnsi(renderSessionLine(ctx));
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx >= 0, 'should include custom line');
+  assert.ok(modelIdx >= 0, 'should include model badge');
+  assert.ok(customIdx < modelIdx, `custom line (${customIdx}) should appear before model badge (${modelIdx})`);
+});
+
+test('renderSessionLine places customLine at end when position is last', () => {
+  const ctx = baseContext();
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'last';
+  const line = stripAnsi(renderSessionLine(ctx));
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx > modelIdx, 'custom line should appear after model badge when position is last');
+});
+
 test('renderSessionLine applies modelFormat compact', () => {
   const ctx = baseContext();
   ctx.stdin.model = { display_name: 'Opus 4.6 (1M context)' };
@@ -570,6 +609,30 @@ test('renderProjectLine includes customLine when configured', () => {
   ctx.config.display.customLine = 'Stay sharp';
   const line = stripAnsi(renderProjectLine(ctx) ?? '');
   assert.ok(line.includes('Stay sharp'));
+});
+
+test('renderProjectLine places customLine before model badge when position is first', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'first';
+  const line = stripAnsi(renderProjectLine(ctx) ?? '');
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx >= 0, 'should include custom line');
+  assert.ok(modelIdx >= 0, 'should include model badge');
+  assert.ok(customIdx < modelIdx, `custom line (${customIdx}) should appear before model badge (${modelIdx})`);
+});
+
+test('renderProjectLine places customLine at end when position is last', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config.display.customLine = 'prod-server';
+  ctx.config.display.customLinePosition = 'last';
+  const line = stripAnsi(renderProjectLine(ctx) ?? '');
+  const customIdx = line.indexOf('prod-server');
+  const modelIdx = line.indexOf('[Opus]');
+  assert.ok(customIdx > modelIdx, 'custom line should appear after model badge when position is last');
 });
 
 test('renderProjectLine applies modelFormat compact (strips context suffix)', () => {
@@ -1227,6 +1290,16 @@ test('renderTodosLine truncates long todo content', () => {
   ];
   const line = renderTodosLine(ctx);
   assert.ok(line?.includes('...'));
+});
+
+test('renderTodosLine tolerates missing in-progress todo content', () => {
+  const ctx = baseContext();
+  ctx.transcript.todos = [
+    { status: 'in_progress' },
+  ];
+
+  assert.doesNotThrow(() => renderTodosLine(ctx));
+  assert.ok(renderTodosLine(ctx)?.includes('(0/1)'));
 });
 
 test('renderTodosLine returns null when no todos exist', () => {
@@ -2663,4 +2736,123 @@ test('renderUsageLine limit-reached uses "resets at" for absolute timeFormat', (
   assert.ok(plain.includes('Limit reached'), 'should show limit reached');
   assert.ok(plain.includes('resets at'), `should use "resets at" for absolute mode, got: ${plain}`);
   assert.ok(!plain.includes('resets in'), `should not say "resets in" for absolute mode, got: ${plain}`);
+});
+
+test('prettifyAdvisorId expands canonical model IDs', () => {
+  assert.equal(prettifyAdvisorId('claude-opus-4-7'), 'Opus 4.7');
+  assert.equal(prettifyAdvisorId('claude-sonnet-4-6'), 'Sonnet 4.6');
+  assert.equal(prettifyAdvisorId('claude-haiku-4-5-20251001'), 'Haiku 4.5');
+});
+
+test('prettifyAdvisorId handles short aliases and unknown formats', () => {
+  assert.equal(prettifyAdvisorId('opus'), 'Opus');
+  assert.equal(prettifyAdvisorId('sonnet'), 'Sonnet');
+  assert.equal(prettifyAdvisorId('claude-some-future-model-9-9'), 'some-future-model-9-9');
+  assert.equal(prettifyAdvisorId(''), '');
+});
+
+test('renderAdvisorLine returns null when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine returns null when no advisor data is available', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine prettifies transcript-driven advisor model', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine honours advisorOverride verbatim', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: 'Opus 4.7 (1M)' } });
+  ctx.transcript.advisorModel = 'claude-sonnet-4-6';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7 (1M)');
+});
+
+test('renderAdvisorLine strips ANSI ESC and C0 control bytes from advisorModel', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // CSI red sequence + bell + DEL injected around a valid ID. The output
+  // intentionally contains label() colour codes, so assertions run against
+  // the plain (ANSI-stripped) text — the user-attributable bytes must not
+  // survive that stripping.
+  ctx.transcript.advisorModel = '\x1b[31mclaude-opus-4-7\x07\x7f';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.ok(!plain.includes('\x1b'), 'ESC byte must be stripped before render');
+  assert.ok(!plain.includes('\x07'), 'BEL must be stripped');
+  assert.ok(!plain.includes('\x7f'), 'DEL must be stripped');
+  // After sanitize the surviving text is "[31mclaude-opus-4-7", which doesn't
+  // match the canonical prefix pattern, so prettifyAdvisorId falls through.
+  assert.ok(plain.startsWith('Advisor:'), `unexpected label: ${plain}`);
+});
+
+test('renderAdvisorLine strips bidi marks from advisorOverride', () => {
+  const ctx = baseContext();
+  // RLO (U+202E) + the override text + PDF (U+202C)
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: '‮Opus 4.7‬' } });
+  const out = renderAdvisorLine(ctx);
+  assert.ok(!out.includes('‮'), 'RLO must be stripped');
+  assert.ok(!out.includes('‬'), 'PDF must be stripped');
+  assert.equal(stripAnsi(out), 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine caps oversized advisorModel at the display length limit', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-' + 'x'.repeat(500);
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  // "Advisor: " prefix (9 chars) + at most 64 chars of payload.
+  const payload = plain.slice('Advisor: '.length);
+  assert.ok(payload.length <= 64, `payload length ${payload.length} exceeds cap`);
+});
+
+test('renderAdvisorLine returns null when sanitized input is empty', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // Only control + bidi bytes — sanitize collapses these to "".
+  ctx.transcript.advisorModel = '\x1b\x07‮‏';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderProjectLine renders advisor inline on the same row (expanded layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('my-project'), 'project path must still render');
+  // Single line — no embedded newline introduced by the inline placement.
+  assert.ok(!plain.includes('\n'), 'project line must remain one row');
+});
+
+test('renderProjectLine omits advisor when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(!plain.includes('Advisor:'), `advisor must not leak in: ${plain}`);
+});
+
+test('renderSessionLine renders advisor inline on the same row (compact layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ lineLayout: 'compact', display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderSessionLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
+  assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
 });

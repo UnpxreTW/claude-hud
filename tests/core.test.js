@@ -2254,3 +2254,99 @@ test('countConfigs cache: works without cwd (user scope only)', async () => {
     await rm(homeDir, { recursive: true, force: true });
   }
 });
+
+test('parseTranscript captures advisorModel from assistant records', async () => {
+  const result = await parseTempTranscript('advisor.jsonl', [
+    { type: 'user', slug: 'auto-slug' },
+    {
+      type: 'assistant',
+      timestamp: '2026-05-28T09:03:32.094Z',
+      advisorModel: 'claude-opus-4-7',
+      message: { content: [] },
+    },
+  ]);
+
+  assert.equal(result.advisorModel, 'claude-opus-4-7');
+});
+
+test('parseTranscript returns undefined advisorModel when not present', async () => {
+  const result = await parseTempTranscript('no-advisor.jsonl', [
+    { type: 'user', slug: 'auto-slug' },
+    { type: 'assistant', timestamp: '2026-05-28T09:03:32.094Z', message: { content: [] } },
+  ]);
+
+  assert.equal(result.advisorModel, undefined);
+});
+
+test('parseTranscript prefers the most recent advisorModel value', async () => {
+  const result = await parseTempTranscript('advisor-latest.jsonl', [
+    {
+      type: 'assistant',
+      timestamp: '2026-05-28T09:00:00.000Z',
+      advisorModel: 'claude-sonnet-4-6',
+      message: { content: [] },
+    },
+    {
+      type: 'assistant',
+      timestamp: '2026-05-28T09:05:00.000Z',
+      advisorModel: 'claude-opus-4-7',
+      message: { content: [] },
+    },
+  ]);
+
+  assert.equal(result.advisorModel, 'claude-opus-4-7');
+});
+
+test('parseTranscript ignores empty advisorModel strings', async () => {
+  const result = await parseTempTranscript('advisor-empty.jsonl', [
+    {
+      type: 'assistant',
+      timestamp: '2026-05-28T09:00:00.000Z',
+      advisorModel: '',
+      message: { content: [] },
+    },
+  ]);
+
+  assert.equal(result.advisorModel, undefined);
+});
+
+test('parseTranscript ignores advisorModel on non-assistant records', async () => {
+  // Per Claude Code's documented schema the field is only meaningful on
+  // assistant records; reading it from user / custom-title / system records
+  // would let a malformed log poison the value.
+  const result = await parseTempTranscript('advisor-non-assistant.jsonl', [
+    {
+      type: 'user',
+      timestamp: '2026-05-28T09:00:00.000Z',
+      advisorModel: 'claude-sonnet-4-6',
+    },
+    {
+      type: 'custom-title',
+      customTitle: 'My Session',
+      advisorModel: 'claude-haiku-4-5',
+    },
+    {
+      type: 'system',
+      subtype: 'compact_boundary',
+      advisorModel: 'claude-haiku-4-5',
+    },
+  ]);
+
+  assert.equal(result.advisorModel, undefined);
+});
+
+test('parseTranscript caps oversized advisorModel at the transcript length limit', async () => {
+  const result = await parseTempTranscript('advisor-oversized.jsonl', [
+    {
+      type: 'assistant',
+      timestamp: '2026-05-28T09:00:00.000Z',
+      advisorModel: 'claude-' + 'x'.repeat(500),
+      message: { content: [] },
+    },
+  ]);
+
+  assert.ok(
+    typeof result.advisorModel === 'string' && result.advisorModel.length <= 64,
+    `expected capped advisorModel, got length ${result.advisorModel?.length}`,
+  );
+});

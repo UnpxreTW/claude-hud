@@ -607,7 +607,41 @@ test('applyContextWindowFallback restores cache for zero-percent frames with non
   }
 });
 
-test('applyContextWindowFallback keeps legitimate zero/reset frames unchanged', async () => {
+test('applyContextWindowFallback restores cache for zero-percent streaming frames without token totals', async () => {
+  const tempHome = await createTempHome();
+  const transcriptPath = '/tmp/session-a.jsonl';
+
+  try {
+    applyContextWindowFallback(
+      makeHealthyFrame(transcriptPath),
+      makeDeps(tempHome, 1_000_000),
+    );
+
+    const variants = [
+      { current_usage: null },
+      { current_usage: undefined },
+      { current_usage: {} },
+    ];
+
+    for (const variant of variants) {
+      const stdin = makeSuspiciousFrame({
+        total_input_tokens: undefined,
+        total_output_tokens: undefined,
+        ...variant,
+      });
+      stdin.transcript_path = transcriptPath;
+
+      applyContextWindowFallback(stdin, makeDeps(tempHome, 1_100_000));
+
+      assert.equal(stdin.context_window.used_percentage, 58);
+      assert.equal(stdin.context_window.remaining_percentage, 42);
+    }
+  } finally {
+    await rm(tempHome, { recursive: true, force: true });
+  }
+});
+
+test('applyContextWindowFallback keeps post-compact zero/reset frames unchanged', async () => {
   const tempHome = await createTempHome();
   const transcriptPath = '/tmp/session-a.jsonl';
 
@@ -620,7 +654,12 @@ test('applyContextWindowFallback keeps legitimate zero/reset frames unchanged', 
     const stdin = makeSuspiciousFrame({ total_input_tokens: 0, total_output_tokens: 0 });
     stdin.transcript_path = transcriptPath;
 
-    applyContextWindowFallback(stdin, makeDeps(tempHome, 1_100_000));
+    applyContextWindowFallback(
+      stdin,
+      makeDeps(tempHome, 1_100_000),
+      undefined,
+      { lastCompactBoundaryAt: new Date(1_050_000) },
+    );
 
     assert.equal(stdin.context_window.used_percentage, 0);
     assert.equal(stdin.context_window.remaining_percentage, 100);

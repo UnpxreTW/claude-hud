@@ -14,6 +14,9 @@ interface TranscriptLine {
   content?: string;
   slug?: string;
   customTitle?: string;
+  // Top-level field stamped onto every assistant record after `/advisor` is
+  // set. Holds the canonical advisor model ID (e.g. "claude-opus-4-7").
+  advisorModel?: string;
   message?: {
     content?: ContentBlock[];
     usage?: {
@@ -65,6 +68,7 @@ interface SerializedTranscriptData {
   sessionTokens?: SessionTokenUsage;
   lastCompactBoundaryAt?: string;
   lastCompactPostTokens?: number;
+  advisorModel?: string;
 }
 
 interface TranscriptCacheFile {
@@ -74,7 +78,13 @@ interface TranscriptCacheFile {
   data: SerializedTranscriptData;
 }
 
-const TRANSCRIPT_CACHE_VERSION = 5;
+const TRANSCRIPT_CACHE_VERSION = 7;
+
+// Hard cap on the advisor model ID captured from the transcript. Real Claude
+// model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
+// cap exists to prevent a malformed transcript from persisting an oversized
+// string through the JSON cache and onto every statusline refresh.
+const ADVISOR_MODEL_MAX_LEN = 64;
 
 let createReadStreamImpl: typeof fs.createReadStream = fs.createReadStream;
 
@@ -147,6 +157,7 @@ function serializeTranscriptData(data: TranscriptData): SerializedTranscriptData
     sessionTokens: data.sessionTokens,
     lastCompactBoundaryAt: data.lastCompactBoundaryAt?.toISOString(),
     lastCompactPostTokens: data.lastCompactPostTokens,
+    advisorModel: data.advisorModel,
   };
 }
 
@@ -169,6 +180,9 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
     sessionTokens: normalizeSessionTokens(data.sessionTokens),
     lastCompactBoundaryAt: data.lastCompactBoundaryAt ? new Date(data.lastCompactBoundaryAt) : undefined,
     lastCompactPostTokens: typeof data.lastCompactPostTokens === 'number' ? data.lastCompactPostTokens : undefined,
+    advisorModel: typeof data.advisorModel === 'string' && data.advisorModel.length > 0
+      ? data.advisorModel.slice(0, ADVISOR_MODEL_MAX_LEN)
+      : undefined,
   };
 }
 
@@ -243,6 +257,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   const queueCompletionMap = new Map<string, Date>();
   let latestSlug: string | undefined;
   let customTitle: string | undefined;
+  let latestAdvisorModel: string | undefined;
   let lastCompactBoundaryAt: Date | undefined;
   let lastCompactPostTokens: number | undefined;
   const sessionTokens: SessionTokenUsage = {
@@ -274,6 +289,19 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
           customTitle = entry.customTitle;
         } else if (typeof entry.slug === 'string') {
           latestSlug = entry.slug;
+        }
+        // Capture the advisor model from the top-level `advisorModel` field.
+        // Claude Code stamps this onto every *assistant* record after `/advisor`
+        // is set, so we restrict to that record type (matching the documented
+        // source) and the most recent occurrence reflects the current choice.
+        // Length is hard-capped so a malformed transcript cannot persist an
+        // unbounded value through the cache layer.
+        if (
+          entry.type === 'assistant'
+          && typeof entry.advisorModel === 'string'
+          && entry.advisorModel.length > 0
+        ) {
+          latestAdvisorModel = entry.advisorModel.slice(0, ADVISOR_MODEL_MAX_LEN);
         }
         // Accumulate token usage from assistant messages.
         // Claude Code can write the same API response to the transcript 2-3 times
@@ -354,6 +382,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   result.sessionTokens = sessionTokens;
   result.lastCompactBoundaryAt = lastCompactBoundaryAt;
   result.lastCompactPostTokens = lastCompactPostTokens;
+  result.advisorModel = latestAdvisorModel;
   if (parsedCleanly) {
     writeTranscriptCache(canonicalTranscriptPath, transcriptState, result);
   }

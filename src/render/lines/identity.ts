@@ -16,8 +16,9 @@ export function renderIdentityLine(
   ctx: RenderContext,
   alignLabels = false,
 ): string {
-  const rawPercent = getContextPercent(ctx.stdin);
-  const bufferedPercent = getBufferedPercent(ctx.stdin);
+  const autoCompactWindow = ctx.config?.display?.autoCompactWindow ?? null;
+  const rawPercent = getContextPercent(ctx.stdin, autoCompactWindow);
+  const bufferedPercent = getBufferedPercent(ctx.stdin, autoCompactWindow);
   const autocompactMode = ctx.config?.display?.autocompactBuffer ?? "enabled";
   const percent = autocompactMode === "disabled" ? rawPercent : bufferedPercent;
   const colors = ctx.config?.colors;
@@ -76,7 +77,14 @@ function formatContextValue(
   mode: "percent" | "tokens" | "remaining" | "both",
 ): string {
   const totalTokens = getTotalTokens(ctx.stdin);
-  const size = ctx.stdin.context_window?.context_window_size ?? 0;
+  const autoCompactWindow = ctx.config?.display?.autoCompactWindow ?? null;
+  // When an explicit auto-compact window is configured, use it as the token
+  // denominator so the tokens/both displays match the percentage (and /context),
+  // rather than the full model context window.
+  const size =
+    typeof autoCompactWindow === "number" && autoCompactWindow > 0
+      ? autoCompactWindow
+      : ctx.stdin.context_window?.context_window_size ?? 0;
 
   if (mode === "tokens") {
     if (size > 0) {

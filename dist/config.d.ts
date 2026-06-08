@@ -13,6 +13,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
+export type CustomLinePosition = 'first' | 'last';
 export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'sessionTime';
 export type AddedDirsLayout = 'inline' | 'line';
 export type HudColorName = 'dim' | 'red' | 'green' | 'yellow' | 'magenta' | 'cyan' | 'brightBlue' | 'brightMagenta';
@@ -97,7 +98,11 @@ export interface HudConfig {
         modelFormat: ModelFormatMode;
         modelOverride: string;
         customLine: string;
+        customLinePosition: CustomLinePosition;
         timeFormat: TimeFormatMode;
+        showAdvisor: boolean;
+        advisorOverride: string;
+        autoCompactWindow: number | null;
     };
     colors: HudColorOverrides;
 }

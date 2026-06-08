@@ -4,9 +4,33 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-03
+
+### Added
+- Effort-level display in the model bracket (#471).
+- Native stdin `cost.total_cost_usd` support, external usage snapshot fallback, prompt-cache countdown, and optional JSON snapshots for stdin `rate_limits` (#381, #477, #478, #570).
+- Vertex AI provider detection with cost estimation disabled for Vertex sessions (#479).
+- Usage display controls for reset labels, absolute/relative reset times, compact display, remaining mode, elapsed/percentage mode, and third-party balance labels (#415, #421, #433, #536, #541, #572).
+- Layout and configuration controls for expanded merge groups, wrapped branch display, terminal width fallbacks, `/add-dir` workspace directories, progress bar colors, tool name wrapping/truncation, and custom line placement (#474, #476, #501, #502, #505, #571, #575).
+- Session start date, last response timestamp, and Skill tool target display (#497, #537).
+
+### Changed
+- Setup is more defensive around marketplace install paths, Windows runtime guidance, Git Bash/MSYS routing, existing statusline backups, and PowerShell wrapper generation (#399, #473, #532, #538, #546, #567).
+- Rendering now handles narrow terminals, unknown terminal widths, CJK ambiguous-width glyphs, branch links, progress-label padding, OSC 8 hyperlinks, and tool wrapping more consistently (#427, #439, #443, #489, #509, #518, #561, #571).
+- Chinese documentation was added and later synced with the English README (#435, #557).
+
 ### Fixed
+- Bounded stdin reads to prevent statusline hangs (#378).
+- Context and cache behavior for initial zero-percent frames, post-compact resets, live zero-percent usage, nonzero token totals with zero usage, and fallback todo rendering (#430, #460, #492, #508, #579).
+- Transcript and task state handling for default subagent labels, duplicate-content `TodoWrite` task IDs, background-agent timing, stale transcript agent caches, and adjacent session usage deduplication (#455, #456, #515, #560, #579).
+- Git and render correctness for renamed files, quoted arrow filenames, Unicode paths, line diffs, and OSC link truncation (#451, #543, #561).
+- Platform-specific behavior for Bedrock provider labels, Linux memory parsing, Windows console flashes, unsafe progress-bar code points, and PowerShell setup output (#468, #523, #567).
+- Speed and cost display edge cases, including native cost fallback, speed cache scoping, short-window accumulation, Claude Haiku 4.x pricing, enterprise aliases, and effort schema changes (#440, #453, #486, #491, #496).
 - Windows + PowerShell `/claude-hud:setup` now writes a `statusline.ps1` wrapper with a guarded width fallback and corrected version-directory glob (#521).
 - Added Windows PowerShell 5.1 guidance for writing `settings.json` without a UTF-8 BOM.
+
+### Dependencies
+- Bumped TypeScript and `@types/node` development dependencies across the 0.1.0 cycle (#383, #426, #465, #533, #554, #565).
 
 ## [0.0.12] - 2026-04-04
 

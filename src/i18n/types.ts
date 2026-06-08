@@ -12,6 +12,7 @@ export type MessageKey =
   | "label.tokens"
   | "label.sessionStarted"
   | "label.lastReply"
+  | "label.advisor"
   // Status
   | "status.limitReached"
   | "status.allTodosComplete"
