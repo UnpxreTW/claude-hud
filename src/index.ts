@@ -10,7 +10,7 @@ import { getMemoryUsage } from "./memory.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { setLanguage, t } from "./i18n/index.js";
+import { setLanguage, t, getCanonicalLanguage } from "./i18n/index.js";
 import type { RenderContext } from "./types.js";
 
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
@@ -164,11 +164,20 @@ export function formatSessionDuration(
   const ms = now() - sessionStart.getTime();
   const mins = Math.floor(ms / 60000);
 
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+
+  // Traditional Chinese renders localized units (other languages keep the
+  // original compact English format).
+  if (getCanonicalLanguage() === "zh-Hant") {
+    if (mins < 1) return "< 1 分鐘";
+    if (mins < 60) return `${mins} 分鐘`;
+    return `${hours} 小時 ${remainingMins} 分鐘`;
+  }
+
   if (mins < 1) return "<1m";
   if (mins < 60) return `${mins}m`;
 
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
   return `${hours}h ${remainingMins}m`;
 }
 

@@ -286,7 +286,11 @@ export function renderSessionLine(ctx: RenderContext): string {
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+    const durationLabel = t('label.duration');
+    const durationText = durationLabel
+      ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
+      : `⏱️  ${ctx.sessionDuration}`;
+    parts.push(label(durationText, colors));
   }
 
   const sessionTimeLine = renderSessionTimeLine(ctx);

@@ -15,6 +15,7 @@ export const zhHant: Messages = {
   "label.sessionStarted": "工作階段開始",
   "label.lastReply": "上次回覆",
   "label.advisor": "顧問",
+  "label.duration": "執行時間",
 
   // Status
   "status.limitReached": "已達上限",
