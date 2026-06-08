@@ -1402,7 +1402,6 @@ test('renderUsageLine translates labels when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('用量'));
-    assert.ok(line.includes('重置剩余'));
   } finally {
     setLanguage('en');
   }
@@ -1561,7 +1560,7 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(line.includes('Weekly  85 %'), `should include 7d label and percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${line}`);
 });
 
 test('renderSessionLine respects sevenDayThreshold override', () => {
@@ -1625,7 +1624,7 @@ test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('(resets in 6d 7h)'), `expected bar-mode reset wording, got: ${plain}`);
+  assert.ok(plain.includes('│ 6d 7h'), `expected bar-mode reset countdown, got: ${plain}`);
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
@@ -1648,7 +1647,7 @@ test('renderUsageLine shows 7d reset countdown in text-only mode', () => {
 
   const weeklyLine = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(weeklyLine.includes('Weekly  85 %'), `should include 7d text-only usage: ${weeklyLine}`);
-  assert.ok(weeklyLine.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${weeklyLine}`);
+  assert.ok(weeklyLine.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${weeklyLine}`);
 });
 
 test('renderUsageLine supports remaining-based usage display with used-percent colors', () => {
@@ -1714,7 +1713,7 @@ test('renderUsageLine can hide reset label in text-only mode', () => {
   };
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('(1d 4h)'), `should include bare countdown when reset label is hidden: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include bare countdown when reset label is hidden: ${line}`);
   assert.ok(!line.includes('resets in'), `should omit reset label when disabled: ${line}`);
 });
 
@@ -1732,7 +1731,6 @@ test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', ()
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
-    assert.ok(line.includes('重置剩余'));
   } finally {
     setLanguage('en');
   }
@@ -1753,7 +1751,7 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode (always visible
   assert.ok(stripAnsi(renderUsageLine(ctx)).includes('45 %'), 'usage line should include 5h percentage');
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in bar mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in bar mode: ${line}`);
   assert.ok(line.includes('Weekly'), `should render the weekly label: ${line}`);
 });
 
@@ -1771,7 +1769,7 @@ test('renderWeeklyUsageLine can hide reset label in bar mode', () => {
   };
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('(1d 4h)'), `should include bare countdown in bar mode: ${line}`);
+  assert.ok(line.includes('│ 1d 4h'), `should include bare countdown in bar mode: ${line}`);
   assert.ok(!line.includes('resets in'), `should omit reset label in bar mode when disabled: ${line}`);
 });
 
@@ -2546,7 +2544,7 @@ test('renderSessionLine translates compact session token summary when Chinese is
 // display.timeFormat — absolute and both modes
 // ---------------------------------------------------------------------------
 
-test('renderUsageLine uses "resets in" preposition for default relative mode in bar-mode', () => {
+test('renderUsageLine shows a bare relative reset time with a "│" separator in bar mode', () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
   ctx.usageData = {
@@ -2557,10 +2555,11 @@ test('renderUsageLine uses "resets in" preposition for default relative mode in 
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('resets in'), `should use "resets in" for relative mode, got: ${plain}`);
+  assert.ok(plain.includes('│ 2h'), `should show bare relative reset with separator, got: ${plain}`);
+  assert.ok(!plain.includes('resets in'), `should not use the "resets in" wording, got: ${plain}`);
 });
 
-test('renderUsageLine uses "resets at" when timeFormat is "absolute" (bar mode)', () => {
+test('renderUsageLine shows a bare absolute reset time with a "│" separator (bar mode)', () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
   ctx.config.display.timeFormat = 'absolute';
@@ -2572,8 +2571,8 @@ test('renderUsageLine uses "resets at" when timeFormat is "absolute" (bar mode)'
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('resets at'), `expected "resets at" in absolute bar mode, got: ${plain}`);
-  assert.ok(!plain.includes('resets in'), `should not say "resets in" for absolute mode, got: ${plain}`);
+  assert.ok(plain.includes('│ at '), `expected bare absolute reset with separator, got: ${plain}`);
+  assert.ok(!plain.includes('resets'), `should not use the "resets" wording, got: ${plain}`);
 });
 
 test('renderUsageLine shows relative and absolute time when timeFormat is "both"', () => {
@@ -2591,7 +2590,7 @@ test('renderUsageLine shows relative and absolute time when timeFormat is "both"
   // "both" produces "Xh Ym, at HH:MM" — must contain relative part and " at " from i18n
   assert.match(plain, /\dh/, 'should contain relative duration hours');
   assert.ok(plain.includes(' at '), `should contain absolute "at" prefix, got: ${plain}`);
-  assert.ok(plain.includes('resets in'), `should use "resets in" preposition for both mode, got: ${plain}`);
+  assert.ok(plain.includes('│'), `should show reset with "│" separator for both mode, got: ${plain}`);
 });
 
 test('renderUsageLine shows elapsed 5h window percentage when timeFormat is "elapsed"', () => {
@@ -2608,7 +2607,7 @@ test('renderUsageLine shows elapsed 5h window percentage when timeFormat is "ela
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h  31 % (20% elapsed)'), `expected elapsed window percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % │ 20% elapsed'), `expected elapsed window percentage, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `elapsed mode should not include reset wording, got: ${plain}`);
 });
 
@@ -2626,7 +2625,7 @@ test('renderUsageLine shows elapsed 5h percentage and reset clock when timeForma
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.match(plain, /Usage 5h  31 % \(20% elapsed, at .+\)/, `expected elapsed percentage with absolute reset clock, got: ${plain}`);
+  assert.match(plain, /Usage 5h  31 % │ 20% elapsed, at .+/, `expected elapsed percentage with absolute reset clock, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `elapsedAndAbsolute mode should not include reset wording, got: ${plain}`);
 });
 
@@ -2644,7 +2643,7 @@ test('renderUsageLine rounds elapsed 7d window percentage', () => {
   };
 
   const plain = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(plain.includes('Weekly  85 % (21% elapsed)'), `expected rounded weekly elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Weekly  85 % │ 21% elapsed'), `expected rounded weekly elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine clamps elapsed window percentage to 100 at the reset boundary', () => {
@@ -2660,7 +2659,7 @@ test('renderUsageLine clamps elapsed window percentage to 100 at the reset bound
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h  31 % (100% elapsed)'), `expected clamped elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % │ 100% elapsed'), `expected clamped elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine clamps elapsed window percentage to 0 when the window has not started', () => {
@@ -2676,7 +2675,7 @@ test('renderUsageLine clamps elapsed window percentage to 0 when the window has 
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h  31 % (0% elapsed)'), `expected non-negative elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % │ 0% elapsed'), `expected non-negative elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine keeps reset label hidden in elapsedAndAbsolute mode when disabled', () => {
@@ -2694,7 +2693,7 @@ test('renderUsageLine keeps reset label hidden in elapsedAndAbsolute mode when d
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.match(plain, /Usage 5h  31 % \(20% elapsed, at .+\)/, `expected elapsed percentage with bare absolute reset clock, got: ${plain}`);
+  assert.match(plain, /Usage 5h  31 % │ 20% elapsed, at .+/, `expected elapsed percentage with bare absolute reset clock, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `reset wording should stay hidden, got: ${plain}`);
 });
 
@@ -2711,7 +2710,7 @@ test('renderUsageLine falls back to relative reset formatting for invalid timeFo
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('resets in'), `invalid timeFormat should use relative reset wording, got: ${plain}`);
+  assert.ok(plain.includes('│ 4h'), `invalid timeFormat should use relative reset format, got: ${plain}`);
   assert.ok(!plain.includes('elapsed'), `invalid timeFormat should not use elapsed mode, got: ${plain}`);
 });
 

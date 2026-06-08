@@ -354,7 +354,7 @@ function formatCompactWindowPart(windowLabel, percent, resetAt, timeFormat, colo
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(`${windowLabel}:`, colors);
     return reset
-        ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+        ? `${styledLabel} ${usageDisplay} ${label(`│ ${reset}`, colors)}`
         : `${styledLabel} ${usageDisplay}`;
 }
 function formatUsagePercent(percent, colors, mode = 'percent') {
@@ -369,24 +369,16 @@ function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, u
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(windowLabel, colors);
-    // "resets in X" for relative/both; "resets X" for absolute (avoids "resets in at 14:30")
-    const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
+    // Fork override: the reset time is always shown bare with a "│" separator,
+    // without the "resets in/at" wording, the showResetLabel toggle, or the
+    // relative "/ windowLabel" suffix.
+    const resetSuffix = reset ? `│ ${reset}` : '';
     if (usageBarEnabled) {
-        // Relative mode keeps the upstream "(duration / windowLabel)" pattern (e.g. "2h 30m / 5h").
-        // Absolute/both modes use the preposition form instead — "(at 14:30 / 5h)" is incoherent.
-        const barReset = timeFormat === 'relative'
-            ? (reset ? `${reset} / ${windowLabel}` : null)
-            : (reset ? (showResetLabel ? `${t(resetsKey)} ${reset}` : reset) : null);
-        const body = barReset
-            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${barReset})`
+        const body = resetSuffix
+            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} ${resetSuffix}`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
         return forceLabel ? `${styledLabel} ${body}` : body;
     }
-    const resetSuffix = reset
-        ? showResetLabel
-            ? `(${t(resetsKey)} ${reset})`
-            : `(${reset})`
-        : '';
     return resetSuffix
         ? `${styledLabel} ${usageDisplay} ${resetSuffix}`
         : `${styledLabel} ${usageDisplay}`;

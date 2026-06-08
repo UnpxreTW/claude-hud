@@ -163,7 +163,7 @@ function formatCompactWindowPart(
   const reset = formatWindowTime(resetAt, windowMs, timeFormat);
   const styledLabel = label(`${windowLabel}:`, colors);
   return reset
-    ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+    ? `${styledLabel} ${usageDisplay} ${label(`│ ${reset}`, colors)}`
     : `${styledLabel} ${usageDisplay}`;
 }
 
@@ -214,14 +214,9 @@ function formatUsageWindowPart({
   const styledLabel = labelKey
     ? progressLabel(labelKey, colors, alignLabels)
     : label(windowLabel, colors);
-  const showResetWording = timeFormat !== 'elapsed' && timeFormat !== 'elapsedAndAbsolute';
-  const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
-
-  const resetSuffix = reset
-    ? showResetLabel && showResetWording
-      ? `(${t(resetsKey)} ${reset})`
-      : `(${reset})`
-    : "";
+  // Fork override: the reset time is always shown bare with a "│" separator,
+  // without the "resets in/at" wording or the showResetLabel toggle.
+  const resetSuffix = reset ? `│ ${reset}` : "";
 
   if (usageBarEnabled) {
     const body = resetSuffix
