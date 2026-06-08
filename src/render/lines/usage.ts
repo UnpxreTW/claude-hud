@@ -62,50 +62,22 @@ export function renderUsageLine(
 
   const threshold = display?.usageThreshold ?? 0;
   const fiveHour = ctx.usageData.fiveHour;
-  const sevenDay = ctx.usageData.sevenDay;
 
-  const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
-  if (effectiveUsage < threshold) {
+  // Weekly usage is rendered by the independent weeklyUsage element.
+  if (fiveHour === null) {
     return null;
   }
 
-  const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
+  if (fiveHour < threshold) {
+    return null;
+  }
 
   if (usageCompact) {
-    const fiveHourPart = fiveHour !== null
-      ? formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode)
-      : null;
-    const sevenDayPart = (sevenDay !== null && (fiveHour === null || sevenDay >= sevenDayThreshold))
-      ? formatCompactWindowPart("7d", sevenDay, ctx.usageData.sevenDayResetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode)
-      : null;
-
-    if (fiveHourPart && sevenDayPart) {
-      return `${fiveHourPart} | ${sevenDayPart}`;
-    }
-    return fiveHourPart ?? sevenDayPart ?? null;
+    return formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode);
   }
 
   const usageBarEnabled = display?.usageBarEnabled ?? true;
   const barWidth = getAdaptiveBarWidth();
-
-  if (fiveHour === null && sevenDay !== null) {
-    const weeklyOnlyPart = formatUsageWindowPart({
-      label: t("label.weekly"),
-      labelKey: "label.weekly",
-      percent: sevenDay,
-      resetAt: ctx.usageData.sevenDayResetAt,
-      windowMs: SEVEN_DAY_WINDOW_MS,
-      colors,
-      usageBarEnabled,
-      barWidth,
-      timeFormat,
-      showResetLabel,
-      forceLabel: true,
-      alignLabels,
-      usageValueMode,
-    });
-    return `${usageLabel} ${weeklyOnlyPart}`;
-  }
 
   const fiveHourPart = formatUsageWindowPart({
     label: "5h",
@@ -120,26 +92,61 @@ export function renderUsageLine(
     usageValueMode,
   });
 
-  if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-    const sevenDayPart = formatUsageWindowPart({
-      label: t("label.weekly"),
-      labelKey: "label.weekly",
-      percent: sevenDay,
-      resetAt: ctx.usageData.sevenDayResetAt,
-      windowMs: SEVEN_DAY_WINDOW_MS,
-      colors,
-      usageBarEnabled,
-      barWidth,
-      timeFormat,
-      showResetLabel,
-      forceLabel: true,
-      alignLabels,
-      usageValueMode,
-    });
-    return `${usageLabel} ${fiveHourPart} | ${sevenDayPart}`;
+  return `${usageLabel} ${fiveHourPart}`;
+}
+
+export function renderWeeklyUsageLine(
+  ctx: RenderContext,
+  alignLabels = false,
+): string | null {
+  const display = ctx.config?.display;
+  const colors = ctx.config?.colors;
+
+  if (display?.showUsage === false) {
+    return null;
   }
 
-  return `${usageLabel} ${fiveHourPart}`;
+  if (!ctx.usageData) {
+    return null;
+  }
+
+  if (shouldHideUsage(ctx.stdin)) {
+    return null;
+  }
+
+  const sevenDay = ctx.usageData.sevenDay;
+  if (sevenDay === null) {
+    return null;
+  }
+
+  const timeFormat = normalizeTimeFormat(display?.timeFormat);
+  const showResetLabel = display?.showResetLabel ?? true;
+  const usageCompact = display?.usageCompact ?? false;
+  const usageValueMode = display?.usageValue ?? 'percent';
+
+  // Always visible: the sevenDayThreshold gate is intentionally not applied.
+  if (usageCompact) {
+    return formatCompactWindowPart("7d", sevenDay, ctx.usageData.sevenDayResetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode);
+  }
+
+  const usageBarEnabled = display?.usageBarEnabled ?? true;
+  const barWidth = getAdaptiveBarWidth();
+
+  return formatUsageWindowPart({
+    label: t("label.weekly"),
+    labelKey: "label.weekly",
+    percent: sevenDay,
+    resetAt: ctx.usageData.sevenDayResetAt,
+    windowMs: SEVEN_DAY_WINDOW_MS,
+    colors,
+    usageBarEnabled,
+    barWidth,
+    timeFormat,
+    showResetLabel,
+    forceLabel: true,
+    alignLabels,
+    usageValueMode,
+  });
 }
 
 function formatCompactWindowPart(

@@ -488,10 +488,23 @@ test('mergeConfig defaults elementOrder to the full expanded layout', () => {
   assert.deepEqual(config.elementOrder, DEFAULT_ELEMENT_ORDER);
 });
 
-test('mergeConfig defaults mergeGroups to context and usage', () => {
+test('mergeConfig defaults mergeGroups to empty so usage windows render separately', () => {
   const config = mergeConfig({});
   assert.deepEqual(config.display.mergeGroups, DEFAULT_MERGE_GROUPS);
   assert.deepEqual(DEFAULT_CONFIG.display.mergeGroups, DEFAULT_MERGE_GROUPS);
+  assert.deepEqual(DEFAULT_MERGE_GROUPS, []);
+});
+
+test('default element order includes weeklyUsage right after usage', () => {
+  const usageIndex = DEFAULT_ELEMENT_ORDER.indexOf('usage');
+  const weeklyIndex = DEFAULT_ELEMENT_ORDER.indexOf('weeklyUsage');
+  assert.ok(usageIndex >= 0, 'usage should be present');
+  assert.equal(weeklyIndex, usageIndex + 1, 'weeklyUsage should immediately follow usage');
+});
+
+test('mergeConfig accepts weeklyUsage in elementOrder', () => {
+  const config = mergeConfig({ elementOrder: ['project', 'usage', 'weeklyUsage', 'context'] });
+  assert.deepEqual(config.elementOrder, ['project', 'usage', 'weeklyUsage', 'context']);
 });
 
 test('mergeConfig preserves explicit empty mergeGroups to disable merged lines', () => {

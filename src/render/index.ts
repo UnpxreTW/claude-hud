@@ -13,6 +13,7 @@ import {
   renderEnvironmentLine,
   renderPromptCacheLine,
   renderUsageLine,
+  renderWeeklyUsageLine,
   renderMemoryLine,
   renderSessionTokensLine,
   renderSessionTimeLine,
@@ -387,6 +388,8 @@ function renderElementLine(
       return renderIdentityLine(ctx, alignProgressLabels);
     case 'usage':
       return renderUsageLine(ctx, alignProgressLabels);
+    case 'weeklyUsage':
+      return renderWeeklyUsageLine(ctx, alignProgressLabels);
     case 'promptCache':
       return renderPromptCacheLine(ctx);
     case 'memory':

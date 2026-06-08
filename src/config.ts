@@ -21,7 +21,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
 export type CustomLinePosition = 'first' | 'last';
-export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'sessionTime';
+export type HudElement = 'project' | 'addedDirs' | 'context' | 'usage' | 'weeklyUsage' | 'promptCache' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'sessionTime';
 
 export type AddedDirsLayout = 'inline' | 'line';
 export type HudColorName =
@@ -58,6 +58,7 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'addedDirs',
   'context',
   'usage',
+  'weeklyUsage',
   'promptCache',
   'memory',
   'environment',
@@ -67,9 +68,9 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'sessionTime',
 ];
 
-export const DEFAULT_MERGE_GROUPS: HudElement[][] = [
-  ['context', 'usage'],
-];
+// Weekly usage is an independent, always-visible element, so context, usage,
+// and weeklyUsage each render on their own line by default (no merge group).
+export const DEFAULT_MERGE_GROUPS: HudElement[][] = [];
 
 const KNOWN_ELEMENTS = new Set<HudElement>(DEFAULT_ELEMENT_ORDER);
 
