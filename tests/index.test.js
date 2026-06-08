@@ -120,6 +120,31 @@ test("formatSessionDuration uses Date.now by default", () => {
   }
 });
 
+test("formatSessionDuration localizes units for zh-Hant", () => {
+  setLanguage("zh-Hant");
+  const start = new Date(0);
+  try {
+    assert.equal(formatSessionDuration(start, () => 30 * 1000), "< 1 分鐘");
+    assert.equal(formatSessionDuration(start, () => 5 * 60 * 1000), "5 分鐘");
+    assert.equal(
+      formatSessionDuration(start, () => 2 * 60 * 60 * 1000 + 5 * 60 * 1000),
+      "2 小時 5 分鐘",
+    );
+  } finally {
+    setLanguage("en");
+  }
+});
+
+test("formatSessionDuration keeps English format for zh-Hans", () => {
+  setLanguage("zh-Hans");
+  const start = new Date(0);
+  try {
+    assert.equal(formatSessionDuration(start, () => 5 * 60 * 1000), "5m");
+  } finally {
+    setLanguage("en");
+  }
+});
+
 test("main logs an error when dependencies throw", async () => {
   const logs = [];
 
