@@ -13,6 +13,7 @@ export const zhHans = {
     "label.sessionStarted": "开始",
     "label.lastReply": "上次回复",
     "label.advisor": "顾问",
+    "label.duration": "",
     // Status
     "status.limitReached": "已达上限",
     "status.allTodosComplete": "全部完成",

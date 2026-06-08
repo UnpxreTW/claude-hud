@@ -170,7 +170,7 @@ test('renderSessionLine token display uses autoCompactWindow as denominator when
   ctx.stdin.context_window.current_usage.input_tokens = 70600;
   const line = stripAnsi(renderSessionLine(ctx));
   // Should match /context: 35% (71k/200k), not 7% (71k/1.0M).
-  assert.ok(line.includes('35%'), `expected 35% in: ${line}`);
+  assert.ok(line.includes('35 %'), `expected 35% in: ${line}`);
   assert.ok(line.includes('/200k'), `expected /200k denominator in: ${line}`);
   assert.ok(!line.includes('/1.0M'), `expected full window not shown in: ${line}`);
 });
@@ -228,7 +228,7 @@ test('renderSessionLine handles missing input tokens and cache creation usage', 
     cache_creation_input_tokens: 147000,
   };
   const line = renderSessionLine(ctx);
-  assert.ok(line.includes('90%'));
+  assert.ok(line.includes('90 %'));
   assert.ok(line.includes('in: 0'));
 });
 
@@ -369,7 +369,7 @@ test('renderSessionLine supports remaining-based context display', () => {
   ctx.stdin.context_window.current_usage.input_tokens = 12345;
   const line = renderSessionLine(ctx);
   // 12345/200k = 6.17% raw, scale ≈ 0.026, buffer ≈ 858 → 7% buffered → 93% remaining
-  assert.ok(line.includes('93%'), 'should include remaining percentage');
+  assert.ok(line.includes('93 %'), 'should include remaining percentage');
 });
 
 test('renderSessionLine supports combined context display', () => {
@@ -378,7 +378,7 @@ test('renderSessionLine supports combined context display', () => {
   ctx.stdin.context_window.context_window_size = 200000;
   ctx.stdin.context_window.current_usage.input_tokens = 12345;
   const line = renderSessionLine(ctx);
-  assert.ok(line.includes('7% (12k/200k)'), 'should include percentage and token counts');
+  assert.ok(line.includes('7 % (12k/200k)'), 'should include percentage and token counts');
 });
 
 test('render expanded layout supports remaining-based context display', () => {
@@ -398,7 +398,7 @@ test('render expanded layout supports remaining-based context display', () => {
   }
 
   // 12345/200k = 6.17% raw, scale ≈ 0.026, buffer ≈ 858 → 7% buffered → 93% remaining
-  assert.ok(logs.some(line => line.includes('Context') && line.includes('93%')), 'expected remaining percentage on context line');
+  assert.ok(logs.some(line => line.includes('Context') && line.includes('93 %')), 'expected remaining percentage on context line');
 });
 
 test('render expanded layout supports combined context display', () => {
@@ -418,7 +418,7 @@ test('render expanded layout supports combined context display', () => {
   }
 
   assert.ok(
-    logs.some(line => line.includes('Context') && line.includes('7% (12k/200k)')),
+    logs.some(line => line.includes('Context') && line.includes('7 % (12k/200k)')),
     'expected combined percentage and token counts on context line'
   );
 });
@@ -1476,7 +1476,7 @@ test('renderSessionLine displays usage percentages (7d hidden when low)', () => 
   const line = renderSessionLine(ctx);
   assert.ok(line.includes('5h'), 'should include 5h label');
   assert.ok(!line.includes('Weekly'), 'should NOT include 7d when below 80%');
-  assert.ok(line.includes('6%'), 'should include 5h percentage');
+  assert.ok(line.includes('6 %'), 'should include 5h percentage');
 });
 
 test('renderSessionLine displays external balance labels', () => {
@@ -1508,8 +1508,8 @@ test('renderSessionLine supports remaining-based usage display', () => {
   };
 
   const line = stripAnsi(renderSessionLine(ctx));
-  assert.ok(line.includes('5h 75%'), `should show remaining 5h usage: ${line}`);
-  assert.ok(line.includes('Weekly 15%'), `should show remaining weekly usage: ${line}`);
+  assert.ok(line.includes('5h  75 %'), `should show remaining 5h usage: ${line}`);
+  assert.ok(line.includes('Weekly  15 %'), `should show remaining weekly usage: ${line}`);
 });
 
 test('renderSessionLine supports remaining-based compact usage display', () => {
@@ -1526,8 +1526,8 @@ test('renderSessionLine supports remaining-based compact usage display', () => {
   };
 
   const line = stripAnsi(renderSessionLine(ctx));
-  assert.ok(line.includes('5h: 75%'), `should show compact remaining 5h usage: ${line}`);
-  assert.ok(line.includes('7d: 15%'), `should show compact remaining 7d usage: ${line}`);
+  assert.ok(line.includes('5h:  75 %'), `should show compact remaining 5h usage: ${line}`);
+  assert.ok(line.includes('7d:  15 %'), `should show compact remaining 7d usage: ${line}`);
 });
 
 test('renderSessionLine shows 7d when approaching limit (>=80%)', () => {
@@ -1543,7 +1543,7 @@ test('renderSessionLine shows 7d when approaching limit (>=80%)', () => {
   const line = renderSessionLine(ctx);
   assert.ok(line.includes('5h'), 'should include 5h label');
   assert.ok(line.includes('Weekly'), 'should include 7d when >= 80%');
-  assert.ok(line.includes('85%'), 'should include 7d percentage');
+  assert.ok(line.includes('85 %'), 'should include 7d percentage');
 });
 
 test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
@@ -1560,7 +1560,7 @@ test('renderSessionLine shows 7d reset countdown in text-only mode', () => {
   };
 
   const line = stripAnsi(renderSessionLine(ctx));
-  assert.ok(line.includes('Weekly 85%'), `should include 7d label and percentage: ${line}`);
+  assert.ok(line.includes('Weekly  85 %'), `should include 7d label and percentage: ${line}`);
   assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${line}`);
 });
 
@@ -1593,7 +1593,7 @@ test('renderSessionLine shows weekly-only usage without a ghost 5h section', () 
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(!line.includes('5h'), `should not render a ghost 5h section: ${line}`);
   assert.ok(line.includes('Weekly'), `should render the weekly window when it is the only usage value: ${line}`);
-  assert.ok(line.includes('13%'), `should render the weekly percentage: ${line}`);
+  assert.ok(line.includes('13 %'), `should render the weekly percentage: ${line}`);
 });
 
 test('renderSessionLine shows 5hr reset countdown', () => {
@@ -1643,11 +1643,11 @@ test('renderUsageLine shows 7d reset countdown in text-only mode', () => {
   };
 
   const line = stripAnsi(renderUsageLine(ctx));
-  assert.ok(line.includes('5h 45%'), `should include 5h text-only usage: ${line}`);
+  assert.ok(line.includes('5h  45 %'), `should include 5h text-only usage: ${line}`);
   assert.ok(!line.includes('Weekly'), `usage line should no longer embed weekly usage: ${line}`);
 
   const weeklyLine = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(weeklyLine.includes('Weekly 85%'), `should include 7d text-only usage: ${weeklyLine}`);
+  assert.ok(weeklyLine.includes('Weekly  85 %'), `should include 7d text-only usage: ${weeklyLine}`);
   assert.ok(weeklyLine.includes('(resets in 1d 4h)'), `should include 7d reset countdown in text-only mode: ${weeklyLine}`);
 });
 
@@ -1672,14 +1672,14 @@ test('renderUsageLine supports remaining-based usage display with used-percent c
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   assert.ok(
-    line.includes('\x1b[36m75%\x1b[0m'),
+    line.includes('\x1b[36m 75 %\x1b[0m'),
     `expected remaining 5h usage with normal usage color, got: ${JSON.stringify(line)}`,
   );
 
   const weeklyLine = renderWeeklyUsageLine(ctx);
   assert.ok(weeklyLine, 'should render weekly usage line');
   assert.ok(
-    weeklyLine.includes('\x1b[35m15%\x1b[0m'),
+    weeklyLine.includes('\x1b[35m 15 %\x1b[0m'),
     `expected remaining weekly usage with used-percent warning color, got: ${JSON.stringify(weeklyLine)}`,
   );
 });
@@ -1750,9 +1750,9 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode (always visible
     sevenDayResetAt: resetTime,
   };
 
-  assert.ok(stripAnsi(renderUsageLine(ctx)).includes('45%'), 'usage line should include 5h percentage');
+  assert.ok(stripAnsi(renderUsageLine(ctx)).includes('45 %'), 'usage line should include 5h percentage');
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('85%'), `should include 7d percentage: ${line}`);
+  assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
   assert.ok(line.includes('(resets in 1d 4h)'), `should include 7d reset countdown in bar mode: ${line}`);
   assert.ok(line.includes('Weekly'), `should render the weekly label: ${line}`);
 });
@@ -1790,7 +1790,7 @@ test('renderWeeklyUsageLine is shown below threshold while usage line hides week
 
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
   assert.ok(line.includes('Weekly'), `should render the weekly window even when it is the only usage value: ${line}`);
-  assert.ok(line.includes('13%'), `should render the weekly percentage even below threshold: ${line}`);
+  assert.ok(line.includes('13 %'), `should render the weekly percentage even below threshold: ${line}`);
   assert.ok(!line.includes('5h'), `should not render a 5h section: ${line}`);
 });
 
@@ -1891,12 +1891,12 @@ test('renderUsageLine uses custom usage palette overrides', () => {
   const line = withTerminal(120, () => renderUsageLine(ctx));
   assert.ok(line, 'should render usage line');
   assert.ok(line.includes('\x1b[36m███'), `expected custom usage bar color, got: ${JSON.stringify(line)}`);
-  assert.ok(line.includes('\x1b[36m25%\x1b[0m'), `expected custom usage percentage color, got: ${JSON.stringify(line)}`);
+  assert.ok(line.includes('\x1b[36m 25 %\x1b[0m'), `expected custom usage percentage color, got: ${JSON.stringify(line)}`);
 
   const weeklyLine = withTerminal(120, () => renderWeeklyUsageLine(ctx));
   assert.ok(weeklyLine, 'should render weekly usage line');
   assert.ok(weeklyLine.includes('\x1b[35m████████'), `expected custom usage warning color, got: ${JSON.stringify(weeklyLine)}`);
-  assert.ok(weeklyLine.includes('\x1b[35m80%\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(weeklyLine)}`);
+  assert.ok(weeklyLine.includes('\x1b[35m 80 %\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(weeklyLine)}`);
 });
 
 test('quotaBar and coloredBar use custom barFilled and barEmpty characters', () => {
@@ -1951,7 +1951,7 @@ test('renderSessionLine uses buffered percent when autocompactBuffer is enabled'
   ctx.config.display.autocompactBuffer = 'enabled';
   const line = renderSessionLine(ctx);
   // Should show 39% (buffered), not 30% (raw)
-  assert.ok(line.includes('39%'), `expected buffered percent 39%, got: ${line}`);
+  assert.ok(line.includes('39 %'), `expected buffered percent 39%, got: ${line}`);
 });
 
 test('renderSessionLine uses raw percent when autocompactBuffer is disabled', () => {
@@ -1961,7 +1961,7 @@ test('renderSessionLine uses raw percent when autocompactBuffer is disabled', ()
   ctx.config.display.autocompactBuffer = 'disabled';
   const line = renderSessionLine(ctx);
   // Should show 30% (raw), not 39% (buffered)
-  assert.ok(line.includes('30%'), `expected raw percent 30%, got: ${line}`);
+  assert.ok(line.includes('30 %'), `expected raw percent 30%, got: ${line}`);
 });
 
 test('renderSessionLine avoids inflated startup percentage before native context data exists', () => {
@@ -1972,7 +1972,7 @@ test('renderSessionLine avoids inflated startup percentage before native context
 
   const line = renderSessionLine(ctx);
 
-  assert.ok(line.includes('0%'), `expected startup percent 0%, got: ${line}`);
+  assert.ok(line.includes('0 %'), `expected startup percent 0%, got: ${line}`);
 });
 
 test('render adds separator line when showSeparators is true and activity exists', () => {
@@ -2365,8 +2365,8 @@ test('render expanded layout combines default merge-group elements when adjacent
   assert.ok(lines[0].includes('Context'), 'combined line should include context');
   assert.ok(lines[0].includes('│'), 'combined line should preserve the shared separator');
   const stripped = stripAnsi(lines[0]);
-  assert.ok(stripped.includes('Usage 5h 30%'), `combined line should keep the default unpadded usage label: ${stripped}`);
-  assert.ok(!stripped.includes('Usage  5h 30%'), `combined line should not pad the usage label: ${stripped}`);
+  assert.ok(stripped.includes('Usage 5h  30 %'), `combined line should keep the default unpadded usage label: ${stripped}`);
+  assert.ok(!stripped.includes('Usage  5h  30 %'), `combined line should not pad the usage label: ${stripped}`);
   assert.ok(!stripped.includes('Weekly '), `combined line should not pad the weekly label: ${stripped}`);
 });
 
@@ -2608,7 +2608,7 @@ test('renderUsageLine shows elapsed 5h window percentage when timeFormat is "ela
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h 31% (20% elapsed)'), `expected elapsed window percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % (20% elapsed)'), `expected elapsed window percentage, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `elapsed mode should not include reset wording, got: ${plain}`);
 });
 
@@ -2626,7 +2626,7 @@ test('renderUsageLine shows elapsed 5h percentage and reset clock when timeForma
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.match(plain, /Usage 5h 31% \(20% elapsed, at .+\)/, `expected elapsed percentage with absolute reset clock, got: ${plain}`);
+  assert.match(plain, /Usage 5h  31 % \(20% elapsed, at .+\)/, `expected elapsed percentage with absolute reset clock, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `elapsedAndAbsolute mode should not include reset wording, got: ${plain}`);
 });
 
@@ -2644,7 +2644,7 @@ test('renderUsageLine rounds elapsed 7d window percentage', () => {
   };
 
   const plain = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(plain.includes('Weekly 85% (21% elapsed)'), `expected rounded weekly elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Weekly  85 % (21% elapsed)'), `expected rounded weekly elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine clamps elapsed window percentage to 100 at the reset boundary', () => {
@@ -2660,7 +2660,7 @@ test('renderUsageLine clamps elapsed window percentage to 100 at the reset bound
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h 31% (100% elapsed)'), `expected clamped elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % (100% elapsed)'), `expected clamped elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine clamps elapsed window percentage to 0 when the window has not started', () => {
@@ -2676,7 +2676,7 @@ test('renderUsageLine clamps elapsed window percentage to 0 when the window has 
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('Usage 5h 31% (0% elapsed)'), `expected non-negative elapsed percentage, got: ${plain}`);
+  assert.ok(plain.includes('Usage 5h  31 % (0% elapsed)'), `expected non-negative elapsed percentage, got: ${plain}`);
 });
 
 test('renderUsageLine keeps reset label hidden in elapsedAndAbsolute mode when disabled', () => {
@@ -2694,7 +2694,7 @@ test('renderUsageLine keeps reset label hidden in elapsedAndAbsolute mode when d
   };
 
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.match(plain, /Usage 5h 31% \(20% elapsed, at .+\)/, `expected elapsed percentage with bare absolute reset clock, got: ${plain}`);
+  assert.match(plain, /Usage 5h  31 % \(20% elapsed, at .+\)/, `expected elapsed percentage with bare absolute reset clock, got: ${plain}`);
   assert.ok(!plain.includes('resets'), `reset wording should stay hidden, got: ${plain}`);
 });
 

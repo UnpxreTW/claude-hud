@@ -9,6 +9,7 @@ import { renderSessionTimeLine } from './lines/session-time.js';
 import { renderAdvisorLine } from './lines/advisor.js';
 import { t } from '../i18n/index.js';
 import { formatResetTime } from './format-reset-time.js';
+import { formatPercent } from './format-percent.js';
 const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
@@ -271,7 +272,11 @@ export function renderSessionLine(ctx) {
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        const durationLabel = t('label.duration');
+        const durationText = durationLabel
+            ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
+            : `⏱️  ${ctx.sessionDuration}`;
+        parts.push(label(durationText, colors));
     }
     const sessionTimeLine = renderSessionTimeLine(ctx);
     if (sessionTimeLine) {
@@ -335,14 +340,14 @@ function formatContextValue(ctx, percent, mode) {
     }
     if (mode === 'both') {
         if (size > 0) {
-            return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+            return `${formatPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
         }
-        return `${percent}%`;
+        return formatPercent(percent);
     }
     if (mode === 'remaining') {
-        return `${Math.max(0, 100 - percent)}%`;
+        return formatPercent(Math.max(0, 100 - percent));
     }
-    return `${percent}%`;
+    return formatPercent(percent);
 }
 function formatCompactWindowPart(windowLabel, percent, resetAt, timeFormat, colors, usageValueMode = 'percent') {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
@@ -358,7 +363,7 @@ function formatUsagePercent(percent, colors, mode = 'percent') {
     }
     const color = getQuotaColor(percent, colors);
     const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
-    return `${color}${displayPercent}%${RESET}`;
+    return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
 function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, usageValueMode = 'percent', }) {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
