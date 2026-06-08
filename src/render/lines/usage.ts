@@ -1,8 +1,7 @@
 import type { RenderContext } from "../../types.js";
-import { isLimitReached } from "../../types.js";
 import type { MessageKey } from "../../i18n/types.js";
 import { shouldHideUsage } from "../../stdin.js";
-import { critical, label, getQuotaColor, quotaBar, RESET } from "../colors.js";
+import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
@@ -40,27 +39,11 @@ export function renderUsageLine(
 
   const timeFormat = normalizeTimeFormat(display?.timeFormat);
   const showResetLabel = display?.showResetLabel ?? true;
-  const resetsKey = limitResetTimeFormat(timeFormat) === 'absolute' ? "format.resets" : "format.resetsIn";
   const usageCompact = display?.usageCompact ?? false;
   const usageValueMode = display?.usageValue ?? 'percent';
 
-  if (isLimitReached(ctx.usageData)) {
-    const limitTimeFormat = limitResetTimeFormat(timeFormat);
-    const resetTime =
-      ctx.usageData.fiveHour === 100
-        ? formatResetTime(ctx.usageData.fiveHourResetAt, limitTimeFormat)
-        : formatResetTime(ctx.usageData.sevenDayResetAt, limitTimeFormat);
-    if (usageCompact) {
-      return critical(`⚠ Limit${resetTime ? ` (${resetTime})` : ""}`, colors);
-    }
-    const resetSuffix = resetTime
-      ? showResetLabel
-        ? ` (${t(resetsKey)} ${resetTime})`
-        : ` (${resetTime})`
-      : "";
-    return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetSuffix}`, colors)}`;
-  }
-
+  // Fork override: no special limit-reached branch — a maxed-out window renders
+  // a full bar naturally through the normal usage rendering below.
   const threshold = display?.usageThreshold ?? 0;
   const fiveHour = ctx.usageData.fiveHour;
 
@@ -241,18 +224,6 @@ function normalizeTimeFormat(value: unknown): TimeFormatMode {
   }
 
   return 'relative';
-}
-
-function limitResetTimeFormat(timeFormat: TimeFormatMode): 'relative' | 'absolute' | 'both' {
-  if (timeFormat === 'elapsedAndAbsolute') {
-    return 'absolute';
-  }
-
-  if (timeFormat === 'elapsed') {
-    return 'relative';
-  }
-
-  return timeFormat;
 }
 
 function formatWindowTime(

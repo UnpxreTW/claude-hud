@@ -1,8 +1,7 @@
 import type { RenderContext } from '../types.js';
-import { isLimitReached } from '../types.js';
 import { getContextPercent, getBufferedPercent, getModelName, formatModelName, getProviderLabel, getTotalTokens, shouldHideUsage } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
+import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 import { renderCostEstimate } from './lines/cost.js';
 import { renderPromptCacheLine } from './lines/prompt-cache.js';
@@ -43,7 +42,6 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   const parts: string[] = [];
   const timeFormat: TimeFormatMode = display?.timeFormat ?? 'relative';
-  const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
   const contextValueMode = display?.contextValue ?? 'percent';
   const contextValue = formatContextValue(ctx, percent, contextValueMode);
   const contextValueDisplay = `${getContextColor(percent, colors, contextThresholds)}${contextValue}${RESET}`;
@@ -179,20 +177,6 @@ export function renderSessionLine(ctx: RenderContext): string {
 
     if (ctx.usageData.balanceLabel) {
       parts.push(`${label(t('label.usage'), colors)} ${ctx.usageData.balanceLabel}`);
-    } else if (isLimitReached(ctx.usageData)) {
-      const resetTime = ctx.usageData.fiveHour === 100
-        ? formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat)
-        : formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
-      if (usageCompact) {
-        parts.push(critical(`⚠ Limit${resetTime ? ` (${resetTime})` : ''}`, colors));
-      } else {
-        const resetSuffix = resetTime
-          ? showResetLabel
-            ? ` (${t(resetsKey)} ${resetTime})`
-            : ` (${resetTime})`
-          : '';
-        parts.push(critical(`⚠ ${t('status.limitReached')}${resetSuffix}`, colors));
-      }
     } else {
       const usageThreshold = display?.usageThreshold ?? 0;
       const fiveHour = ctx.usageData.fiveHour;
