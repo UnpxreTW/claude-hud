@@ -4,6 +4,16 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-unpxre.6] - 2026-06-08
+
+Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + fork overrides).
+
+### Fixed
+- Restored complete compiled `dist/` — the `zh-Hant` locale and percent-format modules were missing from `main`, crashing fresh installs with `ERR_MODULE_NOT_FOUND`.
+
+### Changed
+- `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
+
 ## [0.1.0] - 2026-06-03
 
 ### Added
