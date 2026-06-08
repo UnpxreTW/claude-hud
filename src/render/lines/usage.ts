@@ -8,6 +8,7 @@ import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
 import type { TimeFormatMode, UsageValueMode } from "../../config.js";
 import { formatResetTime } from "../format-reset-time.js";
+import { formatPercent } from "../format-percent.js";
 
 const FIVE_HOUR_WINDOW_MS = 5 * 60 * 60 * 1000;
 const SEVEN_DAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -176,7 +177,7 @@ function formatUsagePercent(
   }
   const color = getQuotaColor(percent, colors);
   const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
-  return `${color}${displayPercent}%${RESET}`;
+  return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
 
 function formatUsageWindowPart({

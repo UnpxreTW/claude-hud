@@ -3,6 +3,7 @@ import { coloredBar, label, getContextColor, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
+import { formatPercent } from "../format-percent.js";
 const DEBUG = process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
 export function renderIdentityLine(ctx, alignLabels = false) {
     const autoCompactWindow = ctx.config?.display?.autoCompactWindow ?? null;
@@ -62,13 +63,13 @@ function formatContextValue(ctx, percent, mode) {
     }
     if (mode === "both") {
         if (size > 0) {
-            return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+            return `${formatPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
         }
-        return `${percent}%`;
+        return formatPercent(percent);
     }
     if (mode === "remaining") {
-        return `${Math.max(0, 100 - percent)}%`;
+        return formatPercent(Math.max(0, 100 - percent));
     }
-    return `${percent}%`;
+    return formatPercent(percent);
 }
 //# sourceMappingURL=identity.js.map

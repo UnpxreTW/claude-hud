@@ -11,6 +11,7 @@ import { renderAdvisorLine } from './lines/advisor.js';
 import { t } from '../i18n/index.js';
 import type { TimeFormatMode, UsageValueMode } from '../config.js';
 import { formatResetTime } from './format-reset-time.js';
+import { formatPercent } from './format-percent.js';
 
 const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
 
@@ -368,16 +369,16 @@ function formatContextValue(ctx: RenderContext, percent: number, mode: 'percent'
 
   if (mode === 'both') {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${formatPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return formatPercent(percent);
   }
 
   if (mode === 'remaining') {
-    return `${Math.max(0, 100 - percent)}%`;
+    return formatPercent(Math.max(0, 100 - percent));
   }
 
-  return `${percent}%`;
+  return formatPercent(percent);
 }
 
 function formatCompactWindowPart(
@@ -406,7 +407,7 @@ function formatUsagePercent(
   }
   const color = getQuotaColor(percent, colors);
   const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
-  return `${color}${displayPercent}%${RESET}`;
+  return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
 
 function formatUsageWindowPart({
