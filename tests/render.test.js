@@ -2867,3 +2867,122 @@ test('renderSessionLine renders advisor inline on the same row (compact layout)'
   assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
   assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
 });
+
+test('prettifyAdvisorId expands canonical model IDs', () => {
+  assert.equal(prettifyAdvisorId('claude-opus-4-7'), 'Opus 4.7');
+  assert.equal(prettifyAdvisorId('claude-sonnet-4-6'), 'Sonnet 4.6');
+  assert.equal(prettifyAdvisorId('claude-haiku-4-5-20251001'), 'Haiku 4.5');
+});
+
+test('prettifyAdvisorId handles short aliases and unknown formats', () => {
+  assert.equal(prettifyAdvisorId('opus'), 'Opus');
+  assert.equal(prettifyAdvisorId('sonnet'), 'Sonnet');
+  assert.equal(prettifyAdvisorId('claude-some-future-model-9-9'), 'some-future-model-9-9');
+  assert.equal(prettifyAdvisorId(''), '');
+});
+
+test('renderAdvisorLine returns null when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine returns null when no advisor data is available', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine prettifies transcript-driven advisor model', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine honours advisorOverride verbatim', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: 'Opus 4.7 (1M)' } });
+  ctx.transcript.advisorModel = 'claude-sonnet-4-6';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7 (1M)');
+});
+
+test('renderAdvisorLine strips ANSI ESC and C0 control bytes from advisorModel', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // CSI red sequence + bell + DEL injected around a valid ID. The output
+  // intentionally contains label() colour codes, so assertions run against
+  // the plain (ANSI-stripped) text — the user-attributable bytes must not
+  // survive that stripping.
+  ctx.transcript.advisorModel = '\x1b[31mclaude-opus-4-7\x07\x7f';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.ok(!plain.includes('\x1b'), 'ESC byte must be stripped before render');
+  assert.ok(!plain.includes('\x07'), 'BEL must be stripped');
+  assert.ok(!plain.includes('\x7f'), 'DEL must be stripped');
+  // After sanitize the surviving text is "[31mclaude-opus-4-7", which doesn't
+  // match the canonical prefix pattern, so prettifyAdvisorId falls through.
+  assert.ok(plain.startsWith('Advisor:'), `unexpected label: ${plain}`);
+});
+
+test('renderAdvisorLine strips bidi marks from advisorOverride', () => {
+  const ctx = baseContext();
+  // RLO (U+202E) + the override text + PDF (U+202C)
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: '‮Opus 4.7‬' } });
+  const out = renderAdvisorLine(ctx);
+  assert.ok(!out.includes('‮'), 'RLO must be stripped');
+  assert.ok(!out.includes('‬'), 'PDF must be stripped');
+  assert.equal(stripAnsi(out), 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine caps oversized advisorModel at the display length limit', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-' + 'x'.repeat(500);
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  // "Advisor: " prefix (9 chars) + at most 64 chars of payload.
+  const payload = plain.slice('Advisor: '.length);
+  assert.ok(payload.length <= 64, `payload length ${payload.length} exceeds cap`);
+});
+
+test('renderAdvisorLine returns null when sanitized input is empty', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // Only control + bidi bytes — sanitize collapses these to "".
+  ctx.transcript.advisorModel = '\x1b\x07‮‏';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderProjectLine renders advisor inline on the same row (expanded layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('my-project'), 'project path must still render');
+  // Single line — no embedded newline introduced by the inline placement.
+  assert.ok(!plain.includes('\n'), 'project line must remain one row');
+});
+
+test('renderProjectLine omits advisor when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(!plain.includes('Advisor:'), `advisor must not leak in: ${plain}`);
+});
+
+test('renderSessionLine renders advisor inline on the same row (compact layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ lineLayout: 'compact', display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderSessionLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
+  assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
+});
