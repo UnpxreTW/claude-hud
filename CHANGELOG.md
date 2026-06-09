@@ -4,6 +4,17 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-unpxre.7] - 2026-06-09
+
+Unpxre fork release synced on top of upstream `0.1.0` (advisor line + auto-compact denominator).
+
+### Added
+- Synced upstream advisor model display (`display.showAdvisor`) rendered inline on the project line.
+- Synced upstream `autoCompactWindow` context denominator, also used for the token display.
+
+### Changed
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
 ## [0.1.0-unpxre.6] - 2026-06-08
 
 Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + fork overrides).
