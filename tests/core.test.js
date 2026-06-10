@@ -947,6 +947,42 @@ test('parseTranscript extracts tool targets for common tools', async () => {
   }
 });
 
+test('parseTranscript collapses multiline Bash targets before truncating', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
+  const filePath = path.join(dir, 'bash-multiline.jsonl');
+  const lines = [
+    JSON.stringify({
+      message: {
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tool-1',
+            name: 'Bash',
+            input: { command: 'ID=foo\nccusage session --json\t| jq .total' },
+          },
+          {
+            type: 'tool_use',
+            id: 'tool-2',
+            name: 'Bash',
+            input: { command: ' \n\t ' },
+          },
+        ],
+      },
+    }),
+  ];
+
+  await writeFile(filePath, lines.join('\n'), 'utf8');
+
+  try {
+    const result = await parseTranscript(filePath);
+    assert.equal(result.tools.length, 2);
+    assert.equal(result.tools[0].target, 'ID=foo ccusage session --json...');
+    assert.equal(result.tools[1].target, undefined);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('parseTranscript extracts Skill tool target from non-empty input.skill', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
   const filePath = path.join(dir, 'skill-target.jsonl');

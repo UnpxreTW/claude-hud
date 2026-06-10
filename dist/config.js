@@ -12,6 +12,8 @@ export const DEFAULT_ELEMENT_ORDER = [
     'memory',
     'environment',
     'tools',
+    'skills',
+    'mcp',
     'agents',
     'todos',
     'sessionTime',
@@ -55,6 +57,8 @@ export const DEFAULT_CONFIG = {
         showResetLabel: true,
         usageCompact: false,
         showTools: false,
+        showSkills: false,
+        showMcp: false,
         toolNameMaxLength: 0,
         toolsMaxVisible: 4,
         showAgents: false,
@@ -398,6 +402,12 @@ export function mergeConfig(userConfig) {
         showTools: typeof migrated.display?.showTools === 'boolean'
             ? migrated.display.showTools
             : DEFAULT_CONFIG.display.showTools,
+        showSkills: typeof migrated.display?.showSkills === 'boolean'
+            ? migrated.display.showSkills
+            : DEFAULT_CONFIG.display.showSkills,
+        showMcp: typeof migrated.display?.showMcp === 'boolean'
+            ? migrated.display.showMcp
+            : DEFAULT_CONFIG.display.showMcp,
         toolNameMaxLength: validateNonNegativeInteger(migrated.display?.toolNameMaxLength, DEFAULT_CONFIG.display.toolNameMaxLength),
         toolsMaxVisible: validateNonNegativeInteger(migrated.display?.toolsMaxVisible, DEFAULT_CONFIG.display.toolsMaxVisible),
         showAgents: typeof migrated.display?.showAgents === 'boolean'

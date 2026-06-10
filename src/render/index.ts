@@ -3,6 +3,7 @@ import { DEFAULT_ELEMENT_ORDER, DEFAULT_MERGE_GROUPS } from '../config.js';
 import type { RenderContext } from '../types.js';
 import { renderSessionLine } from './session-line.js';
 import { renderToolsLine } from './tools-line.js';
+import { renderSkillsLine, renderMcpLine } from './skills-mcp-line.js';
 import { renderAgentsLine } from './agents-line.js';
 import { renderTodosLine } from './todos-line.js';
 import {
@@ -307,7 +308,7 @@ function makeSeparator(length: number): string {
   return dim('─'.repeat(repeats));
 }
 
-const ACTIVITY_ELEMENTS = new Set<HudElement>(['tools', 'agents', 'todos']);
+const ACTIVITY_ELEMENTS = new Set<HudElement>(['tools', 'skills', 'mcp', 'agents', 'todos']);
 
 function buildMergeGroupLookup(mergeGroups: HudElement[][]): Map<HudElement, Set<HudElement>> {
   const lookup = new Map<HudElement, Set<HudElement>>();
@@ -351,6 +352,20 @@ function collectActivityLines(ctx: RenderContext): string[] {
     const toolsLine = renderToolsLine(ctx);
     if (toolsLine) {
       activityLines.push(toolsLine);
+    }
+  }
+
+  if (display?.showSkills === true) {
+    const skillsLine = renderSkillsLine(ctx);
+    if (skillsLine) {
+      activityLines.push(skillsLine);
+    }
+  }
+
+  if (display?.showMcp === true) {
+    const mcpLine = renderMcpLine(ctx);
+    if (mcpLine) {
+      activityLines.push(mcpLine);
     }
   }
 
@@ -398,6 +413,10 @@ function renderElementLine(
       return renderEnvironmentLine(ctx);
     case 'tools':
       return display?.showTools === false ? null : renderToolsLine(ctx);
+    case 'skills':
+      return display?.showSkills === true ? renderSkillsLine(ctx) : null;
+    case 'mcp':
+      return display?.showMcp === true ? renderMcpLine(ctx) : null;
     case 'agents':
       return display?.showAgents === false ? null : renderAgentsLine(ctx);
     case 'todos':

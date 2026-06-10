@@ -4,12 +4,15 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { render } from '../dist/render/index.js';
 import { mergeConfig } from '../dist/config.js';
+import { parseTranscript } from '../dist/transcript.js';
 import { renderSessionLine } from '../dist/render/session-line.js';
 import { renderProjectLine, renderGitFilesLine } from '../dist/render/lines/project.js';
 import { renderPromptCacheLine } from '../dist/render/lines/prompt-cache.js';
 import { renderToolsLine, shortenToolName } from '../dist/render/tools-line.js';
+import { renderSkillsLine, renderMcpLine } from '../dist/render/skills-mcp-line.js';
 import { renderAgentsLine } from '../dist/render/agents-line.js';
 import { renderTodosLine } from '../dist/render/todos-line.js';
 import { renderUsageLine, renderWeeklyUsageLine } from '../dist/render/lines/usage.js';
@@ -42,7 +45,7 @@ function baseContext() {
         },
       },
     },
-    transcript: { tools: [], agents: [], todos: [], sessionTokens: undefined },
+    transcript: { tools: [], skills: [], mcpServers: [], agents: [], todos: [], sessionTokens: undefined },
     claudeMdCount: 0,
     rulesCount: 0,
     mcpCount: 0,
@@ -55,9 +58,9 @@ function baseContext() {
       lineLayout: 'compact',
       showSeparators: false,
       pathLevels: 1,
-      elementOrder: ['project', 'context', 'usage', 'promptCache', 'memory', 'environment', 'tools', 'agents', 'todos'],
+      elementOrder: ['project', 'context', 'usage', 'promptCache', 'memory', 'environment', 'tools', 'skills', 'mcp', 'agents', 'todos'],
       gitStatus: { enabled: true, showDirty: true, showAheadBehind: false, showFileStats: false, branchOverflow: 'truncate', pushWarningThreshold: 0, pushCriticalThreshold: 0 },
-      display: { showModel: true, showProject: true, showContextBar: true, contextValue: 'percent', showConfigCounts: true, showCost: false, showDuration: true, showSpeed: false, showTokenBreakdown: true, showUsage: true, usageValue: 'percent', usageBarEnabled: false, showResetLabel: true, showTools: true, showAgents: true, showTodos: true, showSessionTokens: false, showSessionName: false, showClaudeCodeVersion: false, showMemoryUsage: false, showPromptCache: false, promptCacheTtlSeconds: 300, showOutputStyle: false, mergeGroups: [['context', 'usage']], autocompactBuffer: 'enabled', usageThreshold: 0, sevenDayThreshold: 80, environmentThreshold: 0, customLine: '' },
+      display: { showModel: true, showProject: true, showContextBar: true, contextValue: 'percent', showConfigCounts: true, showCost: false, showDuration: true, showSpeed: false, showTokenBreakdown: true, showUsage: true, usageValue: 'percent', usageBarEnabled: false, showResetLabel: true, showTools: true, showSkills: false, showMcp: false, showAgents: true, showTodos: true, showSessionTokens: false, showSessionName: false, showClaudeCodeVersion: false, showMemoryUsage: false, showPromptCache: false, promptCacheTtlSeconds: 300, showOutputStyle: false, mergeGroups: [['context', 'usage']], autocompactBuffer: 'enabled', usageThreshold: 0, sevenDayThreshold: 80, environmentThreshold: 0, customLine: '' },
       colors: {
         context: 'green',
         usage: 'brightBlue',
@@ -714,6 +717,8 @@ test('label color overrides apply across shared secondary text surfaces', () => 
   ctx.transcript.tools = [
     { id: 'tool-1', name: 'Read', target: 'src/index.ts', status: 'running', startTime: new Date(0) },
   ];
+  ctx.transcript.skills = ['frontend-design'];
+  ctx.transcript.mcpServers = ['linear'];
   ctx.transcript.agents = [
     { id: 'agent-1', type: 'planner', model: 'haiku', description: 'Inspecting', status: 'running', startTime: new Date(0) },
   ];
@@ -721,6 +726,8 @@ test('label color overrides apply across shared secondary text surfaces', () => 
     { content: 'Ship it', status: 'in_progress' },
     { content: 'Done', status: 'completed' },
   ];
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
 
   const expected = '\x1b[38;2;171;205;239m';
   assert.ok(renderIdentityLine(ctx).includes(`${expected}Context\x1b[0m`));
@@ -729,6 +736,8 @@ test('label color overrides apply across shared secondary text surfaces', () => 
   assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md | 1 rules\x1b[0m`));
   assert.ok(renderMemoryLine({ ...ctx, config: { ...ctx.config, lineLayout: 'expanded', display: { ...ctx.config.display, showMemoryUsage: true } } })?.includes(`${expected}Approx RAM\x1b[0m`));
   assert.ok(renderToolsLine(ctx)?.includes(`${expected}: src/index.ts\x1b[0m`));
+  assert.ok(renderSkillsLine(ctx)?.includes(`${expected}(1)\x1b[0m`));
+  assert.ok(renderMcpLine(ctx)?.includes(`${expected}(1)\x1b[0m`));
   assert.ok(renderAgentsLine(ctx)?.includes(`${expected}[haiku]\x1b[0m`));
   assert.ok(renderTodosLine(ctx)?.includes(`${expected}(1/2)\x1b[0m`));
 });
@@ -1312,6 +1321,137 @@ test('renderToolsLine returns null when no tools exist', () => {
   assert.equal(renderToolsLine(ctx), null);
 });
 
+test('parseTranscript detects active skills and distinct MCP servers from tool_use blocks', async () => {
+  const fixturePath = fileURLToPath(new URL('./fixtures/transcript-render.jsonl', import.meta.url));
+
+  const result = await parseTranscript(fixturePath);
+
+  assert.deepEqual(result.skills, ['frontend-design']);
+  assert.deepEqual(result.mcpServers, ['linear', 'slack']);
+});
+
+test('parseTranscript sanitizes and caps active skill and MCP names', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
+  const filePath = path.join(dir, 'unsafe-activity.jsonl');
+  const longSkill = `skill-${'x'.repeat(100)}`;
+  const lines = [
+    JSON.stringify({
+      message: {
+        content: [
+          { type: 'tool_use', id: 'skill-1', name: 'Skill', input: { skill: `\x1b[31m${longSkill}\x1b[0m\u202E` } },
+          { type: 'tool_use', id: 'mcp-1', name: 'mcp__bad\x1b]8;;https://evil.example\x07server\u202E__tool', input: {} },
+        ],
+      },
+    }),
+  ];
+
+  await writeFile(filePath, lines.join('\n'), 'utf8');
+
+  try {
+    const result = await parseTranscript(filePath);
+    assert.equal(result.skills.length, 1);
+    assert.equal(result.skills[0].length, 64);
+    assert.equal(result.skills[0], `${longSkill.slice(0, 63)}…`);
+    assert.deepEqual(result.mcpServers, ['badserver']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('renderSkillsLine and renderMcpLine show counts and names when enabled', () => {
+  const ctx = baseContext();
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
+  ctx.transcript.skills = ['frontend-design'];
+  ctx.transcript.mcpServers = ['linear', 'slack'];
+
+  const skillsLine = stripAnsi(renderSkillsLine(ctx) ?? '');
+  const mcpLine = stripAnsi(renderMcpLine(ctx) ?? '');
+
+  assert.equal(skillsLine, '✓ Skills (1): frontend-design');
+  assert.equal(mcpLine, '✓ MCPs (2): linear, slack');
+});
+
+test('renderSkillsLine and renderMcpLine sanitize direct transcript names before display', () => {
+  const ctx = baseContext();
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
+  ctx.transcript.skills = ['\x1b[31mfrontend-design\x1b[0m\u202E', '\x07'];
+  ctx.transcript.mcpServers = [`linear-${'x'.repeat(100)}`];
+
+  const skillsLine = stripAnsi(renderSkillsLine(ctx) ?? '');
+  const mcpLine = stripAnsi(renderMcpLine(ctx) ?? '');
+
+  assert.equal(skillsLine, '✓ Skills (1): frontend-design');
+  assert.ok(!skillsLine.includes('\u202E'), 'bidi control must not render');
+  assert.equal(mcpLine, `✓ MCPs (1): ${`linear-${'x'.repeat(100)}`.slice(0, 63)}…`);
+});
+
+test('renderSkillsLine and renderMcpLine return null with no data even when enabled', () => {
+  const ctx = baseContext();
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
+
+  assert.equal(renderSkillsLine(ctx), null);
+  assert.equal(renderMcpLine(ctx), null);
+});
+
+test('renderToolsLine suppresses generic Skill entries when the Skills line is enabled', () => {
+  const ctx = baseContext();
+  ctx.config.display.showSkills = true;
+  ctx.transcript.tools = [
+    { id: 'tool-1', name: 'Skill', target: 'frontend-design', status: 'completed', startTime: new Date(0), endTime: new Date(0) },
+    { id: 'tool-2', name: 'Read', status: 'completed', startTime: new Date(0), endTime: new Date(0) },
+  ];
+
+  const line = stripAnsi(renderToolsLine(ctx) ?? '');
+  assert.ok(!line.includes('Skill'), `Skill tool should be suppressed: ${line}`);
+  assert.ok(line.includes('Read'), `other tools should remain visible: ${line}`);
+
+  ctx.transcript.tools = [
+    { id: 'tool-1', name: 'Skill', target: 'frontend-design', status: 'completed', startTime: new Date(0), endTime: new Date(0) },
+  ];
+  assert.equal(renderToolsLine(ctx), null);
+});
+
+test('skills and MCP activity lines stay hidden by default', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({
+    lineLayout: 'expanded',
+    elementOrder: ['project', 'skills', 'mcp'],
+  });
+  ctx.transcript.skills = ['frontend-design'];
+  ctx.transcript.mcpServers = ['linear', 'slack'];
+
+  const output = captureRenderLines(ctx).join('\n');
+
+  assert.ok(!output.includes('Skills'), 'skills line should be default-off');
+  assert.ok(!output.includes('MCPs (2)'), 'MCP activity line should be default-off');
+});
+
+test('mergeConfig validates skill and MCP display options', () => {
+  const enabled = mergeConfig({
+    display: {
+      showSkills: true,
+      showMcp: true,
+    },
+  });
+  assert.equal(enabled.display.showSkills, true);
+  assert.equal(enabled.display.showMcp, true);
+
+  const sanitized = mergeConfig({
+    elementOrder: ['skills', 'unknown', 'mcp', 'project', 'skills'],
+    display: {
+      showSkills: 'yes',
+      showMcp: 1,
+    },
+  });
+
+  assert.deepEqual(sanitized.elementOrder, ['skills', 'mcp', 'project']);
+  assert.equal(sanitized.display.showSkills, false);
+  assert.equal(sanitized.display.showMcp, false);
+});
+
 // Usage display tests
 test('renderSessionLine does not add a synthetic subscriber label from usageData', () => {
   const ctx = baseContext();
@@ -1492,6 +1632,73 @@ test('renderSessionLine displays external balance labels', () => {
   const line = stripAnsi(renderSessionLine(ctx));
   assert.ok(line.includes('Usage ¥6.35'), `should show balance label in compact layout: ${line}`);
   assert.ok(!line.includes('5h'), `should bypass percentage window rendering: ${line}`);
+});
+test('renderSessionLine displays balance label alongside rate-limit windows', () => {
+  const ctx = baseContext();
+  ctx.usageData = {
+    planName: 'Max',
+    fiveHour: 25,
+    sevenDay: null,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+    balanceLabel: '$1,256 / $1,800',
+  };
+
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes('5h'), `should show 5h window alongside balance: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
+});
+
+test('renderSessionLine displays balance label alongside a maxed-out window', () => {
+  const ctx = baseContext();
+  ctx.usageData = {
+    planName: 'Max',
+    fiveHour: 100,
+    sevenDay: null,
+    fiveHourResetAt: new Date(Date.now() + 60 * 60 * 1000),
+    sevenDayResetAt: null,
+    balanceLabel: '$1,256 / $1,800',
+  };
+
+  const line = stripAnsi(renderSessionLine(ctx));
+  // Fork override: a maxed window renders a full bar, not a "Limit reached" warning.
+  assert.ok(!line.includes('Limit reached'), `should not show a limit warning: ${line}`);
+  assert.ok(line.includes('100 %'), `should show the 100% usage value: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside the maxed window: ${line}`);
+});
+
+test('renderUsageLine displays balance label alongside rate-limit windows', () => {
+  const ctx = baseContext();
+  ctx.usageData = {
+    planName: 'Max',
+    fiveHour: 25,
+    sevenDay: null,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+    balanceLabel: '$1,256 / $1,800',
+  };
+
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+  assert.ok(line.includes('5h'), `should show 5h window alongside balance: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
+});
+
+test('renderUsageLine displays balance label alongside a maxed-out window', () => {
+  const ctx = baseContext();
+  ctx.usageData = {
+    planName: 'Max',
+    fiveHour: 100,
+    sevenDay: null,
+    fiveHourResetAt: new Date(Date.now() + 60 * 60 * 1000),
+    sevenDayResetAt: null,
+    balanceLabel: '$1,256 / $1,800',
+  };
+
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+  // Fork override: a maxed window renders a full bar, not a "Limit reached" warning.
+  assert.ok(!line.includes('Limit reached'), `should not show a limit warning: ${line}`);
+  assert.ok(line.includes('100 %'), `should show the 100% usage value: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside the maxed window: ${line}`);
 });
 
 test('renderSessionLine supports remaining-based usage display', () => {
@@ -2263,6 +2470,8 @@ test('render expanded layout honors custom elementOrder including activity place
   ctx.transcript.tools = [
     { id: 'tool-1', name: 'Read', status: 'completed', startTime: new Date(0), endTime: new Date(0), duration: 0 },
   ];
+  ctx.transcript.skills = ['frontend-design'];
+  ctx.transcript.mcpServers = ['linear'];
   ctx.transcript.agents = [
     { id: 'agent-1', type: 'planner', status: 'running', startTime: new Date(0) },
   ];
@@ -2270,10 +2479,14 @@ test('render expanded layout honors custom elementOrder including activity place
     { content: 'todo-marker', status: 'in_progress' },
   ];
   ctx.config.display.showMemoryUsage = true;
-  ctx.config.elementOrder = ['tools', 'project', 'usage', 'context', 'memory', 'environment', 'agents', 'todos'];
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
+  ctx.config.elementOrder = ['tools', 'skills', 'mcp', 'project', 'usage', 'context', 'memory', 'environment', 'agents', 'todos'];
 
   const lines = withTerminal(120, () => captureRenderLines(ctx));
   const toolIndex = lines.findIndex(line => line.includes('Read'));
+  const skillsIndex = lines.findIndex(line => line.includes('Skills'));
+  const mcpIndex = lines.findIndex(line => line.includes('MCPs'));
   const projectIndex = lines.findIndex(line => line.includes('my-project'));
   const combinedIndex = lines.findIndex(line => line.includes('Usage') && line.includes('Context'));
   const memoryIndex = lines.findIndex(line => line.includes('Approx RAM'));
@@ -2282,11 +2495,14 @@ test('render expanded layout honors custom elementOrder including activity place
   const todoIndex = lines.findIndex(line => line.includes('todo-marker'));
 
   assert.deepEqual(
-    [toolIndex, projectIndex, combinedIndex, memoryIndex, environmentIndex, agentIndex, todoIndex].every(index => index >= 0),
+    [toolIndex, skillsIndex, mcpIndex, projectIndex, combinedIndex, memoryIndex, environmentIndex, agentIndex, todoIndex].every(index => index >= 0),
     true,
     'expected all configured elements to render'
   );
   assert.ok(toolIndex < projectIndex, 'tool line should move ahead of project');
+  assert.ok(toolIndex < skillsIndex, 'skills line should follow tools line');
+  assert.ok(skillsIndex < mcpIndex, 'MCP line should follow skills line');
+  assert.ok(mcpIndex < projectIndex, 'project line should follow MCP line');
   assert.ok(projectIndex < combinedIndex, 'combined usage/context line should follow project');
   assert.ok(combinedIndex < memoryIndex, 'memory line should follow combined usage/context');
   assert.ok(memoryIndex < environmentIndex, 'environment line should follow memory');
@@ -2470,14 +2686,20 @@ test('render compact layout keeps activity lines even when elementOrder omits th
   ctx.transcript.tools = [
     { id: 'tool-1', name: 'Read', status: 'completed', startTime: new Date(0), endTime: new Date(0), duration: 0 },
   ];
+  ctx.transcript.skills = ['frontend-design'];
+  ctx.transcript.mcpServers = ['linear'];
   ctx.transcript.todos = [
     { content: 'todo-marker', status: 'in_progress' },
   ];
   ctx.config.elementOrder = ['project'];
+  ctx.config.display.showSkills = true;
+  ctx.config.display.showMcp = true;
 
   const output = captureRenderLines(ctx).join('\n');
 
   assert.ok(output.includes('Read'), 'compact mode should keep tools visible');
+  assert.ok(output.includes('Skills'), 'compact mode should keep skills visible');
+  assert.ok(output.includes('MCPs'), 'compact mode should keep MCPs visible');
   assert.ok(output.includes('todo-marker'), 'compact mode should keep todos visible');
 });
 
@@ -2868,121 +3090,3 @@ test('renderSessionLine renders advisor inline on the same row (compact layout)'
   assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
 });
 
-test('prettifyAdvisorId expands canonical model IDs', () => {
-  assert.equal(prettifyAdvisorId('claude-opus-4-7'), 'Opus 4.7');
-  assert.equal(prettifyAdvisorId('claude-sonnet-4-6'), 'Sonnet 4.6');
-  assert.equal(prettifyAdvisorId('claude-haiku-4-5-20251001'), 'Haiku 4.5');
-});
-
-test('prettifyAdvisorId handles short aliases and unknown formats', () => {
-  assert.equal(prettifyAdvisorId('opus'), 'Opus');
-  assert.equal(prettifyAdvisorId('sonnet'), 'Sonnet');
-  assert.equal(prettifyAdvisorId('claude-some-future-model-9-9'), 'some-future-model-9-9');
-  assert.equal(prettifyAdvisorId(''), '');
-});
-
-test('renderAdvisorLine returns null when showAdvisor is false', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: false } });
-  ctx.transcript.advisorModel = 'claude-opus-4-7';
-  assert.equal(renderAdvisorLine(ctx), null);
-});
-
-test('renderAdvisorLine returns null when no advisor data is available', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  assert.equal(renderAdvisorLine(ctx), null);
-});
-
-test('renderAdvisorLine prettifies transcript-driven advisor model', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  ctx.transcript.advisorModel = 'claude-opus-4-7';
-  const plain = stripAnsi(renderAdvisorLine(ctx));
-  assert.equal(plain, 'Advisor: Opus 4.7');
-});
-
-test('renderAdvisorLine honours advisorOverride verbatim', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: 'Opus 4.7 (1M)' } });
-  ctx.transcript.advisorModel = 'claude-sonnet-4-6';
-  const plain = stripAnsi(renderAdvisorLine(ctx));
-  assert.equal(plain, 'Advisor: Opus 4.7 (1M)');
-});
-
-test('renderAdvisorLine strips ANSI ESC and C0 control bytes from advisorModel', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  // CSI red sequence + bell + DEL injected around a valid ID. The output
-  // intentionally contains label() colour codes, so assertions run against
-  // the plain (ANSI-stripped) text — the user-attributable bytes must not
-  // survive that stripping.
-  ctx.transcript.advisorModel = '\x1b[31mclaude-opus-4-7\x07\x7f';
-  const plain = stripAnsi(renderAdvisorLine(ctx));
-  assert.ok(!plain.includes('\x1b'), 'ESC byte must be stripped before render');
-  assert.ok(!plain.includes('\x07'), 'BEL must be stripped');
-  assert.ok(!plain.includes('\x7f'), 'DEL must be stripped');
-  // After sanitize the surviving text is "[31mclaude-opus-4-7", which doesn't
-  // match the canonical prefix pattern, so prettifyAdvisorId falls through.
-  assert.ok(plain.startsWith('Advisor:'), `unexpected label: ${plain}`);
-});
-
-test('renderAdvisorLine strips bidi marks from advisorOverride', () => {
-  const ctx = baseContext();
-  // RLO (U+202E) + the override text + PDF (U+202C)
-  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: '‮Opus 4.7‬' } });
-  const out = renderAdvisorLine(ctx);
-  assert.ok(!out.includes('‮'), 'RLO must be stripped');
-  assert.ok(!out.includes('‬'), 'PDF must be stripped');
-  assert.equal(stripAnsi(out), 'Advisor: Opus 4.7');
-});
-
-test('renderAdvisorLine caps oversized advisorModel at the display length limit', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  ctx.transcript.advisorModel = 'claude-' + 'x'.repeat(500);
-  const plain = stripAnsi(renderAdvisorLine(ctx));
-  // "Advisor: " prefix (9 chars) + at most 64 chars of payload.
-  const payload = plain.slice('Advisor: '.length);
-  assert.ok(payload.length <= 64, `payload length ${payload.length} exceeds cap`);
-});
-
-test('renderAdvisorLine returns null when sanitized input is empty', () => {
-  const ctx = baseContext();
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  // Only control + bidi bytes — sanitize collapses these to "".
-  ctx.transcript.advisorModel = '\x1b\x07‮‏';
-  assert.equal(renderAdvisorLine(ctx), null);
-});
-
-test('renderProjectLine renders advisor inline on the same row (expanded layout)', () => {
-  const ctx = baseContext();
-  ctx.stdin.cwd = '/tmp/my-project';
-  ctx.config = mergeConfig({ display: { showAdvisor: true } });
-  ctx.transcript.advisorModel = 'claude-opus-4-7';
-  const plain = stripAnsi(renderProjectLine(ctx));
-  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
-  assert.ok(plain.includes('my-project'), 'project path must still render');
-  // Single line — no embedded newline introduced by the inline placement.
-  assert.ok(!plain.includes('\n'), 'project line must remain one row');
-});
-
-test('renderProjectLine omits advisor when showAdvisor is false', () => {
-  const ctx = baseContext();
-  ctx.stdin.cwd = '/tmp/my-project';
-  ctx.config = mergeConfig({ display: { showAdvisor: false } });
-  ctx.transcript.advisorModel = 'claude-opus-4-7';
-  const plain = stripAnsi(renderProjectLine(ctx));
-  assert.ok(!plain.includes('Advisor:'), `advisor must not leak in: ${plain}`);
-});
-
-test('renderSessionLine renders advisor inline on the same row (compact layout)', () => {
-  const ctx = baseContext();
-  ctx.stdin.cwd = '/tmp/my-project';
-  ctx.config = mergeConfig({ lineLayout: 'compact', display: { showAdvisor: true } });
-  ctx.transcript.advisorModel = 'claude-opus-4-7';
-  const plain = stripAnsi(renderSessionLine(ctx));
-  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
-  assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
-  assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
-});

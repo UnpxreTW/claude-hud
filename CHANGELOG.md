@@ -4,6 +4,16 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.1-unpxre.1] - 2026-06-10
+
+Unpxre fork release synced on top of upstream `0.1.1` (Skills/MCP lines, external balance label, advisor hardening, auto-compact validation).
+
+### Added
+- Synced upstream `0.1.1` (Skills + MCP activity lines, advisor display hardening, `balance_label` rendering, narrow-terminal width fixes).
+
+### Changed
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
 ## [0.1.0-unpxre.7] - 2026-06-09
 
 Unpxre fork release synced on top of upstream `0.1.0` (advisor line + auto-compact denominator).
@@ -24,6 +34,28 @@ Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + for
 
 ### Changed
 - `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
+
+## [0.1.1] - 2026-06-09
+
+### Added
+- Add default-off Skills and MCP activity lines, with sanitized active names and Skill-tool suppression when the Skills line is enabled (#527, #595).
+- Add optional advisor model display with sanitized transcript-derived and override labels (#573).
+- Add `display.autoCompactWindow` support for context denominator calculations, including token-display denominator handling (#589).
+
+### Fixed
+- Render external `balance_label` values alongside stdin `rate_limits` instead of treating them as mutually exclusive (#598, #599).
+- Preserve inherited terminal width in setup-generated statusline commands before probing `/dev/tty`, fixing narrow-pane wrapping/flicker in terminals without a controlling TTY (#581).
+- Use a lightweight Windows Node launcher for PowerShell/cmd setup instead of a PowerShell wrapper on every statusline refresh, reducing Windows render-time overhead while preserving update discovery (#555).
+- Collapse whitespace in multiline Bash tool targets before truncation so the tools line stays single-line (#594).
+- Harden advisor, Skills, and MCP labels against control characters, terminal escapes, bidi controls, and oversized activity names (#573, #595).
+- Validate `autoCompactWindow` as an integer before using it in context calculations (#589).
+
+### Changed
+- Clarify in release docs that `.claude-plugin/plugin.json` is the Claude Code update/cache version source (#591).
+
+### Dependencies
+- Bump `@types/node` from 25.9.1 to 25.9.2 (#593).
+- Refresh the lockfile to clear the transitive `brace-expansion` audit advisory.
 
 ## [0.1.0] - 2026-06-03
 

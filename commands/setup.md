@@ -158,9 +158,9 @@ echo $OSTYPE
 
    The command exports `COLUMNS` so the HUD knows the real terminal width.
    Claude Code pipes the subprocess stdout, so `process.stdout.columns` is
-   unavailable at runtime. `stty size </dev/tty` reads from the controlling
-   terminal. The `- 4` accounts for Claude Code's input area padding
-   (2 columns on each side).
+   unavailable at runtime. Prefer Claude Code's inherited positive-integer
+   `COLUMNS`, then try `stty size </dev/tty`, then fall back to 120. The `- 4`
+   accounts for Claude Code's input area padding (2 columns on each side).
 
    The grep pattern uses `[[:space:]]` rather than `\t` to match the tab
    separator emitted by awk. GNU grep (BRE/ERE) does **not** interpret
@@ -176,12 +176,12 @@ echo $OSTYPE
 
    **When runtime is bun** - add `--env-file /dev/null` to prevent Bun from auto-loading project `.env` files:
    ```
-   bash -c 'cols=$(stty size </dev/tty 2>/dev/null | awk '"'"'{print $2}'"'"'); export COLUMNS=$(( ${cols:-120} > 4 ? ${cols:-120} - 4 : 1 )); plugin_dir=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | awk -F/ '"'"'{ print $(NF-1) "\t" $(0) }'"'"' | grep -E '"'"'^[0-9]+\.[0-9]+\.[0-9]+[[:space:]]'"'"' | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1 | cut -f2-); exec "{RUNTIME_PATH}" --env-file /dev/null "${plugin_dir}{SOURCE}"'
+   bash -c 'cols=${COLUMNS:-}; case "$cols" in ""|*[!0-9]*) cols=$(stty size </dev/tty 2>/dev/null | awk '"'"'{print $2}'"'"');; esac; case "$cols" in ""|*[!0-9]*) cols=120;; esac; export COLUMNS=$(( cols > 4 ? cols - 4 : 1 )); plugin_dir=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | awk -F/ '"'"'{ print $(NF-1) "\t" $(0) }'"'"' | grep -E '"'"'^[0-9]+\.[0-9]+\.[0-9]+[[:space:]]'"'"' | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1 | cut -f2-); exec "{RUNTIME_PATH}" --env-file /dev/null "${plugin_dir}{SOURCE}"'
    ```
 
    **When runtime is node**:
    ```
-   bash -c 'cols=$(stty size </dev/tty 2>/dev/null | awk '"'"'{print $2}'"'"'); export COLUMNS=$(( ${cols:-120} > 4 ? ${cols:-120} - 4 : 1 )); plugin_dir=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | awk -F/ '"'"'{ print $(NF-1) "\t" $(0) }'"'"' | grep -E '"'"'^[0-9]+\.[0-9]+\.[0-9]+[[:space:]]'"'"' | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1 | cut -f2-); exec "{RUNTIME_PATH}" "${plugin_dir}{SOURCE}"'
+   bash -c 'cols=${COLUMNS:-}; case "$cols" in ""|*[!0-9]*) cols=$(stty size </dev/tty 2>/dev/null | awk '"'"'{print $2}'"'"');; esac; case "$cols" in ""|*[!0-9]*) cols=120;; esac; export COLUMNS=$(( cols > 4 ? cols - 4 : 1 )); plugin_dir=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | awk -F/ '"'"'{ print $(NF-1) "\t" $(0) }'"'"' | grep -E '"'"'^[0-9]+\.[0-9]+\.[0-9]+[[:space:]]'"'"' | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1 | cut -f2-); exec "{RUNTIME_PATH}" "${plugin_dir}{SOURCE}"'
    ```
 
 **Windows + Git Bash** (Platform: `win32`, Shell: `bash`):
@@ -195,7 +195,7 @@ On Windows require `node` and always use `dist/index.js`.
 Instead, use `sort -V` (GNU version sort, included with Git for Windows) which avoids nested single quotes entirely. Also avoid wrapping the generated command in a second `bash -c ...` layer. Claude Code is already invoking the statusline through bash, so the direct shell command lets `exec` replace that shell instead of spawning an extra bash wrapper first. The command still exports `COLUMNS` so the HUD receives the real terminal width, and it uses the marketplace-aware cache glob:
 
    ```
-   cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}'); export COLUMNS=$(( ${cols:-120} > 4 ? ${cols:-120} - 4 : 1 )); plugin_dir=$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | sort -V | tail -1); exec "{RUNTIME_PATH}" "${plugin_dir}{SOURCE}"
+   cols=${COLUMNS:-}; case "$cols" in ""|*[!0-9]*) cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}');; esac; case "$cols" in ""|*[!0-9]*) cols=120;; esac; export COLUMNS=$(( cols > 4 ? cols - 4 : 1 )); plugin_dir=$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/*/claude-hud/*/ 2>/dev/null | sort -V | tail -1); exec "{RUNTIME_PATH}" "${plugin_dir}{SOURCE}"
    ```
 
 **Windows + PowerShell** (Platform: `win32`, Shell: `powershell`, `pwsh`, or `cmd`, OSTYPE: other/empty):
@@ -226,58 +226,155 @@ Instead, use `sort -V` (GNU version sort, included with Git for Windows) which a
 
 3. Use `dist\index.js`.
 
-4. Write the PowerShell wrapper script.
+4. Write the Windows statusline launcher.
 
-   Claude Code spawns the statusLine subprocess with no console handle attached. On Windows PowerShell 5.1, that makes `[Console]::WindowWidth` throw `System.IO.IOException: The handle is invalid.`, which halts the script before `node` runs — the HUD shows only "initializing..." and no error reaches any log. The macOS/Linux branch sidesteps this with `${cols:-120}` (`stty size` falls back when the controlling terminal is missing); the PowerShell equivalent is `try/catch` around `[Console]::WindowWidth`.
+   Windows PowerShell startup plus `Get-ChildItem | Sort-Object [version]` can exceed Claude Code's render cadence on every statusLine refresh. Write a small Node launcher once during setup, then invoke it through `cmd.exe` on each refresh. The launcher uses the setup-time validated `node.exe`, preserves update discovery by finding the latest installed `claude-hud` version, and prefers inherited `COLUMNS` before falling back to 120.
 
-   Inline `powershell -Command "..."` strings in `settings.json` make `try/catch` and multi-line control flow awkward because of nested quoting and the `cmd /s /c` rules that wrap the call. A standalone `.ps1` wrapper is the PowerShell equivalent of the macOS/Linux `bash -c '...'` script body — proper control flow, no JSON-string quoting pressure, and a single source of truth that future PS-side fixes can extend.
+   The launcher file at `$claudeDir/plugins/claude-hud/statusline.mjs` should contain:
 
-   The wrapper file at `$claudeDir/plugins/claude-hud/statusline.ps1` should contain:
+   ```js
+   import fs from 'node:fs';
+   import os from 'node:os';
+   import path from 'node:path';
+   import { pathToFileURL } from 'node:url';
 
-   ```powershell
-   try { $w = [Console]::WindowWidth } catch { $w = 120 }
-   $env:COLUMNS = [Math]::Max(1, $w - 4)
-   $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
-   $pluginDir = (Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\claude-hud\*') -Directory -ErrorAction SilentlyContinue |
-       Where-Object { $_.Name -match '^\d+(\.\d+)+$' } |
-       Sort-Object { [version]$_.Name } -Descending |
-       Select-Object -First 1).FullName
-   if (-not $pluginDir) { exit 0 }
-   & '{RUNTIME_PATH}' (Join-Path $pluginDir 'dist\index.js')
+   const envColumns = Number.parseInt(process.env.COLUMNS ?? '', 10);
+   const width = Number.isFinite(envColumns) && envColumns > 0 ? envColumns : 120;
+   process.env.COLUMNS = String(Math.max(1, width - 4));
+
+   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+   const cacheDir = path.join(claudeDir, 'plugins', 'cache');
+
+   function versionParts(value) {
+     const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(value);
+     return match ? match.slice(1, 4).map(Number) : null;
+   }
+
+   function compareVersions(a, b) {
+     for (let i = 0; i < 3; i += 1) {
+       if (a[i] !== b[i]) return a[i] - b[i];
+     }
+     return 0;
+   }
+
+   const candidates = [];
+   try {
+     for (const marketplace of fs.readdirSync(cacheDir, { withFileTypes: true })) {
+       if (!marketplace.isDirectory()) continue;
+       const pluginRoot = path.join(cacheDir, marketplace.name, 'claude-hud');
+       let versions = [];
+       try {
+         versions = fs.readdirSync(pluginRoot, { withFileTypes: true });
+       } catch {
+         continue;
+       }
+       for (const version of versions) {
+         if (!version.isDirectory()) continue;
+         const parts = versionParts(version.name);
+         if (!parts) continue;
+         const dir = path.join(pluginRoot, version.name);
+         if (fs.existsSync(path.join(dir, 'dist', 'index.js'))) {
+           candidates.push({ dir, parts });
+         }
+       }
+     }
+   } catch {
+     process.exit(0);
+   }
+
+   candidates.sort((a, b) => compareVersions(a.parts, b.parts));
+   const latest = candidates.at(-1);
+   if (!latest) process.exit(0);
+
+   const hud = await import(pathToFileURL(path.join(latest.dir, 'dist', 'index.js')).href);
+   if (typeof hud.main === 'function') {
+     await hud.main();
+   }
    ```
 
-   Write it using `[System.IO.File]::WriteAllText` with `New-Object System.Text.UTF8Encoding $false` so the file is UTF-8 without a BOM. A script block with `.ToString()` is the cleanest way to embed the body without here-string quoting pressure:
+   Write it using `[System.IO.File]::WriteAllText` with `New-Object System.Text.UTF8Encoding $false` so the file is UTF-8 without a BOM:
 
    ```powershell
    $wrapperDir = Join-Path $claudeDir "plugins\claude-hud"
    New-Item -ItemType Directory -Force -Path $wrapperDir | Out-Null
-   $wrapperPath = Join-Path $wrapperDir "statusline.ps1"
-   $runtimePathLiteral = $runtimePath.Replace("'", "''")
-   $wrapperBody = ({
-       try { $w = [Console]::WindowWidth } catch { $w = 120 }
-       $env:COLUMNS = [Math]::Max(1, $w - 4)
-       $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
-       $pluginDir = (Get-ChildItem (Join-Path $claudeDir 'plugins\cache\*\claude-hud\*') -Directory -ErrorAction SilentlyContinue |
-           Where-Object { $_.Name -match '^\d+(\.\d+)+$' } |
-           Sort-Object { [version]$_.Name } -Descending |
-           Select-Object -First 1).FullName
-       if (-not $pluginDir) { exit 0 }
-       & '__RUNTIME_PATH__' (Join-Path $pluginDir 'dist\index.js')
-   }.ToString().Trim()).Replace('__RUNTIME_PATH__', $runtimePathLiteral)
+   $wrapperPath = Join-Path $wrapperDir "statusline.mjs"
+   $wrapperBody = @'
+   import fs from 'node:fs';
+   import os from 'node:os';
+   import path from 'node:path';
+   import { pathToFileURL } from 'node:url';
+
+   const envColumns = Number.parseInt(process.env.COLUMNS ?? '', 10);
+   const width = Number.isFinite(envColumns) && envColumns > 0 ? envColumns : 120;
+   process.env.COLUMNS = String(Math.max(1, width - 4));
+
+   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+   const cacheDir = path.join(claudeDir, 'plugins', 'cache');
+
+   function versionParts(value) {
+     const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(value);
+     return match ? match.slice(1, 4).map(Number) : null;
+   }
+
+   function compareVersions(a, b) {
+     for (let i = 0; i < 3; i += 1) {
+       if (a[i] !== b[i]) return a[i] - b[i];
+     }
+     return 0;
+   }
+
+   const candidates = [];
+   try {
+     for (const marketplace of fs.readdirSync(cacheDir, { withFileTypes: true })) {
+       if (!marketplace.isDirectory()) continue;
+       const pluginRoot = path.join(cacheDir, marketplace.name, 'claude-hud');
+       let versions = [];
+       try {
+         versions = fs.readdirSync(pluginRoot, { withFileTypes: true });
+       } catch {
+         continue;
+       }
+       for (const version of versions) {
+         if (!version.isDirectory()) continue;
+         const parts = versionParts(version.name);
+         if (!parts) continue;
+         const dir = path.join(pluginRoot, version.name);
+         if (fs.existsSync(path.join(dir, 'dist', 'index.js'))) {
+           candidates.push({ dir, parts });
+         }
+       }
+     }
+   } catch {
+     process.exit(0);
+   }
+
+   candidates.sort((a, b) => compareVersions(a.parts, b.parts));
+   const latest = candidates.at(-1);
+   if (!latest) process.exit(0);
+
+   const hud = await import(pathToFileURL(path.join(latest.dir, 'dist', 'index.js')).href);
+   if (typeof hud.main === 'function') {
+     await hud.main();
+   }
+   '@
    [System.IO.File]::WriteAllText($wrapperPath, $wrapperBody, (New-Object System.Text.UTF8Encoding $false))
    ```
 
-   `$runtimePath` is the value detected in step 2 (the absolute path returned by `(Get-Command node).Source`, typically `C:\Program Files\nodejs\node.exe`). `$runtimePathLiteral` escapes single quotes for the generated single-quoted PowerShell command, and `.Replace()` performs literal replacement so `$` and other regex replacement characters in the runtime path are preserved.
+   `$runtimePath` is the value detected in step 2 (the absolute path returned by `(Get-Command node).Source`, typically `C:\Program Files\nodejs\node.exe`). `Set-Content -Encoding UTF8` and `Out-File -Encoding UTF8` on Windows PowerShell 5.1 both emit a UTF-8 BOM. `WriteAllText` + `UTF8Encoding $false` writes without a BOM in both PowerShell 5.1 and PowerShell 7+.
 
-   `Set-Content -Encoding UTF8` and `Out-File -Encoding UTF8` on Windows PowerShell 5.1 both emit a UTF-8 BOM — PS 7+ added `-Encoding utf8NoBOM`, but PS 5.1 ships as the Windows 10/11 default and does not. `WriteAllText` + `UTF8Encoding $false` writes without a BOM in both versions.
-
-5. Generate command (points at the wrapper file, not an inline `-Command` string):
+5. Generate command:
 
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -File "{WRAPPER_PATH}"
+   {CMD_PATH} /d /s /c ""{RUNTIME_PATH}" "{WRAPPER_PATH}""
    ```
 
-   `{WRAPPER_PATH}` is the value of `$wrapperPath` from step 4 (typically `C:\Users\<user>\.claude\plugins\claude-hud\statusline.ps1`).
+   `{CMD_PATH}` is the absolute `cmd.exe` path, preferably `$env:SystemRoot\System32\cmd.exe`. `{WRAPPER_PATH}` is the value of `$wrapperPath` from step 4 (typically `C:\Users\<user>\.claude\plugins\claude-hud\statusline.mjs`). If you build the string in PowerShell, use:
+
+   ```powershell
+   $cmdPath = Join-Path $env:SystemRoot "System32\cmd.exe"
+   if (-not (Test-Path $cmdPath)) { $cmdPath = "cmd.exe" }
+   $generatedCommand = $cmdPath + ' /d /s /c ""' + $runtimePath + '" "' + $wrapperPath + '""'
+   ```
 
 **WSL (Windows Subsystem for Linux)**: If running in WSL, use the macOS/Linux instructions. Ensure the plugin is installed in the Linux environment (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/...`), not the Windows side.
 
@@ -612,12 +709,12 @@ Use AskUserQuestion:
 
    **Windows + PowerShell: HUD silent or "initializing..." with no error in any log (OSTYPE is not msys/cygwin)**:
    - Symptoms: HUD stays at "initializing..." or shows nothing. Running the generated command interactively in a PowerShell prompt produces the expected HUD output, but the version invoked through Claude Code does not.
-   - Root cause: either (a) `[Console]::WindowWidth` threw `System.IO.IOException: The handle is invalid.` because the subprocess Claude Code spawns has no console handle, or (b) the cache glob `plugins\cache\*\claude-hud` (with no trailing `\*`) matched the `claude-hud` directory itself, leaving `$pluginDir` as `$null` and `Join-Path` throwing `Cannot bind argument to parameter 'Path' because it is null`.
+   - Root cause: older setup commands used a PowerShell wrapper on every refresh. That path could fail when `[Console]::WindowWidth` threw `System.IO.IOException: The handle is invalid.`, when the cache glob resolved the `claude-hud` directory instead of a version directory, or when PowerShell startup exceeded the render cadence.
    - Check: pipe stdin through `cmd.exe` to mirror Claude Code's invocation:
      ```powershell
      '{}' | & cmd.exe /c '{GENERATED_COMMAND}'
      ```
-     If you see either error, the existing setup predates the wrapper-based command format. Re-run `/claude-hud:setup` to regenerate `statusline.ps1` with `try/catch` and the corrected version-dir glob. See [#521](https://github.com/jarrodwatts/claude-hud/issues/521).
+     If you see either error, the existing setup predates the Node launcher format. Re-run `/claude-hud:setup` to regenerate `statusline.mjs` and a `cmd.exe`-launched command. See [#521](https://github.com/jarrodwatts/claude-hud/issues/521).
 
    **Windows: PowerShell execution policy error**:
    - Run: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`

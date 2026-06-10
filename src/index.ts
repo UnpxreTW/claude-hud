@@ -104,6 +104,11 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
       usageData = stdinUsage;
       if (!usageData) {
         usageData = deps.getUsageFromExternalSnapshot(config, deps.now());
+      } else if (config.display.externalUsagePath) {
+        const ext = deps.getUsageFromExternalSnapshot(config, deps.now());
+        if (ext?.balanceLabel != null) {
+          usageData = { ...usageData, balanceLabel: ext.balanceLabel };
+        }
       }
     }
 
