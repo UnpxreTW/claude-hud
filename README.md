@@ -161,7 +161,7 @@ Chinese HUD labels are available as an explicit opt-in. English stays the defaul
 | `pathLevels` | 1-3 | 1 | Directory levels to show in project path |
 | `maxWidth` | number \| `null` | `null` | Optional fallback width used only when terminal width detection fails completely |
 | `forceMaxWidth` | boolean | false | Always use `maxWidth` when it is set, even if terminal width detection returns a smaller value |
-| `elementOrder` | string[] | `["project","context","usage","promptCache","memory","environment","tools","agents","todos","sessionTime"]` | Expanded-mode element order. Omit entries to hide them in expanded mode. Existing configs keep their explicit order until updated. |
+| `elementOrder` | string[] | `["project","addedDirs","context","usage","promptCache","memory","environment","tools","skills","mcp","agents","todos","sessionTime"]` | Expanded-mode element order. Omit entries to hide them in expanded mode. Existing configs keep their explicit order until updated. |
 | `display.mergeGroups` | string[][] | `[["context","usage"]]` | Expanded-mode groups that should share a line when adjacent. Set `[]` to disable merged lines. |
 | `gitStatus.enabled` | boolean | true | Show git branch in HUD |
 | `gitStatus.showDirty` | boolean | true | Show `*` for uncommitted changes |
@@ -188,11 +188,13 @@ Chinese HUD labels are available as an explicit opt-in. English stays the defaul
 | `display.showResetLabel` | boolean | true | Show the `resets in` prefix before usage countdowns |
 | `display.timeFormat` | `relative` \| `absolute` \| `both` \| `elapsed` \| `elapsedAndAbsolute` | `relative` | How usage-window time is shown: countdown only (`resets in 2h 30m`), wall-clock reset (`resets at 14:30`), both, elapsed window percentage (`53% elapsed`), or elapsed plus wall-clock reset |
 | `display.sevenDayThreshold` | 0-100 | 80 | Show 7-day usage when >= threshold (0 = always) |
-| `display.externalUsagePath` | string | `""` | Optional path to a local usage snapshot file used only when stdin `rate_limits` are missing |
+| `display.externalUsagePath` | string | `""` | Optional path to a local usage snapshot file. When stdin `rate_limits` are present, only `balance_label` is appended; when they are missing, valid usage windows can be used as a fallback |
 | `display.externalUsageWritePath` | string | `""` | Optional absolute `.json` path in an existing directory. When stdin `rate_limits` exists, ClaudeHUD writes a private snapshot for other local tools. Relative paths, non-json files, and missing parent directories are ignored |
 | `display.externalUsageFreshnessMs` | number | `300000` | Maximum allowed age for the external usage snapshot before it is ignored |
 | `display.showTokenBreakdown` | boolean | true | Show token details at high context (85%+) |
 | `display.showTools` | boolean | false | Show tools activity line |
+| `display.showSkills` | boolean | false | Show active Skills detected from `Skill` tool invocations |
+| `display.showMcp` | boolean | false | Show active MCP servers detected from `mcp__server__tool` invocations |
 | `display.toolNameMaxLength` | number | `0` | Maximum displayed tool-name length. `0` keeps full names; MCP names may shorten to their final segment when truncating |
 | `display.toolsMaxVisible` | number | `4` | Maximum completed tools shown on the tools line. `0` means unlimited |
 | `display.showAgents` | boolean | false | Show agents activity line |
@@ -236,7 +238,7 @@ Usage display is **enabled by default** when Claude Code provides subscriber `ra
 
 Set `display.usageValue` to `remaining` to show quota left instead of quota used. Warning colors and 7-day threshold checks still use the underlying used percentage.
 
-ClaudeHUD prefers the official statusline stdin payload. If `rate_limits` are missing, you can opt into a local sidecar fallback by setting `display.externalUsagePath` to a JSON snapshot written by another tool such as a proxy. Stdin still wins whenever both sources exist.
+ClaudeHUD prefers the official statusline stdin payload for rate-limit windows. If `display.externalUsagePath` points to a fresh local sidecar snapshot, ClaudeHUD can append its `balance_label` alongside stdin windows. If stdin `rate_limits` are missing, the same snapshot can provide fallback usage windows.
 
 The fallback snapshot must be fresh enough (`display.externalUsageFreshnessMs`) and include valid `updated_at`, plus a `five_hour` window, `seven_day` window, or `balance_label`. `balance_label` is optional text for prepaid provider balances; it is trimmed, length-limited, and sanitized before display. Invalid JSON, stale files, or invalid timestamps are ignored quietly.
 
@@ -299,7 +301,7 @@ Example fallback snapshot:
   "language": "zh",
   "lineLayout": "expanded",
   "pathLevels": 2,
-  "elementOrder": ["project", "tools", "context", "usage", "memory", "environment", "agents", "todos", "sessionTime"],
+  "elementOrder": ["project", "tools", "skills", "mcp", "context", "usage", "memory", "environment", "agents", "todos", "sessionTime"],
   "gitStatus": {
     "enabled": true,
     "showDirty": true,
@@ -308,6 +310,8 @@ Example fallback snapshot:
   },
   "display": {
     "showTools": true,
+    "showSkills": true,
+    "showMcp": true,
     "showAgents": true,
     "showTodos": true,
     "showConfigCounts": true,
@@ -357,8 +361,8 @@ Example fallback snapshot:
 - Verify you're in a git repository
 - Check `gitStatus.enabled` is not `false` in config
 
-**Tool/agent/todo lines missing?**
-- These are hidden by default — enable with `showTools`, `showAgents`, `showTodos` in config
+**Tool/skill/MCP/agent/todo lines missing?**
+- These are hidden by default — enable with `showTools`, `showSkills`, `showMcp`, `showAgents`, `showTodos` in config
 - They also only appear when there's activity to show
 
 **HUD not appearing after setup?**

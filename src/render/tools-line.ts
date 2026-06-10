@@ -21,7 +21,10 @@ export function shortenToolName(name: string, maxLen: number): string {
 }
 
 export function renderToolsLine(ctx: RenderContext): string | null {
-  const { tools } = ctx.transcript;
+  const hideSkillTools = ctx.config?.display?.showSkills === true;
+  const tools = hideSkillTools
+    ? ctx.transcript.tools.filter((tool) => tool.name !== 'Skill')
+    : ctx.transcript.tools;
   const colors = ctx.config?.colors;
   const toolNameMaxLength = ctx.config?.display?.toolNameMaxLength ?? 0;
   const toolsMaxVisible = ctx.config?.display?.toolsMaxVisible ?? 4;

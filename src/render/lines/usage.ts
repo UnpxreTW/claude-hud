@@ -32,10 +32,7 @@ export function renderUsageLine(
   }
 
   const usageLabel = progressLabel("label.usage", colors, alignLabels);
-
-  if (ctx.usageData.balanceLabel) {
-    return `${usageLabel} ${ctx.usageData.balanceLabel}`;
-  }
+  const balanceLabel = ctx.usageData.balanceLabel ?? null;
 
   const timeFormat = normalizeTimeFormat(display?.timeFormat);
   const showResetLabel = display?.showResetLabel ?? true;
@@ -47,17 +44,17 @@ export function renderUsageLine(
   const threshold = display?.usageThreshold ?? 0;
   const fiveHour = ctx.usageData.fiveHour;
 
-  // Weekly usage is rendered by the independent weeklyUsage element.
-  if (fiveHour === null) {
-    return null;
-  }
-
-  if (fiveHour < threshold) {
-    return null;
+  // Weekly usage is rendered by the independent weeklyUsage element; the usage
+  // element only handles the five-hour window (plus any external balance label).
+  if (fiveHour === null || fiveHour < threshold) {
+    return balanceLabel ? `${usageLabel} ${balanceLabel}` : null;
   }
 
   if (usageCompact) {
-    return formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode);
+    return appendBalance(
+      formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode),
+      balanceLabel,
+    );
   }
 
   const usageBarEnabled = display?.usageBarEnabled ?? true;
@@ -76,7 +73,7 @@ export function renderUsageLine(
     usageValueMode,
   });
 
-  return `${usageLabel} ${fiveHourPart}`;
+  return appendBalance(`${usageLabel} ${fiveHourPart}`, balanceLabel);
 }
 
 export function renderWeeklyUsageLine(
@@ -131,6 +128,10 @@ export function renderWeeklyUsageLine(
     alignLabels,
     usageValueMode,
   });
+}
+
+function appendBalance(line: string, balanceLabel: string | null): string {
+  return balanceLabel ? `${line} | ${balanceLabel}` : line;
 }
 
 function formatCompactWindowPart(

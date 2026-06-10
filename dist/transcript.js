@@ -4,7 +4,14 @@ import * as path from 'node:path';
 import * as readline from 'readline';
 import { createHash } from 'node:crypto';
 import { getHudPluginDir } from './claude-config-dir.js';
-const TRANSCRIPT_CACHE_VERSION = 7;
+const TRANSCRIPT_CACHE_VERSION = 8;
+const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
+const ACTIVITY_NAME_MAX_LEN = 64;
+const DISPLAY_CONTROL_PATTERN = new RegExp('[' +
+    '\\u0000-\\u001F\\u007F-\\u009F' +
+    '\\u061C\\u200E\\u200F' +
+    '\\u202A-\\u202E\\u2066-\\u2069\\u206A-\\u206F' +
+    ']', 'g');
 // Hard cap on the advisor model ID captured from the transcript. Real Claude
 // model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
 // cap exists to prevent a malformed transcript from persisting an oversized
@@ -28,6 +35,40 @@ function normalizeSessionTokens(tokens) {
         cacheCreationTokens: normalizeTokenCount(raw.cacheCreationTokens),
         cacheReadTokens: normalizeTokenCount(raw.cacheReadTokens),
     };
+}
+function normalizeNameList(value) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    const seen = new Set();
+    const names = [];
+    for (const item of value) {
+        const name = normalizeActivityName(item);
+        if (!name || seen.has(name)) {
+            continue;
+        }
+        seen.add(name);
+        names.push(name);
+    }
+    return names;
+}
+function normalizeActivityName(value) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const sanitized = value
+        .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
+        .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
+        .replace(/\x1B[@-Z\\-_]/g, '')
+        .replace(DISPLAY_CONTROL_PATTERN, '')
+        .trim();
+    if (!sanitized) {
+        return undefined;
+    }
+    if (sanitized.length <= ACTIVITY_NAME_MAX_LEN) {
+        return sanitized;
+    }
+    return `${sanitized.slice(0, ACTIVITY_NAME_MAX_LEN - 1)}…`;
 }
 function getTranscriptCachePath(transcriptPath, homeDir) {
     const hash = createHash('sha256').update(path.resolve(transcriptPath)).digest('hex');
@@ -63,6 +104,8 @@ function serializeTranscriptData(data) {
             startTime: tool.startTime.toISOString(),
             endTime: tool.endTime?.toISOString(),
         })),
+        skills: [...data.skills],
+        mcpServers: [...data.mcpServers],
         agents: data.agents.map((agent) => ({
             ...agent,
             startTime: agent.startTime.toISOString(),
@@ -85,6 +128,8 @@ function deserializeTranscriptData(data) {
             startTime: new Date(tool.startTime),
             endTime: tool.endTime ? new Date(tool.endTime) : undefined,
         })),
+        skills: normalizeNameList(data.skills),
+        mcpServers: normalizeNameList(data.mcpServers),
         agents: data.agents.map((agent) => ({
             ...agent,
             startTime: new Date(agent.startTime),
@@ -140,6 +185,8 @@ function writeTranscriptCache(transcriptPath, state, data) {
 export async function parseTranscript(transcriptPath) {
     const result = {
         tools: [],
+        skills: [],
+        mcpServers: [],
         agents: [],
         todos: [],
     };
@@ -159,6 +206,8 @@ export async function parseTranscript(transcriptPath) {
         return cached;
     }
     const toolMap = new Map();
+    const skillSet = new Set();
+    const mcpServerSet = new Set();
     const agentMap = new Map();
     let latestTodos = [];
     const taskIdToIndex = new Map();
@@ -252,7 +301,7 @@ export async function parseTranscript(transcriptPath) {
                         }
                     }
                 }
-                processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, result);
+                processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result);
             }
             catch {
                 lastUsageKey = undefined;
@@ -280,6 +329,8 @@ export async function parseTranscript(transcriptPath) {
         }
     }
     result.tools = Array.from(toolMap.values()).slice(-20);
+    result.skills = Array.from(skillSet.values());
+    result.mcpServers = Array.from(mcpServerSet.values());
     result.agents = Array.from(agentMap.values()).slice(-10);
     result.todos = latestTodos;
     result.sessionName = customTitle ?? latestSlug;
@@ -295,7 +346,7 @@ export async function parseTranscript(transcriptPath) {
 export function _setCreateReadStreamForTests(impl) {
     createReadStreamImpl = impl ?? fs.createReadStream;
 }
-function processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, result) {
+function processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result) {
     const timestamp = entry.timestamp ? new Date(entry.timestamp) : new Date();
     const hasValidTimestamp = !Number.isNaN(timestamp.getTime());
     if (!result.sessionStart && entry.timestamp && hasValidTimestamp) {
@@ -309,6 +360,16 @@ function processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, resu
         return;
     for (const block of content) {
         if (block.type === 'tool_use' && block.id && block.name) {
+            const skillName = block.name === 'Skill'
+                ? normalizeSkillName(block.input?.skill)
+                : undefined;
+            if (skillName) {
+                skillSet.add(skillName);
+            }
+            const mcpServerName = extractMcpServerName(block.name);
+            if (mcpServerName) {
+                mcpServerSet.add(mcpServerName);
+            }
             const toolEntry = {
                 id: block.id,
                 name: block.name,
@@ -428,14 +489,29 @@ function extractTarget(toolName, input) {
         case 'Grep':
             return input.pattern;
         case 'Skill':
-            return typeof input.skill === 'string' && input.skill.trim().length > 0
-                ? input.skill
-                : undefined;
+            return normalizeSkillName(input.skill);
         case 'Bash':
-            const cmd = input.command;
-            return cmd?.slice(0, 30) + (cmd?.length > 30 ? '...' : '');
+            if (typeof input.command !== 'string') {
+                return undefined;
+            }
+            const cmd = input.command.replace(/\s+/g, ' ').trim();
+            return cmd
+                ? cmd.length > 30
+                    ? `${cmd.slice(0, 30).trimEnd()}...`
+                    : cmd
+                : undefined;
     }
     return undefined;
+}
+function normalizeSkillName(value) {
+    return normalizeActivityName(value);
+}
+function extractMcpServerName(toolName) {
+    const match = MCP_TOOL_NAME_PATTERN.exec(toolName);
+    if (!match) {
+        return undefined;
+    }
+    return normalizeActivityName(match[1]);
 }
 function resolveTaskIndex(taskId, taskIdToIndex, latestTodos) {
     if (typeof taskId === 'string' || typeof taskId === 'number') {

@@ -119,6 +119,8 @@ export interface SessionTokenUsage {
 
 export interface TranscriptData {
   tools: ToolEntry[];
+  skills: string[];
+  mcpServers: string[];
   agents: AgentEntry[];
   todos: TodoItem[];
   sessionStart?: Date;

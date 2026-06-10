@@ -60,6 +60,8 @@ interface SerializedAgentEntry extends Omit<AgentEntry, 'startTime' | 'endTime'>
 
 interface SerializedTranscriptData {
   tools: SerializedToolEntry[];
+  skills: string[];
+  mcpServers: string[];
   agents: SerializedAgentEntry[];
   todos: TodoItem[];
   sessionStart?: string;
@@ -78,7 +80,17 @@ interface TranscriptCacheFile {
   data: SerializedTranscriptData;
 }
 
-const TRANSCRIPT_CACHE_VERSION = 7;
+const TRANSCRIPT_CACHE_VERSION = 8;
+const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
+const ACTIVITY_NAME_MAX_LEN = 64;
+const DISPLAY_CONTROL_PATTERN = new RegExp(
+  '[' +
+  '\\u0000-\\u001F\\u007F-\\u009F' +
+  '\\u061C\\u200E\\u200F' +
+  '\\u202A-\\u202E\\u2066-\\u2069\\u206A-\\u206F' +
+  ']',
+  'g',
+);
 
 // Hard cap on the advisor model ID captured from the transcript. Real Claude
 // model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
@@ -108,6 +120,48 @@ function normalizeSessionTokens(tokens: unknown): SessionTokenUsage | undefined 
     cacheCreationTokens: normalizeTokenCount(raw.cacheCreationTokens),
     cacheReadTokens: normalizeTokenCount(raw.cacheReadTokens),
   };
+}
+
+function normalizeNameList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const item of value) {
+    const name = normalizeActivityName(item);
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    names.push(name);
+  }
+
+  return names;
+}
+
+function normalizeActivityName(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const sanitized = value
+    .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
+    .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
+    .replace(/\x1B[@-Z\\-_]/g, '')
+    .replace(DISPLAY_CONTROL_PATTERN, '')
+    .trim();
+
+  if (!sanitized) {
+    return undefined;
+  }
+
+  if (sanitized.length <= ACTIVITY_NAME_MAX_LEN) {
+    return sanitized;
+  }
+
+  return `${sanitized.slice(0, ACTIVITY_NAME_MAX_LEN - 1)}…`;
 }
 
 function getTranscriptCachePath(transcriptPath: string, homeDir: string): string {
@@ -145,6 +199,8 @@ function serializeTranscriptData(data: TranscriptData): SerializedTranscriptData
       startTime: tool.startTime.toISOString(),
       endTime: tool.endTime?.toISOString(),
     })),
+    skills: [...data.skills],
+    mcpServers: [...data.mcpServers],
     agents: data.agents.map((agent) => ({
       ...agent,
       startTime: agent.startTime.toISOString(),
@@ -168,6 +224,8 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
       startTime: new Date(tool.startTime),
       endTime: tool.endTime ? new Date(tool.endTime) : undefined,
     })),
+    skills: normalizeNameList(data.skills),
+    mcpServers: normalizeNameList(data.mcpServers),
     agents: data.agents.map((agent) => ({
       ...agent,
       startTime: new Date(agent.startTime),
@@ -227,6 +285,8 @@ function writeTranscriptCache(transcriptPath: string, state: TranscriptFileState
 export async function parseTranscript(transcriptPath: string): Promise<TranscriptData> {
   const result: TranscriptData = {
     tools: [],
+    skills: [],
+    mcpServers: [],
     agents: [],
     todos: [],
   };
@@ -251,6 +311,8 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   }
 
   const toolMap = new Map<string, ToolEntry>();
+  const skillSet = new Set<string>();
+  const mcpServerSet = new Set<string>();
   const agentMap = new Map<string, AgentEntry>();
   let latestTodos: TodoItem[] = [];
   const taskIdToIndex = new Map<string, number>();
@@ -348,7 +410,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
             }
           }
         }
-        processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, result);
+        processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result);
       } catch {
         lastUsageKey = undefined;
         // Skip malformed lines
@@ -376,6 +438,8 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     }
   }
   result.tools = Array.from(toolMap.values()).slice(-20);
+  result.skills = Array.from(skillSet.values());
+  result.mcpServers = Array.from(mcpServerSet.values());
   result.agents = Array.from(agentMap.values()).slice(-10);
   result.todos = latestTodos;
   result.sessionName = customTitle ?? latestSlug;
@@ -397,6 +461,8 @@ export function _setCreateReadStreamForTests(impl: typeof fs.createReadStream | 
 function processEntry(
   entry: TranscriptLine,
   toolMap: Map<string, ToolEntry>,
+  skillSet: Set<string>,
+  mcpServerSet: Set<string>,
   agentMap: Map<string, AgentEntry>,
   taskIdToIndex: Map<string, number>,
   latestTodos: TodoItem[],
@@ -418,6 +484,18 @@ function processEntry(
 
   for (const block of content) {
     if (block.type === 'tool_use' && block.id && block.name) {
+      const skillName = block.name === 'Skill'
+        ? normalizeSkillName(block.input?.skill)
+        : undefined;
+      if (skillName) {
+        skillSet.add(skillName);
+      }
+
+      const mcpServerName = extractMcpServerName(block.name);
+      if (mcpServerName) {
+        mcpServerSet.add(mcpServerName);
+      }
+
       const toolEntry: ToolEntry = {
         id: block.id,
         name: block.name,
@@ -541,14 +619,32 @@ function extractTarget(toolName: string, input?: Record<string, unknown>): strin
     case 'Grep':
       return input.pattern as string;
     case 'Skill':
-      return typeof input.skill === 'string' && input.skill.trim().length > 0
-        ? input.skill
-        : undefined;
+      return normalizeSkillName(input.skill);
     case 'Bash':
-      const cmd = input.command as string;
-      return cmd?.slice(0, 30) + (cmd?.length > 30 ? '...' : '');
+      if (typeof input.command !== 'string') {
+        return undefined;
+      }
+      const cmd = input.command.replace(/\s+/g, ' ').trim();
+      return cmd
+        ? cmd.length > 30
+          ? `${cmd.slice(0, 30).trimEnd()}...`
+          : cmd
+        : undefined;
   }
   return undefined;
+}
+
+function normalizeSkillName(value: unknown): string | undefined {
+  return normalizeActivityName(value);
+}
+
+function extractMcpServerName(toolName: string): string | undefined {
+  const match = MCP_TOOL_NAME_PATTERN.exec(toolName);
+  if (!match) {
+    return undefined;
+  }
+
+  return normalizeActivityName(match[1]);
 }
 
 function resolveTaskIndex(

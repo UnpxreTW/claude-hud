@@ -20,9 +20,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
         return null;
     }
     const usageLabel = progressLabel("label.usage", colors, alignLabels);
-    if (ctx.usageData.balanceLabel) {
-        return `${usageLabel} ${ctx.usageData.balanceLabel}`;
-    }
+    const balanceLabel = ctx.usageData.balanceLabel ?? null;
     const timeFormat = normalizeTimeFormat(display?.timeFormat);
     const showResetLabel = display?.showResetLabel ?? true;
     const usageCompact = display?.usageCompact ?? false;
@@ -31,15 +29,13 @@ export function renderUsageLine(ctx, alignLabels = false) {
     // a full bar naturally through the normal usage rendering below.
     const threshold = display?.usageThreshold ?? 0;
     const fiveHour = ctx.usageData.fiveHour;
-    // Weekly usage is rendered by the independent weeklyUsage element.
-    if (fiveHour === null) {
-        return null;
-    }
-    if (fiveHour < threshold) {
-        return null;
+    // Weekly usage is rendered by the independent weeklyUsage element; the usage
+    // element only handles the five-hour window (plus any external balance label).
+    if (fiveHour === null || fiveHour < threshold) {
+        return balanceLabel ? `${usageLabel} ${balanceLabel}` : null;
     }
     if (usageCompact) {
-        return formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode);
+        return appendBalance(formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode), balanceLabel);
     }
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const barWidth = getAdaptiveBarWidth();
@@ -55,7 +51,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
         showResetLabel,
         usageValueMode,
     });
-    return `${usageLabel} ${fiveHourPart}`;
+    return appendBalance(`${usageLabel} ${fiveHourPart}`, balanceLabel);
 }
 export function renderWeeklyUsageLine(ctx, alignLabels = false) {
     const display = ctx.config?.display;
@@ -98,6 +94,9 @@ export function renderWeeklyUsageLine(ctx, alignLabels = false) {
         alignLabels,
         usageValueMode,
     });
+}
+function appendBalance(line, balanceLabel) {
+    return balanceLabel ? `${line} | ${balanceLabel}` : line;
 }
 function formatCompactWindowPart(windowLabel, percent, resetAt, windowMs, timeFormat, colors, usageValueMode = 'percent') {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);

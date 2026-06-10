@@ -158,15 +158,15 @@ export function renderSessionLine(ctx) {
         const usageCompact = display?.usageCompact ?? false;
         const showResetLabel = display?.showResetLabel ?? true;
         const usageValueMode = display?.usageValue ?? 'percent';
-        if (ctx.usageData.balanceLabel) {
-            parts.push(`${label(t('label.usage'), colors)} ${ctx.usageData.balanceLabel}`);
-        }
-        else {
+        const hasWindowData = ctx.usageData.fiveHour !== null || ctx.usageData.sevenDay !== null;
+        // Fork override: no limit-reached branch — a maxed-out window renders a full
+        // bar naturally through the normal usage rendering below.
+        {
             const usageThreshold = display?.usageThreshold ?? 0;
             const fiveHour = ctx.usageData.fiveHour;
             const sevenDay = ctx.usageData.sevenDay;
             const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
-            if (effectiveUsage >= usageThreshold) {
+            if ((hasWindowData || !ctx.usageData.balanceLabel) && effectiveUsage >= usageThreshold) {
                 const usageBarEnabled = display?.usageBarEnabled ?? true;
                 if (usageCompact) {
                     const fiveHourPart = fiveHour !== null
@@ -235,6 +235,14 @@ export function renderSessionLine(ctx) {
                         parts.push(`${label(t('label.usage'), colors)} ${fiveHourPart}`);
                     }
                 }
+            }
+        }
+        if (ctx.usageData.balanceLabel) {
+            if (!hasWindowData) {
+                parts.push(`${label(t('label.usage'), colors)} ${ctx.usageData.balanceLabel}`);
+            }
+            else {
+                parts.push(ctx.usageData.balanceLabel);
             }
         }
     }

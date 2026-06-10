@@ -414,6 +414,48 @@ test("main prefers stdin usage over external usage fallback", async () => {
   });
 });
 
+test("main appends external balance label to stdin usage when snapshot path is configured", async () => {
+  let renderedContext;
+  let externalCalls = 0;
+
+  await main({
+    readStdin: async () => makeStdin({
+      rate_limits: {
+        five_hour: { used_percentage: 21.9, resets_at: 1710000000 },
+        seven_day: { used_percentage: 55.2, resets_at: 1710600000 },
+      },
+    }),
+    parseTranscript: async () => makeTranscript(),
+    countConfigs: async () => makeCounts(),
+    loadConfig: async () => makeConfig({
+      display: { externalUsagePath: "/tmp/usage.json" },
+    }),
+    getGitStatus: async () => null,
+    getUsageFromExternalSnapshot: () => {
+      externalCalls += 1;
+      return {
+        fiveHour: 99,
+        sevenDay: 99,
+        fiveHourResetAt: null,
+        sevenDayResetAt: null,
+        balanceLabel: "$12.34 / $20.00",
+      };
+    },
+    render: (ctx) => {
+      renderedContext = ctx;
+    },
+  });
+
+  assert.equal(externalCalls, 1);
+  assert.deepEqual(renderedContext?.usageData, {
+    fiveHour: 22,
+    sevenDay: 55,
+    fiveHourResetAt: new Date(1710000000 * 1000),
+    sevenDayResetAt: new Date(1710600000 * 1000),
+    balanceLabel: "$12.34 / $20.00",
+  });
+});
+
 test("main skips all usage loading when usage display is disabled", async () => {
   let renderedContext;
   let externalCalls = 0;
