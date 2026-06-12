@@ -11,6 +11,10 @@ const SPEED_WINDOW_MS = 2000;
 const MIN_DELTA_MS = 500;
 const CACHE_DIRNAME = 'speed-cache';
 const LEGACY_CACHE_FILENAME = '.speed-cache.json';
+// Fallback: approximate bytes-per-token ratio for transcript file growth estimation.
+// Claude's JSONL transcript is mostly ASCII with some overhead; ~4 bytes/token is a
+// reasonable ballpark that avoids wild over/under-estimates.
+const BYTES_PER_TOKEN = 4;
 const defaultDeps = {
     homeDir: () => os.homedir(),
     now: () => Date.now(),
@@ -53,6 +57,35 @@ function writeCache(homeDir, transcriptPath, cache) {
         // Ignore cache write failures
     }
 }
+function readFileSizeCache(cachePath) {
+    try {
+        if (!fs.existsSync(cachePath))
+            return null;
+        const parsed = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        if (typeof parsed.fileSize !== 'number'
+            || !Number.isFinite(parsed.fileSize)
+            || typeof parsed.timestamp !== 'number'
+            || !Number.isFinite(parsed.timestamp)) {
+            return null;
+        }
+        return parsed;
+    }
+    catch {
+        return null;
+    }
+}
+function writeFileSizeCache(cachePath, cache) {
+    try {
+        const cacheDir = path.dirname(cachePath);
+        if (!fs.existsSync(cacheDir)) {
+            fs.mkdirSync(cacheDir, { recursive: true });
+        }
+        fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
+    }
+    catch {
+        // Ignore cache write failures
+    }
+}
 // Remove the pre-0.x global cache file once, if present. It has no owner
 // session so leaving it around only wastes disk.
 function removeLegacyCache(homeDir) {
@@ -66,11 +99,45 @@ function removeLegacyCache(homeDir) {
         // Ignore cleanup failures
     }
 }
-export function getOutputSpeed(stdin, overrides = {}) {
-    const outputTokens = stdin.context_window?.current_usage?.output_tokens;
-    if (typeof outputTokens !== 'number' || !Number.isFinite(outputTokens)) {
+/**
+ * Fallback speed estimation when output_tokens is unavailable.
+ *
+ * Measures the transcript file's byte-size growth between successive
+ * render calls and converts the delta to an approximate token/s rate
+ * using the BYTES_PER_TOKEN heuristic. This allows the HUD to show a
+ * speed reading even when the model provider (e.g. a non-standard
+ * proxy) does not populate `context_window.current_usage.output_tokens`.
+ */
+function getTranscriptSpeed(transcriptPath, homeDir, now) {
+    try {
+        const stat = fs.statSync(transcriptPath);
+        if (!stat.isFile())
+            return null;
+        const canonicalTranscriptPath = fs.realpathSync(transcriptPath);
+        const fileSize = stat.size;
+        const cachePath = getCachePath(homeDir, canonicalTranscriptPath) + '.fs';
+        const prev = readFileSizeCache(cachePath);
+        if (!prev) {
+            writeFileSizeCache(cachePath, { fileSize, timestamp: now });
+            return null;
+        }
+        const deltaBytes = fileSize - prev.fileSize;
+        const deltaMs = now - prev.timestamp;
+        if (deltaMs > SPEED_WINDOW_MS || deltaMs < MIN_DELTA_MS || deltaBytes <= 0) {
+            if (deltaMs >= MIN_DELTA_MS) {
+                writeFileSizeCache(cachePath, { fileSize, timestamp: now });
+            }
+            return null;
+        }
+        const estimatedTokens = deltaBytes / BYTES_PER_TOKEN;
+        writeFileSizeCache(cachePath, { fileSize, timestamp: now });
+        return estimatedTokens / (deltaMs / 1000);
+    }
+    catch {
         return null;
     }
+}
+export function getOutputSpeed(stdin, overrides = {}) {
     const transcriptPath = stdin.transcript_path?.trim();
     if (!transcriptPath) {
         // Without a stable session key we cannot safely isolate cache entries
@@ -81,31 +148,37 @@ export function getOutputSpeed(stdin, overrides = {}) {
     const now = deps.now();
     const homeDir = deps.homeDir();
     removeLegacyCache(homeDir);
-    const previous = readCache(homeDir, transcriptPath);
-    if (!previous) {
+    // Primary: use output_tokens when the provider supplies it.
+    const outputTokens = stdin.context_window?.current_usage?.output_tokens;
+    if (typeof outputTokens === 'number' && Number.isFinite(outputTokens)) {
+        const previous = readCache(homeDir, transcriptPath);
+        if (!previous) {
+            writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
+            return null;
+        }
+        if (outputTokens < previous.outputTokens) {
+            writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
+            return null;
+        }
+        const deltaTokens = outputTokens - previous.outputTokens;
+        const deltaMs = now - previous.timestamp;
+        if (deltaMs > SPEED_WINDOW_MS) {
+            writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
+            return null;
+        }
+        if (deltaTokens <= 0) {
+            writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
+            return null;
+        }
+        if (deltaMs < MIN_DELTA_MS) {
+            return null;
+        }
+        const speed = deltaTokens / (deltaMs / 1000);
         writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
-        return null;
+        return speed;
     }
-    if (outputTokens < previous.outputTokens) {
-        writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
-        return null;
-    }
-    let speed = null;
-    const deltaTokens = outputTokens - previous.outputTokens;
-    const deltaMs = now - previous.timestamp;
-    if (deltaMs > SPEED_WINDOW_MS) {
-        writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
-        return null;
-    }
-    if (deltaTokens <= 0) {
-        writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
-        return null;
-    }
-    if (deltaMs < MIN_DELTA_MS) {
-        return null;
-    }
-    speed = deltaTokens / (deltaMs / 1000);
-    writeCache(homeDir, transcriptPath, { outputTokens, timestamp: now });
-    return speed;
+    // Fallback: estimate from transcript file byte-size growth when the
+    // provider does not expose output_tokens (e.g. non-standard proxies).
+    return getTranscriptSpeed(transcriptPath, homeDir, now);
 }
 //# sourceMappingURL=speed-tracker.js.map

@@ -4,6 +4,17 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.1-unpxre.2] - 2026-06-12
+
+Unpxre fork release synced on top of upstream post-`0.1.1` main (fallback speed estimation, Simplified Chinese terminology fix, architecture docs refresh).
+
+### Added
+- Synced upstream fallback speed estimation via transcript file growth when native token timing is unavailable.
+
+### Changed
+- Synced upstream Simplified Chinese terminology fix ("token" rendered as 词元 instead of 令牌) and the refreshed CLAUDE.md architecture overview.
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
 ## [0.1.1-unpxre.1] - 2026-06-10
 
 Unpxre fork release synced on top of upstream `0.1.1` (Skills/MCP lines, external balance label, advisor hardening, auto-compact validation).

@@ -101,7 +101,7 @@ test("renderSessionTokensLine uses translated labels in English", () => {
 test("renderSessionTokensLine uses translated labels in Chinese", () => {
   setLanguage("zh");
   const line = stripAnsi(renderSessionTokensLine(makeCtx()) ?? "");
-  assert.ok(line.includes("令牌"), `expected '令牌' in ${line}`);
+  assert.ok(line.includes("词元"), `expected '词元' in ${line}`);
   assert.ok(line.includes("输入:"), `expected '输入:' in ${line}`);
   assert.ok(line.includes("输出:"), `expected '输出:' in ${line}`);
   assert.ok(line.includes("缓存:"), `expected '缓存:' in ${line}`);
