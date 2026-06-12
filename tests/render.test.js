@@ -2756,7 +2756,7 @@ test('renderSessionLine translates compact session token summary when Chinese is
   setLanguage('zh');
   try {
     const line = stripAnsi(renderSessionLine(ctx));
-    assert.ok(line.includes('令牌: 2k (输入: 2k, 输出: 250)'), `unexpected zh compact token summary: ${line}`);
+    assert.ok(line.includes('词元: 2k (输入: 2k, 输出: 250)'), `unexpected zh compact token summary: ${line}`);
     assert.ok(!line.includes('tok:'), `unexpected bare English token label in zh output: ${line}`);
     assert.ok(!line.includes('in:'), `unexpected bare English input label in zh output: ${line}`);
     assert.ok(!line.includes('out:'), `unexpected bare English output label in zh output: ${line}`);
