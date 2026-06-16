@@ -115,6 +115,7 @@ export interface TranscriptData {
     sessionTokens?: SessionTokenUsage;
     lastCompactBoundaryAt?: Date;
     lastCompactPostTokens?: number;
+    compactionCount?: number;
     advisorModel?: string;
 }
 export interface RenderContext {

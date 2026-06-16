@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import * as readline from 'readline';
 import { createHash } from 'node:crypto';
 import { getHudPluginDir } from './claude-config-dir.js';
-const TRANSCRIPT_CACHE_VERSION = 8;
+const TRANSCRIPT_CACHE_VERSION = 9;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
 const DISPLAY_CONTROL_PATTERN = new RegExp('[' +
@@ -118,6 +118,7 @@ function serializeTranscriptData(data) {
         sessionTokens: data.sessionTokens,
         lastCompactBoundaryAt: data.lastCompactBoundaryAt?.toISOString(),
         lastCompactPostTokens: data.lastCompactPostTokens,
+        compactionCount: data.compactionCount,
         advisorModel: data.advisorModel,
     };
 }
@@ -142,6 +143,9 @@ function deserializeTranscriptData(data) {
         sessionTokens: normalizeSessionTokens(data.sessionTokens),
         lastCompactBoundaryAt: data.lastCompactBoundaryAt ? new Date(data.lastCompactBoundaryAt) : undefined,
         lastCompactPostTokens: typeof data.lastCompactPostTokens === 'number' ? data.lastCompactPostTokens : undefined,
+        compactionCount: typeof data.compactionCount === 'number' && Number.isFinite(data.compactionCount) && data.compactionCount >= 0
+            ? Math.trunc(data.compactionCount)
+            : undefined,
         advisorModel: typeof data.advisorModel === 'string' && data.advisorModel.length > 0
             ? data.advisorModel.slice(0, ADVISOR_MODEL_MAX_LEN)
             : undefined,
@@ -217,6 +221,7 @@ export async function parseTranscript(transcriptPath) {
     let latestAdvisorModel;
     let lastCompactBoundaryAt;
     let lastCompactPostTokens;
+    let compactionCount = 0;
     const sessionTokens = {
         inputTokens: 0,
         outputTokens: 0,
@@ -279,6 +284,7 @@ export async function parseTranscript(transcriptPath) {
                 if (entry.type === 'system' && entry.subtype === 'compact_boundary') {
                     const ts = entry.timestamp ? new Date(entry.timestamp) : null;
                     if (ts && !Number.isNaN(ts.getTime())) {
+                        compactionCount += 1;
                         if (!lastCompactBoundaryAt || ts.getTime() > lastCompactBoundaryAt.getTime()) {
                             lastCompactBoundaryAt = ts;
                             const post = entry.compactMetadata?.postTokens;
@@ -337,6 +343,7 @@ export async function parseTranscript(transcriptPath) {
     result.sessionTokens = sessionTokens;
     result.lastCompactBoundaryAt = lastCompactBoundaryAt;
     result.lastCompactPostTokens = lastCompactPostTokens;
+    result.compactionCount = compactionCount;
     result.advisorModel = latestAdvisorModel;
     if (parsedCleanly) {
         writeTranscriptCache(canonicalTranscriptPath, transcriptState, result);

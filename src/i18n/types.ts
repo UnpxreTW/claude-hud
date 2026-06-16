@@ -14,6 +14,7 @@ export type MessageKey =
   | "label.lastReply"
   | "label.advisor"
   | "label.duration"
+  | "label.compactions"
   // Status
   | "status.limitReached"
   | "status.allTodosComplete"

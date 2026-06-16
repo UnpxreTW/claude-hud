@@ -14,7 +14,26 @@ import { setLanguage, t, getCanonicalLanguage } from "./i18n/index.js";
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
+/**
+ * Returns true when the HUD is disabled for this invocation via the
+ * CLAUDE_HUD_DISABLE environment variable. Any non-blank value other than an
+ * explicit negative (`0`, `false`, `off`, `no`, case-insensitive) disables the
+ * HUD, so users can launch sessions without it (`CLAUDE_HUD_DISABLE=1 claude`)
+ * while keeping the statusLine entry in settings.json intact.
+ */
+export function isHudDisabled(env = process.env) {
+    const value = env.CLAUDE_HUD_DISABLE?.trim().toLowerCase();
+    if (value === undefined || value === "") {
+        return false;
+    }
+    return value !== "0" && value !== "false" && value !== "off" && value !== "no";
+}
 export async function main(overrides = {}) {
+    if (isHudDisabled()) {
+        // Print nothing so Claude Code renders an empty statusline, and skip all
+        // work (stdin parse, transcript scan, git) for the ~300ms polling loop.
+        return;
+    }
     const deps = {
         readStdin,
         getUsageFromStdin,

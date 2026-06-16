@@ -847,6 +847,22 @@ test('mergeConfig defaults showAdvisor to false', () => {
   assert.equal(DEFAULT_CONFIG.display.showAdvisor, false);
 });
 
+test('mergeConfig defaults showCompactions to false', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showCompactions, false);
+  assert.equal(DEFAULT_CONFIG.display.showCompactions, false);
+});
+
+test('mergeConfig preserves explicit showCompactions=true', () => {
+  const config = mergeConfig({ display: { showCompactions: true } });
+  assert.equal(config.display.showCompactions, true);
+});
+
+test('mergeConfig rejects non-boolean showCompactions', () => {
+  const config = mergeConfig({ display: { showCompactions: 'yes' } });
+  assert.equal(config.display.showCompactions, false);
+});
+
 test('mergeConfig preserves explicit showAdvisor=true', () => {
   const config = mergeConfig({ display: { showAdvisor: true } });
   assert.equal(config.display.showAdvisor, true);

@@ -17,6 +17,7 @@ import {
   renderWeeklyUsageLine,
   renderMemoryLine,
   renderSessionTokensLine,
+  renderCompactionsLine,
   renderSessionTimeLine,
 } from './lines/index.js';
 import { dim, RESET } from './colors.js';
@@ -546,6 +547,12 @@ export function render(ctx: RenderContext): void {
       if (sessionTokensLine) {
         lines.push(sessionTokensLine);
       }
+    }
+
+    // Compaction count (opt-in, hidden until the first compaction)
+    const compactionsLine = renderCompactionsLine(ctx);
+    if (compactionsLine) {
+      lines.push(compactionsLine);
     }
 
     // Advisor is rendered inline on the project line; see renderProjectLine.

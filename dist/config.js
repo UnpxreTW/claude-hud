@@ -73,6 +73,7 @@ export const DEFAULT_CONFIG = {
         showOutputStyle: false,
         showSessionStartDate: false,
         showLastResponseAt: false,
+        showCompactions: false,
         mergeGroups: DEFAULT_MERGE_GROUPS.map(group => [...group]),
         autocompactBuffer: 'enabled',
         contextWarningThreshold: 70,
@@ -444,6 +445,9 @@ export function mergeConfig(userConfig) {
         showLastResponseAt: typeof migrated.display?.showLastResponseAt === 'boolean'
             ? migrated.display.showLastResponseAt
             : DEFAULT_CONFIG.display.showLastResponseAt,
+        showCompactions: typeof migrated.display?.showCompactions === 'boolean'
+            ? migrated.display.showCompactions
+            : DEFAULT_CONFIG.display.showCompactions,
         mergeGroups: validateMergeGroups(migrated.display?.mergeGroups),
         autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
             ? migrated.display.autocompactBuffer
