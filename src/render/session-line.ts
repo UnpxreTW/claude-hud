@@ -272,6 +272,15 @@ export function renderSessionLine(ctx: RenderContext): string {
     }
   }
 
+  // Compaction count from transcript compact_boundary entries (opt-in,
+  // hidden until the first compaction)
+  if (display?.showCompactions) {
+    const compactions = ctx.transcript.compactionCount ?? 0;
+    if (compactions > 0) {
+      parts.push(label(`${t('label.compactions')}: ${compactions}`, colors));
+    }
+  }
+
   // Advisor model (when `/advisor` is configured for the session)
   if (display?.showAdvisor) {
     const advisorLine = renderAdvisorLine(ctx);

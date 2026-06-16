@@ -33,6 +33,11 @@ export function renderUsageLine(
 
   const usageLabel = progressLabel("label.usage", colors, alignLabels);
   const balanceLabel = ctx.usageData.balanceLabel ?? null;
+  const hasWindowData = ctx.usageData.fiveHour !== null || ctx.usageData.sevenDay !== null;
+
+  if (balanceLabel && !hasWindowData) {
+    return `${usageLabel} ${balanceLabel}`;
+  }
 
   const timeFormat = normalizeTimeFormat(display?.timeFormat);
   const showResetLabel = display?.showResetLabel ?? true;

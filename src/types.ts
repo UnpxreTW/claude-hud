@@ -129,6 +129,9 @@ export interface TranscriptData {
   sessionTokens?: SessionTokenUsage;
   lastCompactBoundaryAt?: Date;
   lastCompactPostTokens?: number;
+  // Number of compact_boundary entries (manual /compact or auto compaction)
+  // with a valid timestamp seen in the transcript.
+  compactionCount?: number;
   // Advisor model ID for the current session, captured from the top-level
   // `advisorModel` field that Claude Code stamps onto every assistant record
   // after `/advisor` is set (e.g. "claude-opus-4-7"). undefined when /advisor

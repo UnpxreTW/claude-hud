@@ -87,6 +87,7 @@ export interface HudConfig {
         showOutputStyle: boolean;
         showSessionStartDate: boolean;
         showLastResponseAt: boolean;
+        showCompactions: boolean;
         mergeGroups: HudElement[][];
         autocompactBuffer: AutocompactBufferMode;
         contextWarningThreshold: number;

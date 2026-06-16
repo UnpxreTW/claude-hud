@@ -646,6 +646,7 @@ test('parseTranscript records the most recent compact_boundary and postTokens', 
     const result = await parseTranscript(filePath);
     assert.equal(result.lastCompactBoundaryAt?.toISOString(), '2024-01-01T00:10:00.000Z');
     assert.equal(result.lastCompactPostTokens, 12345);
+    assert.equal(result.compactionCount, 2);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -675,6 +676,7 @@ test('parseTranscript ignores compact_boundary entries without a valid timestamp
     const result = await parseTranscript(filePath);
     assert.equal(result.lastCompactBoundaryAt, undefined);
     assert.equal(result.lastCompactPostTokens, undefined);
+    assert.equal(result.compactionCount, 0);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -1330,6 +1332,11 @@ test('parseTranscript reuses cached data when transcript state is unchanged', as
   const initialLine = `${JSON.stringify({
     timestamp: '2024-01-01T00:00:00.000Z',
     message: { content: [{ type: 'tool_use', id: 'tool-1', name: 'Read', input: { path: '/tmp/original.txt' } }] },
+  })}\n${JSON.stringify({
+    type: 'system',
+    subtype: 'compact_boundary',
+    timestamp: '2024-01-01T00:05:00.000Z',
+    compactMetadata: { trigger: 'auto', preTokens: 170574, postTokens: 7679 },
   })}\n`;
 
   process.env.CLAUDE_CONFIG_DIR = configDir;
@@ -1340,6 +1347,7 @@ test('parseTranscript reuses cached data when transcript state is unchanged', as
     const first = await parseTranscript(transcriptPath);
     assert.equal(first.tools.length, 1);
     assert.equal(first.tools[0].target, '/tmp/original.txt');
+    assert.equal(first.compactionCount, 1);
 
     const stat = fs.statSync(transcriptPath);
     const corrupted = '#'.repeat(stat.size);
@@ -1349,6 +1357,7 @@ test('parseTranscript reuses cached data when transcript state is unchanged', as
     const second = await parseTranscript(transcriptPath);
     assert.equal(second.tools.length, 1);
     assert.equal(second.tools[0].target, '/tmp/original.txt');
+    assert.equal(second.compactionCount, 1);
   } finally {
     restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
     await rm(dir, { recursive: true, force: true });

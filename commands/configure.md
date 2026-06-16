@@ -9,16 +9,23 @@ allowed-tools: Read, Write, AskUserQuestion
 
 Store current values and note whether config exists (determines which flow to use).
 
-## Always On (Core Features)
+## Core Features (on by default)
 
-These are always enabled and NOT configurable:
+These default to ON and are what most users keep. They ARE configurable
+(`display.showModel`, `display.showContextBar`), but the guided flow keeps them
+enabled — toggle them by editing `config.json` directly if needed:
 - Model name `[Opus]`
 - Context bar `████░░░░░░ 45%`
 
-Advanced settings such as `colors.*`, `pathLevels`, `display.timeFormat`,
-`display.usageThreshold`, `display.usageValue`, `display.environmentThreshold`,
-`display.contextWarningThreshold`, and `display.contextCriticalThreshold` are
-preserved when saving but are not edited by this guided flow.
+Advanced settings such as `colors.*`, `pathLevels`, `maxWidth`, `forceMaxWidth`,
+`elementOrder`, `display.mergeGroups`, `display.timeFormat`, `display.contextValue`,
+`display.modelFormat`, `display.modelOverride`, `display.autocompactBuffer`,
+`display.autoCompactWindow`, `display.promptCacheTtlSeconds`,
+`display.usageThreshold`, `display.sevenDayThreshold`,
+`display.environmentThreshold`, `display.contextWarningThreshold`,
+`display.contextCriticalThreshold`, `display.advisorOverride`, and the
+`display.externalUsage*` keys are preserved when saving but are not edited by
+this guided flow.
 
 ---
 
@@ -72,15 +79,26 @@ Save as `language: "en"`, `language: "zh-Hans"`, or `language: "zh-TW"`.
   - "Agents status" - ◐ explore [haiku]: Finding code
   - "Todo progress" - ▸ Fix bug (2/5 tasks)
   - "Project name" - my-project path display
+  - "Added directories" - +repo +shared workspace directories from /add-dir
   - "Git status" - git:(main*) branch indicator
   - "Config counts" - 2 CLAUDE.md | 4 rules
   - "Token breakdown" - (in: 45k, cache: 12k)
   - "Output speed" - out: 42.1 tok/s
   - "Usage limits" - 5h: 25% | 7d: 10%
+  - "Usage reset label" - show or hide the `resets in` prefix
   - "Compact usage" - 5h: 25% (1h 30m) shorter format
   - "Session duration" - ⏱️ 5m
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Output style" - style: explanatory (current output style name)
+  - "Session cost" - 💰 $0.42
+  - "Skills activity" - active skills count
+  - "MCP status" - MCP server status
+  - "Memory usage" - process memory footprint
+  - "Prompt cache" - cache TTL countdown
+  - "Claude Code version" - the running CC version
+  - "Compaction count" - Compactions: 2 after /compact or auto-compaction
   - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
 
 ### Q5: Turn On (based on chosen preset)
@@ -116,11 +134,22 @@ If user chooses "Enter custom text", use AskUserQuestion to get their text. Save
   - "Agents status" - ◐ explore [haiku]: Finding code
   - "Todo progress" - ▸ Fix bug (2/5 tasks)
   - "Project name" - my-project path display
+  - "Added directories" - +repo +shared workspace directories from /add-dir
   - "Git status" - git:(main*) branch indicator
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Output style" - style: explanatory (current output style name)
+  - "Session cost" - 💰 $0.42
+  - "Skills activity" - active skills count
+  - "MCP status" - MCP server status
+  - "Memory usage" - process memory footprint
+  - "Prompt cache" - cache TTL countdown
+  - "Claude Code version" - the running CC version
+  - "Compaction count" - Compactions: 2 after /compact or auto-compaction
   - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
   - "Usage bar style" - ██░░ 25% visual bar (only if usageBarEnabled is true)
+  - "Usage reset label" - show or hide the `resets in` prefix
   - "Compact usage" - 5h: 25% (1h 30m) shorter format (only if usageCompact is false)
 
 If more than 4 items ON, show Activity items (Tools, Agents, Todos, Project, Git) first.
@@ -136,10 +165,21 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
   - "Output speed" - out: 42.1 tok/s
   - "Usage limits" - 5h: 25% | 7d: 10%
   - "Usage bar style" - ██░░ 25% visual bar (only if usageBarEnabled is false)
+  - "Usage reset label" - show or hide the `resets in` prefix
   - "Compact usage" - 5h: 25% (1h 30m) shorter format (only if usageCompact is false)
+  - "Added directories" - +repo +shared workspace directories from /add-dir
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
   - "Session duration" - ⏱️ 5m
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Output style" - style: explanatory (current output style name)
+  - "Session cost" - 💰 $0.42
+  - "Skills activity" - active skills count
+  - "MCP status" - MCP server status
+  - "Memory usage" - process memory footprint
+  - "Prompt cache" - cache TTL countdown
+  - "Claude Code version" - the running CC version
+  - "Compaction count" - Compactions: 2 after /compact or auto-compaction
   - "Advisor model" - Advisor: Opus 4.7 (when /advisor is configured)
 
 ### Q3: Git Style (only if Git is currently enabled)
@@ -197,8 +237,8 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 ## Preset Definitions
 
 **Full** (everything ON):
-- Activity: Tools ON, Agents ON, Todos ON
-- Info: Counts ON, Tokens ON, Usage ON, Duration ON, Session Name ON, Session Tokens ON, Advisor ON
+- Activity: Tools ON, Skills ON, MCP ON, Agents ON, Todos ON
+- Info: Added Dirs ON, Counts ON, Tokens ON, Usage ON, Reset Label ON, Cost ON, Duration ON, Session Name ON, Session Tokens ON, Reasoning Level ON, Output Style ON, Memory ON, Prompt Cache ON, CC Version ON, Compactions ON, Advisor ON
 - Git: ON (with dirty indicator, no ahead/behind)
 
 **Essential** (activity + git):
@@ -248,30 +288,43 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 
 | Element | Config Key |
 |---------|------------|
+| Model name | `display.showModel` |
+| Context bar | `display.showContextBar` |
 | Tools activity | `display.showTools` |
+| Skills activity | `display.showSkills` |
+| MCP status | `display.showMcp` |
 | Agents status | `display.showAgents` |
 | Todo progress | `display.showTodos` |
 | Project name | `display.showProject` |
+| Added directories | `display.showAddedDirs` (layout via `display.addedDirsLayout`) |
 | Git status | `gitStatus.enabled` |
 | Config counts | `display.showConfigCounts` |
 | Token breakdown | `display.showTokenBreakdown` |
 | Output speed | `display.showSpeed` |
+| Session cost | `display.showCost` |
 | Usage limits | `display.showUsage` |
 | Usage bar style | `display.usageBarEnabled` |
 | Compact usage | `display.usageCompact` |
 | Usage value | `display.usageValue` |
+| Usage reset label | `display.showResetLabel` |
 | Session name | `display.showSessionName` |
 | Session duration | `display.showDuration` |
 | Session tokens | `display.showSessionTokens` |
 | Session start date | `display.showSessionStartDate` |
 | Last response time | `display.showLastResponseAt` |
-| Advisor model | `display.showAdvisor` |
+| Compaction count | `display.showCompactions` |
+| Reasoning level | `display.showEffortLevel` |
+| Output style | `display.showOutputStyle` |
+| Memory usage | `display.showMemoryUsage` |
+| Prompt cache | `display.showPromptCache` (TTL via `display.promptCacheTtlSeconds`) |
+| Claude Code version | `display.showClaudeCodeVersion` |
+| Advisor model | `display.showAdvisor` (override via `display.advisorOverride`) |
 | Custom line | `display.customLine` |
 | Custom line position | `display.customLinePosition` |
 
-**Always true (not configurable):**
-- `display.showModel: true`
-- `display.showContextBar: true`
+**Defaults to ON (configurable booleans, kept enabled by the guided flow):**
+- `display.showModel` (default `true`)
+- `display.showContextBar` (default `true`)
 
 ---
 

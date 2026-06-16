@@ -141,6 +141,9 @@ export interface HudConfig {
     showOutputStyle: boolean;
     showSessionStartDate: boolean;
     showLastResponseAt: boolean;
+    // Show how many context compactions (manual /compact or auto) have
+    // occurred this session, counted from transcript compact_boundary entries.
+    showCompactions: boolean;
     mergeGroups: HudElement[][];
     autocompactBuffer: AutocompactBufferMode;
     contextWarningThreshold: number;
@@ -220,6 +223,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     showOutputStyle: false,
     showSessionStartDate: false,
     showLastResponseAt: false,
+    showCompactions: false,
     mergeGroups: DEFAULT_MERGE_GROUPS.map(group => [...group]),
     autocompactBuffer: 'enabled',
     contextWarningThreshold: 70,
@@ -644,6 +648,9 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     showLastResponseAt: typeof migrated.display?.showLastResponseAt === 'boolean'
       ? migrated.display.showLastResponseAt
       : DEFAULT_CONFIG.display.showLastResponseAt,
+    showCompactions: typeof migrated.display?.showCompactions === 'boolean'
+      ? migrated.display.showCompactions
+      : DEFAULT_CONFIG.display.showCompactions,
     mergeGroups: validateMergeGroups(migrated.display?.mergeGroups),
     autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
       ? migrated.display.autocompactBuffer
