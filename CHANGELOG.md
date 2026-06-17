@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0-unpxre.2] - 2026-06-17
+
+Unpxre fork release re-synced on top of upstream `0.2.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.2.0` main and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
 ## [0.2.0-unpxre.1] - 2026-06-16
 
 Unpxre fork release synced on top of upstream `0.2.0` (session compaction count, `CLAUDE_HUD_DISABLE` kill switch, configure docs sync).
