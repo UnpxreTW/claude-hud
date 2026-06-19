@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.1-unpxre.1] - 2026-06-19
+
+Unpxre fork release re-synced on top of upstream `0.2.1` main.
+
+### Changed
+- Re-synced the latest upstream `0.2.1` main (explicit `CLAUDE_HUD_ALLOW_EXTRA_CMD` opt-in for `--extra-cmd`, seven-day usage merge from an external snapshot, and corrected Opus 4.5+ cost estimates) and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
 ## [0.2.0-unpxre.2] - 2026-06-17
 
 Unpxre fork release re-synced on top of upstream `0.2.0` main.
@@ -63,6 +70,13 @@ Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + for
 ### Changed
 - `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
 
+## [0.2.1] - 2026-06-18
+
+### Fixed
+- Require explicit `CLAUDE_HUD_ALLOW_EXTRA_CMD` opt-in before running `--extra-cmd`, and document the local command trust boundary (#619).
+- Merge missing seven-day usage from a configured external snapshot when stdin only supplies the five-hour usage window (#617).
+- Correct Opus 4.5+ local cost estimates to the current standard Anthropic rate while keeping older Opus 4.0/4.1 pricing unchanged (#625).
+
 ## [0.2.0] - 2026-06-15
 
 ### Added
@@ -83,7 +97,6 @@ Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + for
 - Add `display.autoCompactWindow` support for context denominator calculations, including token-display denominator handling (#589).
 
 ### Fixed
-
 - Render external `balance_label` values alongside stdin `rate_limits` instead of treating them as mutually exclusive (#598, #599).
 - Preserve inherited terminal width in setup-generated statusline commands before probing `/dev/tty`, fixing narrow-pane wrapping/flicker in terminals without a controlling TTY (#581).
 - Use a lightweight Windows Node launcher for PowerShell/cmd setup instead of a PowerShell wrapper on every statusline refresh, reducing Windows render-time overhead while preserving update discovery (#555).

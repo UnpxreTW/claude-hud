@@ -69,9 +69,21 @@ function writeVersionCache(homeDir, cache) {
         const cachePath = getVersionCachePath(homeDir);
         const cacheDir = path.dirname(cachePath);
         if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir, { recursive: true });
+            fs.mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
         }
-        fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
+        try {
+            fs.chmodSync(cacheDir, 0o700);
+        }
+        catch {
+            // Best-effort: some filesystems do not support POSIX modes.
+        }
+        fs.writeFileSync(cachePath, JSON.stringify(cache), { encoding: 'utf8', mode: 0o600 });
+        try {
+            fs.chmodSync(cachePath, 0o600);
+        }
+        catch {
+            // Best-effort: version cache failures should not affect rendering.
+        }
     }
     catch {
         // Ignore cache write failures.

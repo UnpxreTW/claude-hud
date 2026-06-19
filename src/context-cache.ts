@@ -68,6 +68,15 @@ function getCacheDir(homeDir: string): string {
   return path.join(getHudPluginDir(homeDir), CACHE_DIRNAME);
 }
 
+function ensurePrivateDir(dir: string): void {
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try {
+    fs.chmodSync(dir, 0o700);
+  } catch {
+    // Best-effort: some filesystems do not support POSIX modes.
+  }
+}
+
 /**
  * Read the last known good context snapshot from disk.
  * Returns null when the cache is missing, malformed, or invalid.
@@ -126,9 +135,7 @@ function writeCache(
       return;
     }
     const cacheDir = path.dirname(cachePath);
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
-    }
+    ensurePrivateDir(cacheDir);
     const payload: ContextCache = {
       used_percentage: contextWindow.used_percentage ?? 0,
       remaining_percentage: contextWindow.remaining_percentage ?? null,
@@ -137,7 +144,15 @@ function writeCache(
       saved_at: now,
       session_name: sessionName ?? null,
     };
-    fs.writeFileSync(cachePath, JSON.stringify(payload), "utf8");
+    fs.writeFileSync(cachePath, JSON.stringify(payload), {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+    try {
+      fs.chmodSync(cachePath, 0o600);
+    } catch {
+      // Best-effort: cache permissions should not break HUD rendering.
+    }
     const timestampSeconds = now / 1000;
     fs.utimesSync(cachePath, timestampSeconds, timestampSeconds);
   } catch {

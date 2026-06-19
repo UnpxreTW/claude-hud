@@ -4,11 +4,16 @@ const execAsync = promisify(exec);
 const MAX_BUFFER = 10 * 1024; // 10KB - plenty for a label
 const MAX_LABEL_LENGTH = 50;
 const TIMEOUT_MS = 3000;
+const EXTRA_CMD_ENABLE_ENV = 'CLAUDE_HUD_ALLOW_EXTRA_CMD';
 const isDebug = process.env.DEBUG?.includes('claude-hud') ?? false;
 function debug(message) {
     if (isDebug) {
         console.error(`[claude-hud:extra-cmd] ${message}`);
     }
+}
+export function isExtraCmdAllowed(env = process.env) {
+    const value = env[EXTRA_CMD_ENABLE_ENV]?.trim().toLowerCase();
+    return value === '1' || value === 'true' || value === 'yes' || value === 'on';
 }
 /**
  * Sanitize output to prevent terminal escape injection.
@@ -26,11 +31,15 @@ export function sanitize(input) {
  * Parse --extra-cmd argument from process.argv
  * Supports both: --extra-cmd "command" and --extra-cmd="command"
  */
-export function parseExtraCmdArg(argv = process.argv) {
+export function parseExtraCmdArg(argv = process.argv, env = process.env) {
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         // Handle --extra-cmd=value syntax
         if (arg.startsWith('--extra-cmd=')) {
+            if (!isExtraCmdAllowed(env)) {
+                debug(`Warning: --extra-cmd ignored because ${EXTRA_CMD_ENABLE_ENV} is not enabled`);
+                return null;
+            }
             const value = arg.slice('--extra-cmd='.length);
             if (value === '') {
                 debug('Warning: --extra-cmd value is empty, ignoring');
@@ -40,6 +49,10 @@ export function parseExtraCmdArg(argv = process.argv) {
         }
         // Handle --extra-cmd value syntax
         if (arg === '--extra-cmd') {
+            if (!isExtraCmdAllowed(env)) {
+                debug(`Warning: --extra-cmd ignored because ${EXTRA_CMD_ENABLE_ENV} is not enabled`);
+                return null;
+            }
             if (i + 1 >= argv.length) {
                 debug('Warning: --extra-cmd specified but no value provided');
                 return null;

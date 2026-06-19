@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rm, writeFile, utimes } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile, utimes } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
@@ -145,6 +145,10 @@ test('applyContextWindowFallback writes cache for good context frames', async ()
     assert.equal(cacheContent.context_window_size, 200000);
     assert.deepEqual(cacheContent.current_usage, stdin.context_window.current_usage);
     assert.equal(cacheContent.saved_at, 1_000_000);
+    if (process.platform !== 'win32') {
+      assert.equal((await stat(path.dirname(cachePath))).mode & 0o777, 0o700);
+      assert.equal((await stat(cachePath)).mode & 0o777, 0o600);
+    }
   } finally {
     await rm(tempHome, { recursive: true, force: true });
   }

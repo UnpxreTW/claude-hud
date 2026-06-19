@@ -180,6 +180,15 @@ function statSentinels(paths) {
     }
     return result;
 }
+function ensurePrivateDir(dir) {
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    try {
+        fs.chmodSync(dir, 0o700);
+    }
+    catch {
+        // Best-effort: some filesystems do not support POSIX modes.
+    }
+}
 function sentinelsMatch(a, b) {
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
@@ -236,9 +245,15 @@ function readConfigCache(cacheKey, homeDir) {
 function writeConfigCache(key, data, homeDir) {
     try {
         const cachePath = getConfigCachePath(key.cwd, key.claudeConfigDir, homeDir);
-        fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+        ensurePrivateDir(path.dirname(cachePath));
         const payload = { key, data };
-        fs.writeFileSync(cachePath, JSON.stringify(payload), 'utf8');
+        fs.writeFileSync(cachePath, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
+        try {
+            fs.chmodSync(cachePath, 0o600);
+        }
+        catch {
+            // Cache writes are best-effort.
+        }
     }
     catch {
         // Cache write failures are non-fatal.
