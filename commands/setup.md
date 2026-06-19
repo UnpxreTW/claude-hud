@@ -569,7 +569,21 @@ $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-
 $pluginDir = Join-Path $claudeDir "plugins\claude-hud"
 if (-not (Test-Path $pluginDir)) { New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null }
 if ($existingCommand -ne "") {
-  Set-Content -Path (Join-Path $pluginDir "previous-statusline.txt") -Value $existingCommand -NoNewline
+  $previousCommandPath = Join-Path $pluginDir "previous-statusline.txt"
+  [System.IO.File]::WriteAllText($previousCommandPath, $existingCommand, (New-Object System.Text.UTF8Encoding $false))
+  try {
+    $acl = Get-Acl $previousCommandPath
+    $acl.SetAccessRuleProtection($true, $false)
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+      [System.Security.Principal.WindowsIdentity]::GetCurrent().Name,
+      "FullControl",
+      "Allow"
+    )
+    $acl.SetAccessRule($rule)
+    Set-Acl -Path $previousCommandPath -AclObject $acl
+  } catch {
+    Write-Warning "Saved previous statusline command, but could not tighten file ACLs: $($_.Exception.Message)"
+  }
 }
 ```
 

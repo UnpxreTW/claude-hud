@@ -274,7 +274,13 @@ function readTranscriptCache(transcriptPath: string, state: TranscriptFileState)
 function writeTranscriptCache(transcriptPath: string, state: TranscriptFileState, data: TranscriptData): void {
   try {
     const cachePath = getTranscriptCachePath(transcriptPath, os.homedir());
-    fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+    const cacheDir = path.dirname(cachePath);
+    fs.mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
+    try {
+      fs.chmodSync(cacheDir, 0o700);
+    } catch {
+      // Best-effort: some filesystems do not support POSIX modes.
+    }
     const payload: TranscriptCacheFile = {
       version: TRANSCRIPT_CACHE_VERSION,
       transcriptPath: path.resolve(transcriptPath),
@@ -282,6 +288,11 @@ function writeTranscriptCache(transcriptPath: string, state: TranscriptFileState
       data: serializeTranscriptData(data),
     };
     fs.writeFileSync(cachePath, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
+    try {
+      fs.chmodSync(cachePath, 0o600);
+    } catch {
+      // Best-effort: cache permissions should not break rendering.
+    }
   } catch {
     // Cache failures are non-fatal; fall back to fresh parsing next time.
   }
