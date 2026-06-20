@@ -315,14 +315,14 @@ test('render ignores OSC 8 hyperlink sequences when measuring line width', () =>
   ctx.extraLabel = '\x1b]8;;file:///tmp/my-project\x1b\\linked-label\x1b]8;;\x1b\\';
 
   let lines = [];
-  withTerminal(50, () => {
+  withTerminal(49, () => {
     lines = captureRender(ctx);
   });
 
   assert.equal(lines.length, 1, 'a visibly short line with an OSC 8 hyperlink should stay on one line');
   assert.ok(lines[0].includes('linked-label'), 'hyperlink label text should still render');
   assert.ok(lines[0].includes('1m'), 'later elements should not be wrapped off the line');
-  assert.ok(displayWidth(lines[0]) <= 50, 'visible width should respect terminal width');
+  assert.ok(displayWidth(lines[0]) <= 49, 'visible width should respect terminal width');
 });
 
 
@@ -338,14 +338,14 @@ test('render ignores BEL-terminated OSC 8 hyperlink sequences when measuring lin
   ctx.extraLabel = '\x1b]8;;file:///tmp/my-project\x07linked-label\x1b]8;;\x07';
 
   let lines = [];
-  withTerminal(50, () => {
+  withTerminal(49, () => {
     lines = captureRender(ctx);
   });
 
   assert.equal(lines.length, 1, 'a visibly short BEL-terminated OSC 8 hyperlink should stay on one line');
   assert.ok(lines[0].includes('linked-label'), 'hyperlink label text should still render');
   assert.ok(lines[0].includes('1m'), 'later elements should not be wrapped off the line');
-  assert.ok(displayWidth(lines[0]) <= 50, 'visible width should respect terminal width');
+  assert.ok(displayWidth(lines[0]) <= 49, 'visible width should respect terminal width');
 });
 
 test('render closes an OSC 8 hyperlink when truncation cuts inside it', () => {
@@ -505,16 +505,16 @@ test('render does not treat a real 40-column terminal as unknown maxWidth fallba
   ctx.config.display.showProject = false;
   ctx.config.display.showConfigCounts = false;
   ctx.config.display.showDuration = false;
-  ctx.extraLabel = '12345678901234567890123456789012';
+  ctx.extraLabel = '12345678901234567890123456789012345';
 
   let lines = [];
-  withTerminal(40, () => {
+  withTerminal(43, () => {
     lines = captureRender(ctx);
   });
 
-  assert.equal(lines.length, 1, 'real 40-column terminals should not fall back to maxWidth wrapping');
-  assert.ok(lines[0].includes('12345678901234567890123456789012'), 'full extra label should remain visible at the real terminal width');
-  assert.ok(lines.every(line => displayWidth(line) <= 40), 'lines should still fit the real terminal width');
+  assert.equal(lines.length, 1, 'real terminals should not fall back to maxWidth wrapping');
+  assert.ok(lines[0].includes('12345678901234567890123456789012345'), 'full extra label should remain visible at the real terminal width');
+  assert.ok(lines.every(line => displayWidth(line) <= 43), 'lines should still fit the real terminal width');
 });
 
 test('render does not strand a bare 5h continuation line in compact mode', () => {

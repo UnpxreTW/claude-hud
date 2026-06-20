@@ -1,6 +1,9 @@
 import type { StdinData, UsageData } from './types.js';
 import type { ModelFormatMode } from './config.js';
 import { AUTOCOMPACT_BUFFER_PERCENT } from './constants.js';
+import { createDebug } from './debug.js';
+
+const debug = createDebug('stdin');
 
 type StdinStream = Pick<NodeJS.ReadStream, 'setEncoding' | 'on' | 'off' | 'pause'> & {
   isTTY?: boolean;
@@ -30,7 +33,8 @@ export async function readStdin(
 
   try {
     stream.setEncoding('utf8');
-  } catch {
+  } catch (err) {
+    debug('Failed to set stream encoding:', err);
     return null;
   }
 
@@ -73,7 +77,8 @@ export async function readStdin(
 
       try {
         return JSON.parse(trimmed) as StdinData;
-      } catch {
+      } catch (err) {
+        debug('JSON parse incomplete/invalid, waiting for more data');
         return undefined;
       }
     };
@@ -115,7 +120,8 @@ export async function readStdin(
       finish(parsed ?? null);
     };
 
-    const onError = (): void => {
+    const onError = (err: Error): void => {
+      debug('stdin stream error:', err);
       finish(null);
     };
 

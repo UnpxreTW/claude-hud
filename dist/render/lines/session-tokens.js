@@ -1,14 +1,6 @@
 import { label } from '../colors.js';
 import { t } from '../../i18n/index.js';
-function formatTokens(n) {
-    if (n >= 1000000) {
-        return `${(n / 1000000).toFixed(1)}M`;
-    }
-    if (n >= 1000) {
-        return `${(n / 1000).toFixed(0)}k`;
-    }
-    return n.toString();
-}
+import { formatTokens } from '../../utils/format.js';
 export function renderSessionTokensLine(ctx) {
     const display = ctx.config?.display;
     if (display?.showSessionTokens === false) {

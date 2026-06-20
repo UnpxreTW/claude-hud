@@ -1,7 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { HudConfig } from './config.js';
+import { createDebug } from './debug.js';
 import type { ExternalUsageSnapshot, UsageData } from './types.js';
+import { sanitizeDisplayText } from './utils/sanitize.js';
+
+const debug = createDebug('external-usage');
 
 const MAX_BALANCE_LABEL_LENGTH = 50;
 export const EXTERNAL_USAGE_WRITE_THROTTLE_MS = 30_000;
@@ -50,13 +54,7 @@ function sanitizeBalanceLabel(value: unknown): string | null {
     return null;
   }
 
-  const sanitized = value
-    .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
-    .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
-    .replace(/\x1B[@-Z\\-_]/g, '')
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-    .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069\u206A-\u206F]/g, '')
-    .trim();
+  const sanitized = sanitizeDisplayText(value).trim();
 
   if (!sanitized) {
     return null;
@@ -187,7 +185,8 @@ function shouldWriteSnapshot(
 
     const current = JSON.parse(deps.readFileSync(snapshotPath, 'utf8') as string) as unknown;
     return JSON.stringify(comparableSnapshot(current)) !== JSON.stringify(comparableSnapshot(nextSnapshot));
-  } catch {
+  } catch (err) {
+    debug('Failed to compare snapshot (will write):', err instanceof Error ? err.message : err);
     return true;
   }
 }
@@ -208,7 +207,8 @@ function resolveSnapshotWritePath(snapshotPath: string): string | null {
 function directoryExists(dir: string, deps: FileSystemDeps): boolean {
   try {
     return deps.statSync(dir).isDirectory();
-  } catch {
+  } catch (err) {
+    debug('Directory check failed for %s:', dir, err instanceof Error ? err.message : err);
     return false;
   }
 }
@@ -249,11 +249,12 @@ export function writeExternalUsageSnapshot(
     deps.renameSync(tmpPath, snapshotPath);
     deps.chmodSync(snapshotPath, 0o600);
     return true;
-  } catch {
+  } catch (err) {
+    debug('Failed to write usage snapshot:', err instanceof Error ? err.message : err);
     try {
       deps.rmSync(tmpPath, { force: true });
-    } catch {
-      // Ignore cleanup errors; snapshot writes must not break rendering.
+    } catch (cleanupErr) {
+      debug('Failed to clean up temp file:', cleanupErr instanceof Error ? cleanupErr.message : cleanupErr);
     }
     return false;
   }
@@ -264,7 +265,7 @@ export function getUsageFromExternalSnapshot(
   now = Date.now(),
 ): UsageData | null {
   const snapshotPath = config.display.externalUsagePath;
-  if (!snapshotPath) {
+  if (!snapshotPath || !path.isAbsolute(snapshotPath)) {
     return null;
   }
 
@@ -308,7 +309,8 @@ export function getUsageFromExternalSnapshot(
       usage.balanceLabel = balanceLabel;
     }
     return usage;
-  } catch {
+  } catch (err) {
+    debug('Failed to read external usage snapshot:', err instanceof Error ? err.message : err);
     return null;
   }
 }

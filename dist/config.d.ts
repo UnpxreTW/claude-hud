@@ -100,6 +100,8 @@ export interface HudConfig {
         externalUsageFreshnessMs: number;
         modelFormat: ModelFormatMode;
         modelOverride: string;
+        showProvider: boolean;
+        providerName: string;
         customLine: string;
         customLinePosition: CustomLinePosition;
         timeFormat: TimeFormatMode;

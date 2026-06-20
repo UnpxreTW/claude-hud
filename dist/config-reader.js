@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { createHash } from 'node:crypto';
 import { createDebug } from './debug.js';
 import { getClaudeConfigDir, getClaudeConfigJsonPath, getHudPluginDir } from './claude-config-dir.js';
@@ -121,7 +121,8 @@ function pathsReferToSameLocation(pathA, pathB) {
         const realPathB = fs.realpathSync.native(pathB);
         return normalizePathForComparison(realPathA) === normalizePathForComparison(realPathB);
     }
-    catch {
+    catch (err) {
+        debug('Failed to compare paths %s and %s:', pathA, pathB, err instanceof Error ? err.message : err);
         return false;
     }
 }
@@ -135,7 +136,8 @@ function statSentinel(filePath) {
         const stat = fs.statSync(filePath);
         return { mtimeMs: stat.mtimeMs, size: stat.size };
     }
-    catch {
+    catch (err) {
+        debug('Failed to stat sentinel %s:', filePath, err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -238,7 +240,8 @@ function readConfigCache(cacheKey, homeDir) {
         }
         return parsed;
     }
-    catch {
+    catch (err) {
+        debug('Failed to read config cache:', err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -252,11 +255,11 @@ function writeConfigCache(key, data, homeDir) {
             fs.chmodSync(cachePath, 0o600);
         }
         catch {
-            // Cache writes are best-effort.
+            // Best-effort: some filesystems do not support POSIX modes.
         }
     }
-    catch {
-        // Cache write failures are non-fatal.
+    catch (err) {
+        debug('Failed to write config cache:', err instanceof Error ? err.message : err);
     }
 }
 function computeConfigCountsFresh(cwd) {

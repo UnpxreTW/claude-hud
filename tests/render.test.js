@@ -174,7 +174,7 @@ test('renderSessionLine token display uses autoCompactWindow as denominator when
   ctx.stdin.context_window.current_usage.input_tokens = 70600;
   const line = stripAnsi(renderSessionLine(ctx));
   // Should match /context: 35% (71k/200k), not 7% (71k/1.0M).
-  assert.ok(line.includes('35 %'), `expected 35% in: ${line}`);
+  assert.ok(line.includes('35 %'), `expected 35 % in: ${line}`);
   assert.ok(line.includes('/200k'), `expected /200k denominator in: ${line}`);
   assert.ok(!line.includes('/1.0M'), `expected full window not shown in: ${line}`);
 });
@@ -674,6 +674,74 @@ test('renderProjectLine modelOverride takes precedence over modelFormat', () => 
   ctx.config.display.modelOverride = 'My Custom Model';
   const line = stripAnsi(renderProjectLine(ctx) ?? '');
   assert.ok(line.includes('My Custom Model'));
+});
+
+test('renderProjectLine shows custom provider before the model when showProvider is on', () => {
+  const ctx = baseContext();
+  ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+  ctx.config.display.showProvider = true;
+  ctx.config.display.providerName = 'MyProxy';
+  const line = stripAnsi(renderProjectLine(ctx) ?? '');
+  assert.ok(line.includes('[MyProxy | Claude Opus 4.6]'), `got: ${line}`);
+});
+
+test('renderProjectLine falls back to auto-detected provider before the model', () => {
+  process.env.CLAUDE_CODE_USE_BEDROCK = '1';
+  try {
+    const ctx = baseContext();
+    ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+    ctx.config.display.showProvider = true;
+    const line = stripAnsi(renderProjectLine(ctx) ?? '');
+    assert.ok(line.includes('[Bedrock | Claude Opus 4.6]'), `got: ${line}`);
+  } finally {
+    delete process.env.CLAUDE_CODE_USE_BEDROCK;
+  }
+});
+
+test('renderProjectLine keeps the legacy trailing provider label when showProvider is off', () => {
+  process.env.CLAUDE_CODE_USE_BEDROCK = '1';
+  try {
+    const ctx = baseContext();
+    ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+    const line = stripAnsi(renderProjectLine(ctx) ?? '');
+    assert.ok(line.includes('[Claude Opus 4.6 | Bedrock]'), `got: ${line}`);
+  } finally {
+    delete process.env.CLAUDE_CODE_USE_BEDROCK;
+  }
+});
+
+test('renderSessionLine shows custom provider before the model when showProvider is on', () => {
+  const ctx = baseContext();
+  ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+  ctx.config.display.showProvider = true;
+  ctx.config.display.providerName = 'MyProxy';
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes('[MyProxy | Claude Opus 4.6]'), `got: ${line}`);
+});
+
+test('renderSessionLine falls back to auto-detected provider before the model', () => {
+  process.env.CLAUDE_CODE_USE_BEDROCK = '1';
+  try {
+    const ctx = baseContext();
+    ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+    ctx.config.display.showProvider = true;
+    const line = stripAnsi(renderSessionLine(ctx));
+    assert.ok(line.includes('[Bedrock | Claude Opus 4.6]'), `got: ${line}`);
+  } finally {
+    delete process.env.CLAUDE_CODE_USE_BEDROCK;
+  }
+});
+
+test('renderSessionLine keeps the legacy trailing provider label when showProvider is off', () => {
+  process.env.CLAUDE_CODE_USE_BEDROCK = '1';
+  try {
+    const ctx = baseContext();
+    ctx.stdin.model = { display_name: 'Claude Opus 4.6' };
+    const line = stripAnsi(renderSessionLine(ctx));
+    assert.ok(line.includes('[Claude Opus 4.6 | Bedrock]'), `got: ${line}`);
+  } finally {
+    delete process.env.CLAUDE_CODE_USE_BEDROCK;
+  }
 });
 
 test('renderProjectLine uses configurable element colors', () => {
@@ -1543,6 +1611,8 @@ test('renderUsageLine translates labels when Chinese is enabled', () => {
   try {
     const line = stripAnsi(renderUsageLine(ctx) ?? '');
     assert.ok(line.includes('用量'));
+    // Reset time is now shown bare with a vertical-bar separator (no "resets in" wording).
+    assert.ok(line.includes('│ '));
   } finally {
     setLanguage('en');
   }
@@ -1650,7 +1720,7 @@ test('renderSessionLine displays balance label alongside rate-limit windows', ()
   assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
 });
 
-test('renderSessionLine displays balance label alongside a maxed-out window', () => {
+test('renderSessionLine displays balance label alongside limit reached warnings', () => {
   const ctx = baseContext();
   ctx.usageData = {
     planName: 'Max',
@@ -1662,10 +1732,9 @@ test('renderSessionLine displays balance label alongside a maxed-out window', ()
   };
 
   const line = stripAnsi(renderSessionLine(ctx));
-  // Fork override: a maxed window renders a full bar, not a "Limit reached" warning.
-  assert.ok(!line.includes('Limit reached'), `should not show a limit warning: ${line}`);
-  assert.ok(line.includes('100 %'), `should show the 100% usage value: ${line}`);
-  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside the maxed window: ${line}`);
+  assert.ok(line.includes('100 %'), `should show full 5h usage at 100%: ${line}`);
+  assert.ok(!line.includes('Limit'), `should not show a limit warning: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
 });
 
 test('renderUsageLine displays balance label alongside rate-limit windows', () => {
@@ -1684,7 +1753,7 @@ test('renderUsageLine displays balance label alongside rate-limit windows', () =
   assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
 });
 
-test('renderUsageLine displays balance label alongside a maxed-out window', () => {
+test('renderUsageLine displays balance label alongside limit reached warnings', () => {
   const ctx = baseContext();
   ctx.usageData = {
     planName: 'Max',
@@ -1696,10 +1765,9 @@ test('renderUsageLine displays balance label alongside a maxed-out window', () =
   };
 
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  // Fork override: a maxed window renders a full bar, not a "Limit reached" warning.
-  assert.ok(!line.includes('Limit reached'), `should not show a limit warning: ${line}`);
-  assert.ok(line.includes('100 %'), `should show the 100% usage value: ${line}`);
-  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside the maxed window: ${line}`);
+  assert.ok(line.includes('100 %'), `should show full 5h usage at 100%: ${line}`);
+  assert.ok(!line.includes('Limit'), `should not show a limit warning: ${line}`);
+  assert.ok(line.includes('$1,256 / $1,800'), `should show balance label alongside windows: ${line}`);
 });
 
 test('renderSessionLine supports remaining-based usage display', () => {
@@ -1832,7 +1900,7 @@ test('renderUsageLine shows reset countdown in days when >= 24 hours', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(plain.includes('│ 6d 7h'), `expected bar-mode reset countdown, got: ${plain}`);
+  assert.ok(plain.includes('│ 6d 7h'), `expected bar-mode reset wording, got: ${plain}`);
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
 
@@ -1851,11 +1919,9 @@ test('renderUsageLine shows 7d reset countdown in text-only mode', () => {
 
   const line = stripAnsi(renderUsageLine(ctx));
   assert.ok(line.includes('5h  45 %'), `should include 5h text-only usage: ${line}`);
-  assert.ok(!line.includes('Weekly'), `usage line should no longer embed weekly usage: ${line}`);
-
-  const weeklyLine = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(weeklyLine.includes('Weekly  85 %'), `should include 7d text-only usage: ${weeklyLine}`);
-  assert.ok(weeklyLine.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${weeklyLine}`);
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx));
+  assert.ok(weekly.includes('Weekly  85 %'), `should include 7d text-only usage: ${weekly}`);
+  assert.ok(weekly.includes('│ 1d 4h'), `should include 7d reset countdown in text-only mode: ${weekly}`);
 });
 
 test('renderUsageLine supports remaining-based usage display with used-percent colors', () => {
@@ -1882,12 +1948,11 @@ test('renderUsageLine supports remaining-based usage display with used-percent c
     line.includes('\x1b[36m 75 %\x1b[0m'),
     `expected remaining 5h usage with normal usage color, got: ${JSON.stringify(line)}`,
   );
-
-  const weeklyLine = renderWeeklyUsageLine(ctx);
-  assert.ok(weeklyLine, 'should render weekly usage line');
+  const weekly = renderWeeklyUsageLine(ctx);
+  assert.ok(weekly, 'should render weekly usage line');
   assert.ok(
-    weeklyLine.includes('\x1b[35m 15 %\x1b[0m'),
-    `expected remaining weekly usage with used-percent warning color, got: ${JSON.stringify(weeklyLine)}`,
+    weekly.includes('\x1b[35m 15 %\x1b[0m'),
+    `expected remaining weekly usage with used-percent warning color, got: ${JSON.stringify(weekly)}`,
   );
 });
 
@@ -1906,7 +1971,7 @@ test('renderUsageLine displays external balance labels', () => {
   assert.equal(line, 'Usage ¥6.35');
 });
 
-test('renderUsageLine can hide reset label in text-only mode', () => {
+test('renderUsageLine shows bare reset separator regardless of showResetLabel in text-only mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000));
   ctx.config.display.usageBarEnabled = false;
@@ -1920,13 +1985,15 @@ test('renderUsageLine can hide reset label in text-only mode', () => {
     sevenDayResetAt: resetTime,
   };
 
-  const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('│ 1d 4h'), `should include bare countdown when reset label is hidden: ${line}`);
-  assert.ok(!line.includes('resets in'), `should omit reset label when disabled: ${line}`);
+  // Reset time is always shown bare with a "│" separator (showResetLabel no longer applies).
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx));
+  assert.ok(weekly.includes('│ 1d 4h'), `should include bare countdown with separator: ${weekly}`);
+  assert.ok(!weekly.includes('resets in'), `should not include reset wording: ${weekly}`);
 });
 
-test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', () => {
+test('renderUsageLine translates weekly label when Chinese is enabled', () => {
   const ctx = baseContext();
+  ctx.config.display.sevenDayThreshold = 80;
   ctx.usageData = {
     planName: 'Pro',
     fiveHour: 45,
@@ -1939,15 +2006,18 @@ test('renderWeeklyUsageLine translates weekly label when Chinese is enabled', ()
   try {
     const line = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
     assert.ok(line.includes('本周'));
+    // Reset time is now shown bare with a vertical-bar separator (no "resets in" wording).
+    assert.ok(line.includes('│ '));
   } finally {
     setLanguage('en');
   }
 });
 
-test('renderWeeklyUsageLine shows 7d reset countdown in bar mode (always visible)', () => {
+test('renderUsageLine shows 7d reset countdown in bar mode when above threshold', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000)); // 1d 4h from now
   ctx.config.display.usageBarEnabled = true;
+  ctx.config.display.sevenDayThreshold = 80;
   ctx.usageData = {
     planName: 'Pro',
     fiveHour: 45,
@@ -1956,18 +2026,19 @@ test('renderWeeklyUsageLine shows 7d reset countdown in bar mode (always visible
     sevenDayResetAt: resetTime,
   };
 
-  assert.ok(stripAnsi(renderUsageLine(ctx)).includes('45 %'), 'usage line should include 5h percentage');
-  const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('85 %'), `should include 7d percentage: ${line}`);
-  assert.ok(line.includes('│ 1d 4h'), `should include 7d reset countdown in bar mode: ${line}`);
-  assert.ok(line.includes('Weekly'), `should render the weekly label: ${line}`);
+  const line = stripAnsi(renderUsageLine(ctx));
+  assert.ok(line.includes('45 %'), `should include 5h percentage in bar mode: ${line}`);
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx));
+  assert.ok(weekly.includes('85 %'), `should include 7d percentage: ${weekly}`);
+  assert.ok(weekly.includes('│ 1d 4h'), `should include 7d reset countdown in bar mode: ${weekly}`);
 });
 
-test('renderWeeklyUsageLine can hide reset label in bar mode', () => {
+test('renderUsageLine shows bare reset separator regardless of showResetLabel in bar mode', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (28 * 60 * 60 * 1000));
   ctx.config.display.usageBarEnabled = true;
   ctx.config.display.showResetLabel = false;
+  ctx.config.display.sevenDayThreshold = 80;
   ctx.usageData = {
     planName: 'Pro',
     fiveHour: 45,
@@ -1976,13 +2047,15 @@ test('renderWeeklyUsageLine can hide reset label in bar mode', () => {
     sevenDayResetAt: resetTime,
   };
 
-  const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('│ 1d 4h'), `should include bare countdown in bar mode: ${line}`);
-  assert.ok(!line.includes('resets in'), `should omit reset label in bar mode when disabled: ${line}`);
+  // Reset time is always shown bare with a "│" separator (showResetLabel no longer applies).
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx));
+  assert.ok(weekly.includes('│ 1d 4h'), `should include bare countdown with separator in bar mode: ${weekly}`);
+  assert.ok(!weekly.includes('resets in'), `should not include reset wording: ${weekly}`);
 });
 
-test('renderWeeklyUsageLine is shown below threshold while usage line hides weekly', () => {
+test('renderUsageLine shows weekly-only usage without a ghost 5h section', () => {
   const ctx = baseContext();
+  ctx.config.display.sevenDayThreshold = 80;
   ctx.usageData = {
     planName: 'Pro',
     fiveHour: null,
@@ -1991,16 +2064,16 @@ test('renderWeeklyUsageLine is shown below threshold while usage line hides week
     sevenDayResetAt: null,
   };
 
-  // No five-hour data: the usage element renders nothing.
+  // The usage element only handles the 5h window, so it is null when fiveHour is null.
   assert.equal(renderUsageLine(ctx), null);
-
   const line = stripAnsi(renderWeeklyUsageLine(ctx));
-  assert.ok(line.includes('Weekly'), `should render the weekly window even when it is the only usage value: ${line}`);
-  assert.ok(line.includes('13 %'), `should render the weekly percentage even below threshold: ${line}`);
-  assert.ok(!line.includes('5h'), `should not render a 5h section: ${line}`);
+  assert.ok(!line.includes('5h'), `should not render a ghost 5h section: ${line}`);
+  assert.ok(line.includes('Weekly'), `should render the weekly window when it is the only usage value: ${line}`);
+  assert.ok(line.includes('13 %'), `should render the weekly percentage: ${line}`);
+  assert.ok(!line.includes('|'), `should not render a separator for a missing 5h window: ${line}`);
 });
 
-test('renderSessionLine shows a full usage bar at 100% instead of a limit warning', () => {
+test('renderSessionLine displays limit reached warning', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + 3600000); // 1 hour from now
   ctx.usageData = {
@@ -2011,12 +2084,12 @@ test('renderSessionLine shows a full usage bar at 100% instead of a limit warnin
     sevenDayResetAt: null,
   };
   const line = stripAnsi(renderSessionLine(ctx));
-  assert.ok(!line.includes('Limit reached'), `should not show a limit warning: ${line}`);
-  assert.ok(line.includes('100 %'), `should show the 100% usage value: ${line}`);
-  assert.ok(line.includes('5h'), `should show the 5h usage window: ${line}`);
+  assert.ok(line.includes('100 %'), 'should show full 5h usage at 100%');
+  assert.ok(!line.includes('Limit'), 'should not show a limit warning');
+  assert.ok(line.includes('│ 1h'), 'should show reset time with bare separator');
 });
 
-test('renderUsageLine shows a full bar and day/hour reset at 100%', () => {
+test('renderUsageLine shows limit reset in days when >= 24 hours', () => {
   const ctx = baseContext();
   const resetTime = new Date(Date.now() + (151 * 3600000) + (59 * 60000)); // 6d 7h 59m from now
   ctx.usageData = {
@@ -2029,8 +2102,8 @@ test('renderUsageLine shows a full bar and day/hour reset at 100%', () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, 'should render usage line');
   const plain = stripAnsi(line);
-  assert.ok(!plain.includes('Limit reached'), `should not show a limit warning: ${plain}`);
-  assert.ok(plain.includes('100 %'), `should show the 100% usage value: ${plain}`);
+  assert.ok(plain.includes('100 %'), 'should show full 5h usage at 100%');
+  assert.ok(!plain.includes('Limit'), 'should not show a limit warning');
   assert.ok(/│ \d+d( \d+h)?/.test(plain), `expected day/hour reset format, got: ${plain}`);
   assert.ok(!plain.includes('151h'), `should avoid raw hour format for long durations: ${plain}`);
 });
@@ -2075,8 +2148,8 @@ test('renderSessionLine uses custom critical colors for limit-reached usage stat
   };
 
   const criticalLine = renderSessionLine(ctx);
-  assert.ok(!stripAnsi(criticalLine).includes('Limit reached'), 'should not show a limit warning');
-  assert.ok(criticalLine.includes('\x1b[35m100 %'), `expected the 100% value in the custom critical color, got: ${JSON.stringify(criticalLine)}`);
+  assert.ok(!criticalLine.includes('Limit'), `should not show a limit warning, got: ${JSON.stringify(criticalLine)}`);
+  assert.ok(criticalLine.includes('\x1b[35m100 %\x1b[0m'), `expected custom critical color on full usage, got: ${JSON.stringify(criticalLine)}`);
 });
 
 test('renderUsageLine uses custom usage palette overrides', () => {
@@ -2101,11 +2174,10 @@ test('renderUsageLine uses custom usage palette overrides', () => {
   assert.ok(line, 'should render usage line');
   assert.ok(line.includes('\x1b[36m███'), `expected custom usage bar color, got: ${JSON.stringify(line)}`);
   assert.ok(line.includes('\x1b[36m 25 %\x1b[0m'), `expected custom usage percentage color, got: ${JSON.stringify(line)}`);
-
-  const weeklyLine = withTerminal(120, () => renderWeeklyUsageLine(ctx));
-  assert.ok(weeklyLine, 'should render weekly usage line');
-  assert.ok(weeklyLine.includes('\x1b[35m████████'), `expected custom usage warning color, got: ${JSON.stringify(weeklyLine)}`);
-  assert.ok(weeklyLine.includes('\x1b[35m 80 %\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(weeklyLine)}`);
+  const weekly = withTerminal(120, () => renderWeeklyUsageLine(ctx));
+  assert.ok(weekly, 'should render weekly usage line');
+  assert.ok(weekly.includes('\x1b[35m████████'), `expected custom usage warning color, got: ${JSON.stringify(weekly)}`);
+  assert.ok(weekly.includes('\x1b[35m 80 %\x1b[0m'), `expected custom usage warning percentage color, got: ${JSON.stringify(weekly)}`);
 });
 
 test('quotaBar and coloredBar use custom barFilled and barEmpty characters', () => {
@@ -2160,7 +2232,7 @@ test('renderSessionLine uses buffered percent when autocompactBuffer is enabled'
   ctx.config.display.autocompactBuffer = 'enabled';
   const line = renderSessionLine(ctx);
   // Should show 39% (buffered), not 30% (raw)
-  assert.ok(line.includes('39 %'), `expected buffered percent 39%, got: ${line}`);
+  assert.ok(line.includes('39 %'), `expected buffered percent 39 %, got: ${line}`);
 });
 
 test('renderSessionLine uses raw percent when autocompactBuffer is disabled', () => {
@@ -2170,7 +2242,7 @@ test('renderSessionLine uses raw percent when autocompactBuffer is disabled', ()
   ctx.config.display.autocompactBuffer = 'disabled';
   const line = renderSessionLine(ctx);
   // Should show 30% (raw), not 39% (buffered)
-  assert.ok(line.includes('30 %'), `expected raw percent 30%, got: ${line}`);
+  assert.ok(line.includes('30 %'), `expected raw percent 30 %, got: ${line}`);
 });
 
 test('renderSessionLine avoids inflated startup percentage before native context data exists', () => {
@@ -2181,7 +2253,7 @@ test('renderSessionLine avoids inflated startup percentage before native context
 
   const line = renderSessionLine(ctx);
 
-  assert.ok(line.includes('0 %'), `expected startup percent 0%, got: ${line}`);
+  assert.ok(line.includes('  0 %'), `expected startup percent 0 %, got: ${line}`);
 });
 
 test('render adds separator line when showSeparators is true and activity exists', () => {
@@ -2584,7 +2656,7 @@ test('render expanded layout combines default merge-group elements when adjacent
   assert.ok(lines[0].includes('│'), 'combined line should preserve the shared separator');
   const stripped = stripAnsi(lines[0]);
   assert.ok(stripped.includes('Usage 5h  30 %'), `combined line should keep the default unpadded usage label: ${stripped}`);
-  assert.ok(!stripped.includes('Usage  5h  30 %'), `combined line should not pad the usage label: ${stripped}`);
+  assert.ok(!stripped.includes('Usage  5h'), `combined line should not pad the usage label: ${stripped}`);
   assert.ok(!stripped.includes('Weekly '), `combined line should not pad the weekly label: ${stripped}`);
 });
 
@@ -2665,8 +2737,8 @@ test('render expanded layout aligns progress labels only after wrapping merged l
     fiveHourResetAt: new Date(Date.now() + 90 * 60 * 1000),
     sevenDayResetAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
   };
-  ctx.config.elementOrder = ['usage', 'context', 'weeklyUsage'];
-  ctx.config.display.mergeGroups = [['context', 'usage']];
+  ctx.config.display.mergeGroups = [['usage', 'weeklyUsage', 'context']];
+  ctx.config.elementOrder = ['usage', 'weeklyUsage', 'context'];
 
   const lines = withTerminal(24, () => captureRenderLines(ctx)).map(stripAnsi);
   const usageLine = lines.find((line) => line.includes('Usage'));
@@ -2675,9 +2747,9 @@ test('render expanded layout aligns progress labels only after wrapping merged l
 
   assert.ok(usageLine, `narrow terminals should keep the usage line visible: ${lines.join(' | ')}`);
   assert.ok(contextLine, `narrow terminals should keep the context line visible: ${lines.join(' | ')}`);
-  assert.ok(weeklyLine, `the weekly element should render as its own line: ${lines.join(' | ')}`);
+  assert.ok(weeklyLine, `narrow terminals should keep the weekly segment visible: ${lines.join(' | ')}`);
   assert.ok(usageLine.startsWith('Usage  '), `usage line should pad its label when stacked: ${usageLine}`);
-  assert.ok(weeklyLine.startsWith('Weekly '), `weekly label should be followed by its value: ${weeklyLine}`);
+  assert.ok(weeklyLine.startsWith('Weekly '), `weekly label should pad when stacked: ${weeklyLine}`);
   assert.ok(contextLine.startsWith('Context'), `context line should stay aligned with the padded usage label: ${contextLine}`);
 });
 
@@ -2843,7 +2915,7 @@ test('render expanded layout omits compactions line by default', () => {
 // display.timeFormat — absolute and both modes
 // ---------------------------------------------------------------------------
 
-test('renderUsageLine shows a bare relative reset time with a "│" separator in bar mode', () => {
+test('renderUsageLine uses "resets in" preposition for default relative mode in bar-mode', () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
   ctx.usageData = {
@@ -2854,11 +2926,11 @@ test('renderUsageLine shows a bare relative reset time with a "│" separator in
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('│ 2h'), `should show bare relative reset with separator, got: ${plain}`);
-  assert.ok(!plain.includes('resets in'), `should not use the "resets in" wording, got: ${plain}`);
+  assert.ok(plain.includes('│ 2h'), `should show bare relative reset time, got: ${plain}`);
+  assert.ok(!plain.includes('resets in'), `should not use "resets in" wording, got: ${plain}`);
 });
 
-test('renderUsageLine shows a bare absolute reset time with a "│" separator (bar mode)', () => {
+test('renderUsageLine uses "resets at" when timeFormat is "absolute" (bar mode)', () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
   ctx.config.display.timeFormat = 'absolute';
@@ -2870,8 +2942,8 @@ test('renderUsageLine shows a bare absolute reset time with a "│" separator (b
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(plain.includes('│ at '), `expected bare absolute reset with separator, got: ${plain}`);
-  assert.ok(!plain.includes('resets'), `should not use the "resets" wording, got: ${plain}`);
+  assert.match(plain, /│ at \d{1,2}:\d{2}/, `expected bare absolute reset time, got: ${plain}`);
+  assert.ok(!plain.includes('resets'), `should not say "resets in/at" wording, got: ${plain}`);
 });
 
 test('renderUsageLine shows relative and absolute time when timeFormat is "both"', () => {
@@ -2886,10 +2958,11 @@ test('renderUsageLine shows relative and absolute time when timeFormat is "both"
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  // "both" produces "Xh Ym, at HH:MM" — must contain relative part and " at " from i18n
+  // "both" produces "│ Xh Ym, at HH:MM" — bare, with relative part and " at " from i18n
   assert.match(plain, /\dh/, 'should contain relative duration hours');
   assert.ok(plain.includes(' at '), `should contain absolute "at" prefix, got: ${plain}`);
-  assert.ok(plain.includes('│'), `should show reset with "│" separator for both mode, got: ${plain}`);
+  assert.ok(plain.includes('│ '), `should show reset time with bare separator, got: ${plain}`);
+  assert.ok(!plain.includes('resets'), `should not use "resets in/at" wording, got: ${plain}`);
 });
 
 test('renderUsageLine shows elapsed 5h window percentage when timeFormat is "elapsed"', () => {
@@ -3013,7 +3086,7 @@ test('renderUsageLine falls back to relative reset formatting for invalid timeFo
   assert.ok(!plain.includes('elapsed'), `invalid timeFormat should not use elapsed mode, got: ${plain}`);
 });
 
-test('renderUsageLine shows a full bar with bare relative reset at 100%', () => {
+test('renderUsageLine renders 100% with bare relative reset time', () => {
   const ctx = baseContext();
   ctx.usageData = {
     planName: 'Pro',
@@ -3023,12 +3096,12 @@ test('renderUsageLine shows a full bar with bare relative reset at 100%', () => 
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(!plain.includes('Limit reached'), `should not show a limit warning: ${plain}`);
-  assert.ok(plain.includes('100 %'), `should show the 100% usage value: ${plain}`);
-  assert.ok(plain.includes('│ 2h'), `should show bare relative reset with separator, got: ${plain}`);
+  assert.ok(plain.includes('100 %'), 'should show full 5h usage at 100%');
+  assert.ok(!plain.includes('Limit'), 'should not show a limit warning');
+  assert.ok(plain.includes('│ 2h'), `should show bare relative reset time, got: ${plain}`);
 });
 
-test('renderUsageLine shows a full bar with bare absolute reset at 100% (absolute timeFormat)', () => {
+test('renderUsageLine renders 100% with bare absolute reset time', () => {
   const ctx = baseContext();
   ctx.config.display.timeFormat = 'absolute';
   ctx.usageData = {
@@ -3039,10 +3112,9 @@ test('renderUsageLine shows a full bar with bare absolute reset at 100% (absolut
     sevenDayResetAt: null,
   };
   const plain = stripAnsi(renderUsageLine(ctx));
-  assert.ok(!plain.includes('Limit reached'), `should not show a limit warning: ${plain}`);
-  assert.ok(plain.includes('100 %'), `should show the 100% usage value: ${plain}`);
-  assert.ok(plain.includes('│ at '), `should show bare absolute reset with separator, got: ${plain}`);
-  assert.ok(!plain.includes('resets'), `should not use the "resets" wording, got: ${plain}`);
+  assert.ok(plain.includes('100 %'), 'should show full 5h usage at 100%');
+  assert.ok(!plain.includes('Limit'), 'should not show a limit warning');
+  assert.match(plain, /│ at \d{1,2}:\d{2}/, `should show bare absolute reset time, got: ${plain}`);
 });
 
 test('prettifyAdvisorId expands canonical model IDs', () => {
@@ -3163,4 +3235,3 @@ test('renderSessionLine renders advisor inline on the same row (compact layout)'
   assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
   assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
 });
-

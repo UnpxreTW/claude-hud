@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createDebug } from './debug.js';
+const debug = createDebug('git');
 const execFileAsync = promisify(execFile);
 export async function getGitBranch(cwd) {
     if (!cwd)
@@ -8,7 +10,8 @@ export async function getGitBranch(cwd) {
         const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd, timeout: 1000, encoding: 'utf8', windowsHide: true });
         return stdout.trim() || null;
     }
-    catch {
+    catch (err) {
+        debug('Failed to get git branch:', err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -33,8 +36,8 @@ export async function getGitStatus(cwd) {
                 fileStats = parseFileStats(trimmed);
             }
         }
-        catch {
-            // Ignore errors, assume clean
+        catch (err) {
+            debug('Failed to get git status:', err instanceof Error ? err.message : err);
         }
         // Get per-file and total line diffs
         if (isDirty) {
@@ -47,8 +50,8 @@ export async function getGitStatus(cwd) {
                     applyLineDiffsToFiles(fileStats.trackedFiles, perFileDiff);
                 }
             }
-            catch {
-                // Ignore errors
+            catch (err) {
+                debug('Failed to get line diff:', err instanceof Error ? err.message : err);
             }
         }
         // Get ahead/behind counts
@@ -62,8 +65,8 @@ export async function getGitStatus(cwd) {
                 ahead = parseInt(parts[1], 10) || 0;
             }
         }
-        catch {
-            // No upstream or error, keep 0/0
+        catch (err) {
+            debug('Failed to get ahead/behind (no upstream?):', err instanceof Error ? err.message : err);
         }
         // Build GitHub branch URL from remote
         let branchUrl;
@@ -78,12 +81,13 @@ export async function getGitStatus(cwd) {
                 branchUrl = `${httpsBase}/tree/${encodeURIComponent(branch)}`;
             }
         }
-        catch {
-            // No remote or not GitHub
+        catch (err) {
+            debug('Failed to get remote URL:', err instanceof Error ? err.message : err);
         }
         return { branch, isDirty, ahead, behind, fileStats, lineDiff, branchUrl };
     }
-    catch {
+    catch (err) {
+        debug('getGitStatus failed:', err instanceof Error ? err.message : err);
         return null;
     }
 }

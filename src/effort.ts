@@ -1,4 +1,7 @@
 import { execFileSync } from 'node:child_process';
+import { createDebug } from './debug.js';
+
+const debug = createDebug('effort');
 
 export interface EffortInfo {
   level: string;
@@ -95,7 +98,8 @@ function readParentProcessEffort(): string | null {
 
     const match = output.match(/--effort[= ]+(\w+)/);
     return match?.[1] ?? null;
-  } catch {
+  } catch (err) {
+    debug('Failed to read parent process effort:', err instanceof Error ? err.message : err);
     return null;
   }
 }

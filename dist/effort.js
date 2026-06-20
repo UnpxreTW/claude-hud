@@ -1,4 +1,6 @@
 import { execFileSync } from 'node:child_process';
+import { createDebug } from './debug.js';
+const debug = createDebug('effort');
 const KNOWN_SYMBOLS = {
     low: '○',
     medium: '◔',
@@ -64,7 +66,8 @@ function readParentProcessEffort() {
         const match = output.match(/--effort[= ]+(\w+)/);
         return match?.[1] ?? null;
     }
-    catch {
+    catch (err) {
+        debug('Failed to read parent process effort:', err instanceof Error ? err.message : err);
         return null;
     }
 }

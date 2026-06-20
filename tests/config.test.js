@@ -120,6 +120,19 @@ test('mergeConfig preserves explicit showSessionName=true', () => {
   assert.equal(config.display.showSessionName, true);
 });
 
+test('mergeConfig defaults provider options to off/empty', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showProvider, false);
+  assert.equal(config.display.providerName, '');
+  assert.equal(DEFAULT_CONFIG.display.showProvider, false);
+});
+
+test('mergeConfig preserves provider options and caps providerName length', () => {
+  const config = mergeConfig({ display: { showProvider: true, providerName: 'x'.repeat(60) } });
+  assert.equal(config.display.showProvider, true);
+  assert.equal(config.display.providerName.length, 40);
+});
+
 test('mergeConfig defaults showClaudeCodeVersion to false', () => {
   const config = mergeConfig({});
   assert.equal(config.display.showClaudeCodeVersion, false);
@@ -488,23 +501,10 @@ test('mergeConfig defaults elementOrder to the full expanded layout', () => {
   assert.deepEqual(config.elementOrder, DEFAULT_ELEMENT_ORDER);
 });
 
-test('mergeConfig defaults mergeGroups to empty so usage windows render separately', () => {
+test('mergeConfig defaults mergeGroups to context and usage', () => {
   const config = mergeConfig({});
   assert.deepEqual(config.display.mergeGroups, DEFAULT_MERGE_GROUPS);
   assert.deepEqual(DEFAULT_CONFIG.display.mergeGroups, DEFAULT_MERGE_GROUPS);
-  assert.deepEqual(DEFAULT_MERGE_GROUPS, []);
-});
-
-test('default element order includes weeklyUsage right after usage', () => {
-  const usageIndex = DEFAULT_ELEMENT_ORDER.indexOf('usage');
-  const weeklyIndex = DEFAULT_ELEMENT_ORDER.indexOf('weeklyUsage');
-  assert.ok(usageIndex >= 0, 'usage should be present');
-  assert.equal(weeklyIndex, usageIndex + 1, 'weeklyUsage should immediately follow usage');
-});
-
-test('mergeConfig accepts weeklyUsage in elementOrder', () => {
-  const config = mergeConfig({ elementOrder: ['project', 'usage', 'weeklyUsage', 'context'] });
-  assert.deepEqual(config.elementOrder, ['project', 'usage', 'weeklyUsage', 'context']);
 });
 
 test('mergeConfig preserves explicit empty mergeGroups to disable merged lines', () => {

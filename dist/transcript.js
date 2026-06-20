@@ -1,17 +1,15 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import * as readline from 'readline';
+import * as readline from 'node:readline';
 import { createHash } from 'node:crypto';
 import { getHudPluginDir } from './claude-config-dir.js';
+import { createDebug } from './debug.js';
+import { sanitizeDisplayText } from './utils/sanitize.js';
+const debug = createDebug('transcript');
 const TRANSCRIPT_CACHE_VERSION = 9;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
-const DISPLAY_CONTROL_PATTERN = new RegExp('[' +
-    '\\u0000-\\u001F\\u007F-\\u009F' +
-    '\\u061C\\u200E\\u200F' +
-    '\\u202A-\\u202E\\u2066-\\u2069\\u206A-\\u206F' +
-    ']', 'g');
 // Hard cap on the advisor model ID captured from the transcript. Real Claude
 // model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
 // cap exists to prevent a malformed transcript from persisting an oversized
@@ -56,12 +54,7 @@ function normalizeActivityName(value) {
     if (typeof value !== 'string') {
         return undefined;
     }
-    const sanitized = value
-        .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
-        .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
-        .replace(/\x1B[@-Z\\-_]/g, '')
-        .replace(DISPLAY_CONTROL_PATTERN, '')
-        .trim();
+    const sanitized = sanitizeDisplayText(value).trim();
     if (!sanitized) {
         return undefined;
     }
@@ -78,7 +71,8 @@ function canonicalizeTranscriptPath(transcriptPath) {
     try {
         return fs.realpathSync(transcriptPath);
     }
-    catch {
+    catch (err) {
+        debug('Failed to resolve transcript path %s:', transcriptPath, err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -86,6 +80,7 @@ function readTranscriptFileState(transcriptPath) {
     try {
         const stat = fs.statSync(transcriptPath);
         if (!stat.isFile()) {
+            debug('Transcript path is not a file: %s', transcriptPath);
             return null;
         }
         return {
@@ -93,7 +88,8 @@ function readTranscriptFileState(transcriptPath) {
             size: stat.size,
         };
     }
-    catch {
+    catch (err) {
+        debug('Failed to stat transcript file %s:', transcriptPath, err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -166,7 +162,8 @@ function readTranscriptCache(transcriptPath, state) {
         }
         return deserializeTranscriptData(parsed.data);
     }
-    catch {
+    catch (err) {
+        debug('Failed to read transcript cache:', err instanceof Error ? err.message : err);
         return null;
     }
 }
@@ -195,8 +192,8 @@ function writeTranscriptCache(transcriptPath, state, data) {
             // Best-effort: cache permissions should not break rendering.
         }
     }
-    catch {
-        // Cache failures are non-fatal; fall back to fresh parsing next time.
+    catch (err) {
+        debug('Failed to write transcript cache:', err instanceof Error ? err.message : err);
     }
 }
 export async function parseTranscript(transcriptPath) {
@@ -322,15 +319,15 @@ export async function parseTranscript(transcriptPath) {
                 }
                 processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result);
             }
-            catch {
+            catch (err) {
                 lastUsageKey = undefined;
-                // Skip malformed lines
+                debug('Skipping malformed transcript line:', err instanceof Error ? err.message : err);
             }
         }
         parsedCleanly = true;
     }
-    catch {
-        // Return partial results on error
+    catch (err) {
+        debug('Transcript stream read error, returning partial results:', err instanceof Error ? err.message : err);
     }
     // Resolve agent completion: prefer queue-operation timestamps (accurate for
     // background agents), fall back to tool_result timestamps (inline agents).

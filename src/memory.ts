@@ -1,7 +1,10 @@
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createDebug } from './debug.js';
 import type { MemoryInfo } from './types.js';
+
+const debug = createDebug('memory');
 
 type MemoryReader = () => { totalBytes: number; freeBytes: number };
 
@@ -47,7 +50,8 @@ const readLinuxMemory: MemoryReader = () => {
   try {
     const content = readFileSync('/proc/meminfo', 'utf8');
     return parseLinuxMeminfo(content) ?? readDefaultMemory();
-  } catch {
+  } catch (err) {
+    debug('Failed to read /proc/meminfo:', err instanceof Error ? err.message : err);
     return readDefaultMemory();
   }
 };
@@ -63,7 +67,8 @@ const readMacOSMemory: MemoryReader = () => {
     const totalBytes = os.totalmem();
     const usedBytes = (parsed.active + parsed.wired) * parsed.pageSize;
     return { totalBytes, freeBytes: totalBytes - usedBytes };
-  } catch {
+  } catch (err) {
+    debug('Failed to run vm_stat:', err instanceof Error ? err.message : err);
     return readDefaultMemory();
   }
 };
@@ -92,7 +97,8 @@ export async function getMemoryUsage(): Promise<MemoryInfo | null> {
       freeBytes: safeFreeBytes,
       usedPercent: Math.min(Math.max(usedPercent, 0), 100),
     };
-  } catch {
+  } catch (err) {
+    debug('Failed to get memory usage:', err instanceof Error ? err.message : err);
     return null;
   }
 }

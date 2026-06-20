@@ -2,7 +2,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { getHudPluginDir } from './claude-config-dir.js';
+import { createDebug } from './debug.js';
 import type { Language } from './i18n/types.js';
+
+const debug = createDebug('config');
 
 export type LineLayoutType = 'compact' | 'expanded';
 
@@ -156,6 +159,12 @@ export interface HudConfig {
     externalUsageFreshnessMs: number;
     modelFormat: ModelFormatMode;
     modelOverride: string;
+    // Show the provider label (custom name or auto-detected Bedrock/Vertex/
+    // Enterprise) BEFORE the model name on the project line. Default off.
+    showProvider: boolean;
+    // Explicit provider label, e.g. for custom proxies where the provider can't
+    // be auto-detected. Falls back to auto-detection when empty.
+    providerName: string;
     customLine: string;
     customLinePosition: CustomLinePosition;
     timeFormat: TimeFormatMode;
@@ -236,6 +245,8 @@ export const DEFAULT_CONFIG: HudConfig = {
     externalUsageFreshnessMs: 300000,
     modelFormat: 'full',
     modelOverride: '',
+    showProvider: false,
+    providerName: '',
     customLine: '',
     customLinePosition: 'last',
     timeFormat: 'relative',
@@ -675,6 +686,12 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     modelOverride: typeof migrated.display?.modelOverride === 'string'
       ? migrated.display.modelOverride.slice(0, 80)
       : DEFAULT_CONFIG.display.modelOverride,
+    showProvider: typeof migrated.display?.showProvider === 'boolean'
+      ? migrated.display.showProvider
+      : DEFAULT_CONFIG.display.showProvider,
+    providerName: typeof migrated.display?.providerName === 'string'
+      ? migrated.display.providerName.slice(0, 40)
+      : DEFAULT_CONFIG.display.providerName,
     customLine: typeof migrated.display?.customLine === 'string'
       ? migrated.display.customLine.slice(0, 80)
       : DEFAULT_CONFIG.display.customLine,
@@ -749,7 +766,8 @@ export async function loadConfig(): Promise<HudConfig> {
     const content = fs.readFileSync(configPath, 'utf-8');
     const userConfig = JSON.parse(content) as Partial<HudConfig>;
     return mergeConfig(userConfig);
-  } catch {
+  } catch (err) {
+    debug('Failed to load config from %s, using defaults:', configPath, err instanceof Error ? err.message : err);
     return mergeConfig({});
   }
 }

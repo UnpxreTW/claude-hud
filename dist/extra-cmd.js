@@ -1,16 +1,13 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createDebug } from './debug.js';
+import { sanitizeDisplayText } from './utils/sanitize.js';
 const execAsync = promisify(exec);
 const MAX_BUFFER = 10 * 1024; // 10KB - plenty for a label
 const MAX_LABEL_LENGTH = 50;
 const TIMEOUT_MS = 3000;
 const EXTRA_CMD_ENABLE_ENV = 'CLAUDE_HUD_ALLOW_EXTRA_CMD';
-const isDebug = process.env.DEBUG?.includes('claude-hud') ?? false;
-function debug(message) {
-    if (isDebug) {
-        console.error(`[claude-hud:extra-cmd] ${message}`);
-    }
-}
+const debug = createDebug('extra-cmd');
 export function isExtraCmdAllowed(env = process.env) {
     const value = env[EXTRA_CMD_ENABLE_ENV]?.trim().toLowerCase();
     return value === '1' || value === 'true' || value === 'yes' || value === 'on';
@@ -20,12 +17,7 @@ export function isExtraCmdAllowed(env = process.env) {
  * Strips ANSI escapes, OSC sequences, control characters, and bidi controls.
  */
 export function sanitize(input) {
-    return input
-        .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '') // CSI sequences
-        .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '') // OSC sequences
-        .replace(/\x1B[@-Z\\-_]/g, '') // 7-bit C1 / ESC Fe
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // C0/C1 controls
-        .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069\u206A-\u206F]/g, ''); // bidi
+    return sanitizeDisplayText(input);
 }
 /**
  * Parse --extra-cmd argument from process.argv

@@ -4,6 +4,9 @@ import * as os from 'node:os';
 import { createHash } from 'node:crypto';
 import type { StdinData } from './types.js';
 import { getHudPluginDir } from './claude-config-dir.js';
+import { createDebug } from './debug.js';
+
+const debug = createDebug('speed-tracker');
 
 const SPEED_WINDOW_MS = 2000;
 // Status lines can re-render many times per second while tokens stream.
@@ -59,8 +62,18 @@ function readCache(homeDir: string, transcriptPath: string): SpeedCache | null {
       return null;
     }
     return parsed;
-  } catch {
+  } catch (err) {
+    debug('Failed to read speed cache:', err instanceof Error ? err.message : err);
     return null;
+  }
+}
+
+function ensurePrivateDir(dir: string): void {
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try {
+    fs.chmodSync(dir, 0o700);
+  } catch {
+    // Best-effort: some filesystems do not support POSIX modes.
   }
 }
 
@@ -68,12 +81,15 @@ function writeCache(homeDir: string, transcriptPath: string, cache: SpeedCache):
   try {
     const cachePath = getCachePath(homeDir, transcriptPath);
     const cacheDir = path.dirname(cachePath);
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+    ensurePrivateDir(cacheDir);
+    fs.writeFileSync(cachePath, JSON.stringify(cache), { encoding: 'utf8', mode: 0o600 });
+    try {
+      fs.chmodSync(cachePath, 0o600);
+    } catch {
+      // Best-effort: cache permissions should not break speed tracking.
     }
-    fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
-  } catch {
-    // Ignore cache write failures
+  } catch (err) {
+    debug('Failed to write speed cache:', err instanceof Error ? err.message : err);
   }
 }
 
@@ -90,7 +106,8 @@ function readFileSizeCache(cachePath: string): FileSizeCache | null {
       return null;
     }
     return parsed;
-  } catch {
+  } catch (err) {
+    debug('Failed to read file size cache:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -98,12 +115,15 @@ function readFileSizeCache(cachePath: string): FileSizeCache | null {
 function writeFileSizeCache(cachePath: string, cache: FileSizeCache): void {
   try {
     const cacheDir = path.dirname(cachePath);
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+    ensurePrivateDir(cacheDir);
+    fs.writeFileSync(cachePath, JSON.stringify(cache), { encoding: 'utf8', mode: 0o600 });
+    try {
+      fs.chmodSync(cachePath, 0o600);
+    } catch {
+      // Best-effort: cache permissions should not break speed tracking.
     }
-    fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
-  } catch {
-    // Ignore cache write failures
+  } catch (err) {
+    debug('Failed to write file size cache:', err instanceof Error ? err.message : err);
   }
 }
 
@@ -115,8 +135,8 @@ function removeLegacyCache(homeDir: string): void {
     if (fs.existsSync(legacyPath)) {
       fs.unlinkSync(legacyPath);
     }
-  } catch {
-    // Ignore cleanup failures
+  } catch (err) {
+    debug('Failed to remove legacy cache:', err instanceof Error ? err.message : err);
   }
 }
 
@@ -161,7 +181,8 @@ function getTranscriptSpeed(
     const estimatedTokens = deltaBytes / BYTES_PER_TOKEN;
     writeFileSizeCache(cachePath, { fileSize, timestamp: now });
     return estimatedTokens / (deltaMs / 1000);
-  } catch {
+  } catch (err) {
+    debug('Failed to compute transcript speed:', err instanceof Error ? err.message : err);
     return null;
   }
 }

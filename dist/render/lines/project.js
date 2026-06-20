@@ -1,26 +1,14 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { getModelName, formatModelName, getProviderLabel } from '../../stdin.js';
+import { getModelName, formatModelName } from '../../stdin.js';
 import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, critical as criticalColor, label, model as modelColor, project as projectColor, red, green, yellow, dim, custom as customColor } from '../colors.js';
 import { t } from '../../i18n/index.js';
 import { renderCostEstimate } from './cost.js';
 import { renderAdvisorLine } from './advisor.js';
 import { normalizeAddedDirs, sanitize as sanitizeDisplayText, basenameOf, truncateBasename, MAX_RENDERED_ADDED_DIRS } from './added-dirs.js';
-function hyperlink(uri, text) {
-    const esc = '\x1b';
-    const st = '\\';
-    return `${esc}]8;;${uri}${esc}${st}${text}${esc}]8;;${esc}${st}`;
-}
-function getFileHref(filePath) {
-    try {
-        return pathToFileURL(path.resolve(filePath)).toString();
-    }
-    catch {
-        return null;
-    }
-}
+import { getFileHref, safeHyperlink } from '../../utils/hyperlinks.js';
+import { formatModelDisplay } from '../model-display.js';
 function resolvePathWithinCwd(cwd, candidatePath) {
     const resolvedCwd = path.resolve(cwd);
     const resolvedPath = path.resolve(cwd, candidatePath);
@@ -29,22 +17,6 @@ function resolvePathWithinCwd(cwd, candidatePath) {
         return resolvedPath;
     }
     return null;
-}
-function safeHyperlink(uri, text) {
-    if (!uri) {
-        return text;
-    }
-    const sanitizedUri = sanitizeDisplayText(uri);
-    try {
-        const parsed = new URL(sanitizedUri);
-        if (parsed.protocol !== 'https:' && parsed.protocol !== 'file:') {
-            return text;
-        }
-        return hyperlink(parsed.toString(), text);
-    }
-    catch {
-        return text;
-    }
 }
 export function renderProjectLine(ctx) {
     const display = ctx.config?.display;
@@ -57,15 +29,7 @@ export function renderProjectLine(ctx) {
     }
     if (display?.showModel !== false) {
         const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
-        const providerLabel = getProviderLabel(ctx.stdin);
-        const modelQualifier = providerLabel ?? undefined;
-        let modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
-        if (ctx.effortLevel && ctx.effortSymbol) {
-            modelDisplay += ` ${ctx.effortSymbol} ${ctx.effortLevel}`;
-        }
-        else if (ctx.effortLevel) {
-            modelDisplay += ` ${ctx.effortLevel}`;
-        }
+        const modelDisplay = formatModelDisplay(model, ctx);
         parts.push(modelColor(`[${modelDisplay}]`, colors));
     }
     let projectPart = null;

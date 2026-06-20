@@ -1,4 +1,6 @@
 import { AUTOCOMPACT_BUFFER_PERCENT } from './constants.js';
+import { createDebug } from './debug.js';
+const debug = createDebug('stdin');
 const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 250;
 const DEFAULT_IDLE_TIMEOUT_MS = 30;
 const DEFAULT_MAX_STDIN_BYTES = 256 * 1024;
@@ -12,7 +14,8 @@ export async function readStdin(stream = process.stdin, options = {}) {
     try {
         stream.setEncoding('utf8');
     }
-    catch {
+    catch (err) {
+        debug('Failed to set stream encoding:', err);
         return null;
     }
     return await new Promise((resolve) => {
@@ -51,7 +54,8 @@ export async function readStdin(stream = process.stdin, options = {}) {
             try {
                 return JSON.parse(trimmed);
             }
-            catch {
+            catch (err) {
+                debug('JSON parse incomplete/invalid, waiting for more data');
                 return undefined;
             }
         };
@@ -86,7 +90,8 @@ export async function readStdin(stream = process.stdin, options = {}) {
             const parsed = tryParse();
             finish(parsed ?? null);
         };
-        const onError = () => {
+        const onError = (err) => {
+            debug('stdin stream error:', err);
             finish(null);
         };
         firstByteTimer = setTimeout(() => {

@@ -1,17 +1,10 @@
 import type { HudColorOverrides } from '../config.js';
 import type { RenderContext } from '../types.js';
 import { cyan, green, label } from './colors.js';
+import { sanitizeDisplayText } from '../utils/sanitize.js';
 
 const MAX_ITEMS_SHOWN = 4;
 const ACTIVITY_NAME_MAX_LEN = 64;
-const DISPLAY_CONTROL_PATTERN = new RegExp(
-  '[' +
-  '\\u0000-\\u001F\\u007F-\\u009F' +
-  '\\u061C\\u200E\\u200F' +
-  '\\u202A-\\u202E\\u2066-\\u2069\\u206A-\\u206F' +
-  ']',
-  'g',
-);
 
 export function renderSkillsLine(ctx: RenderContext): string | null {
   if (ctx.config?.display?.showSkills !== true) {
@@ -49,12 +42,7 @@ function renderNameListLine(
 }
 
 function safeActivityName(value: string): string | null {
-  const sanitized = value
-    .replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
-    .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
-    .replace(/\x1B[@-Z\\-_]/g, '')
-    .replace(DISPLAY_CONTROL_PATTERN, '')
-    .trim();
+  const sanitized = sanitizeDisplayText(value).trim();
 
   if (!sanitized) {
     return null;
