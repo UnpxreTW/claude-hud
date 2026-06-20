@@ -158,3 +158,42 @@ test("mergeConfig accepts zh-Hans as valid language", () => {
   const config = mergeConfig({ language: "zh-Hans" });
   assert.equal(config.language, "zh-Hans");
 });
+
+test("t() returns Traditional Chinese strings for zh-Hant", () => {
+  setLanguage("zh-Hant");
+  assert.equal(t("label.context"), "上下文佔用");
+  assert.equal(t("label.usage"), "五小時上限");
+  assert.equal(t("label.weekly"), "每週使用量");
+  assert.equal(t("label.approxRam"), "記憶體用量");
+  assert.equal(t("status.limitReached"), "已達上限");
+  assert.equal(t("status.allTodosComplete"), "全部完成");
+  assert.equal(t("format.in"), "輸入");
+  assert.equal(t("format.out"), "輸出");
+  setLanguage("en");
+});
+
+test("getCanonicalLanguage resolves zh-Hant to zh-Hant", () => {
+  setLanguage("zh-Hant");
+  assert.equal(getCanonicalLanguage(), "zh-Hant");
+  setLanguage("en");
+});
+
+test("getCanonicalLanguage resolves zh-TW alias to zh-Hant", () => {
+  setLanguage("zh-TW");
+  assert.equal(getCanonicalLanguage(), "zh-Hant");
+  assert.equal(t("label.usage"), "五小時上限");
+  setLanguage("en");
+});
+
+test("isCjkLanguage returns true for zh-Hant and zh-TW", () => {
+  setLanguage("zh-Hant");
+  assert.equal(isCjkLanguage(), true);
+  setLanguage("zh-TW");
+  assert.equal(isCjkLanguage(), true);
+  setLanguage("en");
+});
+
+test("mergeConfig accepts zh-Hant and zh-TW as valid languages", () => {
+  assert.equal(mergeConfig({ language: "zh-Hant" }).language, "zh-Hant");
+  assert.equal(mergeConfig({ language: "zh-TW" }).language, "zh-TW");
+});

@@ -4,17 +4,78 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-06-19
+## [0.3.0-unpxre.1] - 2026-06-20
 
-### Added
-- Add `display.showProvider` and `display.providerName` so custom proxy users can optionally show provider labels before the model name in compact and expanded layouts (#629).
+Unpxre fork release re-synced on top of upstream `0.3.0` main.
 
 ### Changed
-- Extract shared model badge formatting so compact and expanded layouts keep provider labels and effort suffixes consistent (#629).
+- Re-synced the latest upstream `0.3.0` main (optional provider label before the model name, shared model-badge formatting, extracted shared utilities, external usage snapshot and cache permission hardening, expanded test coverage) and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
+
+## [0.2.1-unpxre.1] - 2026-06-19
+
+Unpxre fork release re-synced on top of upstream `0.2.1` main.
+
+### Changed
+- Re-synced the latest upstream `0.2.1` main (explicit `CLAUDE_HUD_ALLOW_EXTRA_CMD` opt-in for `--extra-cmd`, seven-day usage merge from an external snapshot, and corrected Opus 4.5+ cost estimates) and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.2.0-unpxre.2] - 2026-06-17
+
+Unpxre fork release re-synced on top of upstream `0.2.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.2.0` main and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.2.0-unpxre.1] - 2026-06-16
+
+Unpxre fork release synced on top of upstream `0.2.0` (session compaction count, `CLAUDE_HUD_DISABLE` kill switch, configure docs sync).
+
+### Added
+- Synced upstream `0.2.0` (opt-in session compaction count display, `CLAUDE_HUD_DISABLE` per-session kill switch, and configure documentation sync).
+
+### Changed
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.1.1-unpxre.2] - 2026-06-12
+
+Unpxre fork release synced on top of upstream post-`0.1.1` main (fallback speed estimation, Simplified Chinese terminology fix, architecture docs refresh).
+
+### Added
+- Synced upstream fallback speed estimation via transcript file growth when native token timing is unavailable.
+
+### Changed
+- Synced upstream Simplified Chinese terminology fix ("token" rendered as 词元 instead of 令牌) and the refreshed CLAUDE.md architecture overview.
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.1.1-unpxre.1] - 2026-06-10
+
+Unpxre fork release synced on top of upstream `0.1.1` (Skills/MCP lines, external balance label, advisor hardening, auto-compact validation).
+
+### Added
+- Synced upstream `0.1.1` (Skills + MCP activity lines, advisor display hardening, `balance_label` rendering, narrow-terminal width fixes).
+
+### Changed
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.1.0-unpxre.7] - 2026-06-09
+
+Unpxre fork release synced on top of upstream `0.1.0` (advisor line + auto-compact denominator).
+
+### Added
+- Synced upstream advisor model display (`display.showAdvisor`) rendered inline on the project line.
+- Synced upstream `autoCompactWindow` context denominator, also used for the token display.
+
+### Changed
+- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
+
+## [0.1.0-unpxre.6] - 2026-06-08
+
+Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + fork overrides).
 
 ### Fixed
-- Harden and document external usage snapshot read paths as absolute-only, with focused regression coverage for relative-path rejection (#637).
-- Add regression coverage for private `speed-cache` directory and cache file permissions introduced by the cache hardening work (#637).
+- Restored complete compiled `dist/` — the `zh-Hant` locale and percent-format modules were missing from `main`, crashing fresh installs with `ERR_MODULE_NOT_FOUND`.
+
+### Changed
+- `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
 
 ## [0.2.1] - 2026-06-18
 
