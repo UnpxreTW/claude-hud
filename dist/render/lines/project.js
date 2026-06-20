@@ -121,7 +121,11 @@ export function renderProjectLine(ctx) {
         parts.push(label(ctx.extraLabel, colors));
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        const durationLabel = t('label.duration');
+        const durationText = durationLabel
+            ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
+            : `⏱️  ${ctx.sessionDuration}`;
+        parts.push(label(durationText, colors));
     }
     const costEstimate = renderCostEstimate(ctx);
     if (costEstimate) {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderUsageLine } from '../dist/render/lines/usage.js';
+import { renderUsageLine, renderWeeklyUsageLine } from '../dist/render/lines/usage.js';
 
 function stripAnsi(str) {
   return str
@@ -88,31 +88,38 @@ test('renderUsageLine shows balance label when below threshold', () => {
   assert.ok(line.includes('¥6.35'));
 });
 
-test('renderUsageLine shows limit reached warning', () => {
+test('renderUsageLine renders a full bar at 100% without a limit warning', () => {
   const ctx = baseContext();
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit reached'));
+  assert.ok(line.includes('Usage'));
+  assert.ok(line.includes('100 %'));
+  assert.ok(!line.includes('Limit'));
+  assert.ok(!line.includes('⚠'));
 });
 
-test('renderUsageLine shows limit reached in compact mode', () => {
+test('renderUsageLine renders 100% in compact mode without a limit warning', () => {
   const ctx = baseContext();
   ctx.config.display.usageCompact = true;
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit'));
+  assert.ok(line.includes('5h:'));
+  assert.ok(line.includes('100 %'));
+  assert.ok(!line.includes('Limit'));
+  assert.ok(!line.includes('⚠'));
 });
 
-test('renderUsageLine shows limit reached with balance label', () => {
+test('renderUsageLine renders 100% with balance label and no limit warning', () => {
   const ctx = baseContext();
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 60 * 60 * 1000);
   ctx.usageData.balanceLabel = '$10.00';
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit reached'));
+  assert.ok(line.includes('100 %'));
   assert.ok(line.includes('$10.00'));
+  assert.ok(!line.includes('Limit'));
 });
 
 test('renderUsageLine compact mode with fiveHour only', () => {
@@ -122,10 +129,10 @@ test('renderUsageLine compact mode with fiveHour only', () => {
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
   assert.ok(line.includes('5h:'));
-  assert.ok(line.includes('50%'));
+  assert.ok(line.includes('50 %'));
 });
 
-test('renderUsageLine compact mode with both windows', () => {
+test('renderUsageLine compact mode shows only 5h; weekly is a separate element', () => {
   const ctx = baseContext();
   ctx.config.display.usageCompact = true;
   ctx.usageData.fiveHour = 60;
@@ -134,7 +141,9 @@ test('renderUsageLine compact mode with both windows', () => {
   ctx.usageData.sevenDayResetAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
   assert.ok(line.includes('5h:'));
-  assert.ok(line.includes('7d:'));
+  assert.ok(!line.includes('7d:'));
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.ok(weekly.includes('7d:'));
 });
 
 test('renderUsageLine compact mode returns null when no window data qualifies', () => {
@@ -148,24 +157,27 @@ test('renderUsageLine compact mode returns null when no window data qualifies', 
   assert.equal(result, null);
 });
 
-test('renderUsageLine shows seven-day only when fiveHour is null', () => {
+test('renderUsageLine returns null when fiveHour is null; weekly element renders 7d', () => {
   const ctx = baseContext();
   ctx.usageData.fiveHour = null;
   ctx.usageData.sevenDay = 45;
   ctx.usageData.sevenDayResetAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
-  const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Weekly'));
+  assert.equal(renderUsageLine(ctx), null);
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.ok(weekly.includes('Weekly'));
 });
 
-test('renderUsageLine shows both windows when sevenDay exceeds threshold', () => {
+test('renderUsageLine shows 5h; weekly is rendered separately regardless of threshold', () => {
   const ctx = baseContext();
   ctx.usageData.fiveHour = 40;
   ctx.usageData.sevenDay = 85;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 3 * 60 * 60 * 1000);
   ctx.usageData.sevenDayResetAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('40%'));
-  assert.ok(line.includes('Weekly'));
+  assert.ok(line.includes('40 %'));
+  assert.ok(!line.includes('Weekly'));
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.ok(weekly.includes('Weekly'));
 });
 
 test('renderUsageLine with bar enabled', () => {
@@ -183,7 +195,7 @@ test('renderUsageLine absolute time format', () => {
   ctx.usageData.fiveHour = 50;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('resets at'));
+  assert.match(line, /│ at \d{1,2}:\d{2}/);
 });
 
 test('renderUsageLine elapsed time format', () => {
@@ -210,7 +222,7 @@ test('renderUsageLine remaining usage value mode', () => {
   ctx.usageData.fiveHour = 40;
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
   // remaining = 100 - 40 = 60%
-  assert.ok(line.includes('60%'));
+  assert.ok(line.includes('60 %'));
 });
 
 test('renderUsageLine hides reset label when showResetLabel is false', () => {
@@ -233,32 +245,38 @@ test('renderUsageLine with only balanceLabel and no window data', () => {
   assert.ok(line.includes('$5.00'));
 });
 
-test('renderUsageLine with null percent shows -- in compact mode', () => {
+test('renderWeeklyUsageLine shows 7d in compact mode when fiveHour is null', () => {
   const ctx = baseContext();
   ctx.config.display.usageCompact = true;
   ctx.usageData.fiveHour = null;
   ctx.usageData.sevenDay = 85;
   ctx.usageData.sevenDayResetAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-  const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('7d:'));
+  // The usage element only handles 5h, so it is null when fiveHour is null.
+  assert.equal(renderUsageLine(ctx), null);
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.ok(weekly.includes('7d:'));
 });
 
-test('renderUsageLine limit reached with sevenDay at 100', () => {
+test('renderWeeklyUsageLine renders 100% full bar without a limit warning', () => {
   const ctx = baseContext();
   ctx.usageData.fiveHour = 80;
   ctx.usageData.sevenDay = 100;
   ctx.usageData.sevenDayResetAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
-  const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit reached'));
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.ok(weekly.includes('100 %'));
+  assert.ok(!weekly.includes('Limit'));
+  assert.ok(!weekly.includes('⚠'));
 });
 
-test('renderUsageLine limit reached compact mode without reset time', () => {
+test('renderUsageLine renders 100% compact without reset time and no limit warning', () => {
   const ctx = baseContext();
   ctx.config.display.usageCompact = true;
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = null;
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit'));
+  assert.ok(line.includes('5h:'));
+  assert.ok(line.includes('100 %'));
+  assert.ok(!line.includes('Limit'));
 });
 
 test('renderUsageLine limit reached with balance in compact mode', () => {
@@ -271,21 +289,24 @@ test('renderUsageLine limit reached with balance in compact mode', () => {
   assert.ok(line.includes('$2.50'));
 });
 
-test('renderUsageLine elapsed format for limit reached uses relative', () => {
+test('renderUsageLine renders 100% with elapsed format and no limit warning', () => {
   const ctx = baseContext();
   ctx.config.display.timeFormat = 'elapsed';
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit reached'));
+  assert.ok(line.includes('100 %'));
+  assert.ok(line.includes('elapsed'));
+  assert.ok(!line.includes('Limit'));
 });
 
-test('renderUsageLine elapsedAndAbsolute format for limit uses absolute', () => {
+test('renderUsageLine renders 100% with elapsedAndAbsolute format and no limit warning', () => {
   const ctx = baseContext();
   ctx.config.display.timeFormat = 'elapsedAndAbsolute';
   ctx.usageData.fiveHour = 100;
   ctx.usageData.fiveHourResetAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
   const line = stripAnsi(renderUsageLine(ctx) ?? '');
-  assert.ok(line.includes('Limit reached'));
-  assert.ok(line.includes('resets at'));
+  assert.ok(line.includes('100 %'));
+  assert.ok(line.includes('at '));
+  assert.ok(!line.includes('Limit'));
 });

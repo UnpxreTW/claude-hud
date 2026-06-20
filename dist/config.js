@@ -9,6 +9,7 @@ export const DEFAULT_ELEMENT_ORDER = [
     'addedDirs',
     'context',
     'usage',
+    'weeklyUsage',
     'promptCache',
     'memory',
     'environment',
@@ -19,9 +20,9 @@ export const DEFAULT_ELEMENT_ORDER = [
     'todos',
     'sessionTime',
 ];
-export const DEFAULT_MERGE_GROUPS = [
-    ['context', 'usage'],
-];
+// Weekly usage is an independent, always-visible element, so context, usage,
+// and weeklyUsage each render on their own line by default (no merge group).
+export const DEFAULT_MERGE_GROUPS = [];
 const KNOWN_ELEMENTS = new Set(DEFAULT_ELEMENT_ORDER);
 export const DEFAULT_CONFIG = {
     language: 'en',
@@ -135,7 +136,8 @@ function validateUsageValue(value) {
     return value === 'percent' || value === 'remaining';
 }
 function validateLanguage(value) {
-    return value === 'en' || value === 'zh' || value === 'zh-Hans';
+    return value === 'en' || value === 'zh' || value === 'zh-Hans'
+        || value === 'zh-Hant' || value === 'zh-TW';
 }
 function validateModelFormat(value) {
     return value === 'full' || value === 'compact' || value === 'short';

@@ -1,5 +1,6 @@
 import type { RenderContext } from '../types.js';
 import { getTotalTokens } from '../stdin.js';
+import { formatPercent } from '../render/format-percent.js';
 
 /**
  * Format a token count into a human-readable short string.
@@ -45,14 +46,14 @@ export function formatContextValue(
 
   if (mode === 'both') {
     if (size > 0) {
-      return `${percent}% (${formatTokens(totalTokens)}/${formatTokens(size)})`;
+      return `${formatPercent(percent)} (${formatTokens(totalTokens)}/${formatTokens(size)})`;
     }
-    return `${percent}%`;
+    return formatPercent(percent);
   }
 
   if (mode === 'remaining') {
-    return `${Math.max(0, 100 - percent)}%`;
+    return formatPercent(Math.max(0, 100 - percent));
   }
 
-  return `${percent}%`;
+  return formatPercent(percent);
 }

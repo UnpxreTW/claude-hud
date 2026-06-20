@@ -13,6 +13,7 @@ export type MessageKey =
   | "label.sessionStarted"
   | "label.lastReply"
   | "label.advisor"
+  | "label.duration"
   | "label.compactions"
   // Status
   | "status.limitReached"
@@ -35,4 +36,4 @@ export type MessageKey =
 
 export type Messages = Record<MessageKey, string>;
 
-export type Language = "en" | "zh" | "zh-Hans";
+export type Language = "en" | "zh" | "zh-Hans" | "zh-Hant" | "zh-TW";

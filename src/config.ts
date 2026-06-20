@@ -29,6 +29,7 @@ export type HudElement =
   | 'addedDirs'
   | 'context'
   | 'usage'
+  | 'weeklyUsage'
   | 'promptCache'
   | 'memory'
   | 'environment'
@@ -74,6 +75,7 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'addedDirs',
   'context',
   'usage',
+  'weeklyUsage',
   'promptCache',
   'memory',
   'environment',
@@ -85,9 +87,9 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'sessionTime',
 ];
 
-export const DEFAULT_MERGE_GROUPS: HudElement[][] = [
-  ['context', 'usage'],
-];
+// Weekly usage is an independent, always-visible element, so context, usage,
+// and weeklyUsage each render on their own line by default (no merge group).
+export const DEFAULT_MERGE_GROUPS: HudElement[][] = [];
 
 const KNOWN_ELEMENTS = new Set<HudElement>(DEFAULT_ELEMENT_ORDER);
 
@@ -299,7 +301,8 @@ function validateUsageValue(value: unknown): value is UsageValueMode {
 }
 
 function validateLanguage(value: unknown): value is Language {
-  return value === 'en' || value === 'zh' || value === 'zh-Hans';
+  return value === 'en' || value === 'zh' || value === 'zh-Hans'
+    || value === 'zh-Hant' || value === 'zh-TW';
 }
 
 function validateModelFormat(value: unknown): value is ModelFormatMode {

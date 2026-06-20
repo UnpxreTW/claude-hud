@@ -1,25 +1,30 @@
 name: Build dist
 
+# Verify-only. Upstream's original build-dist.yml rebuilt dist/ and pushed it
+# straight to `main` after every push. This fork's `main` ruleset forbids direct
+# pushes (changes must go through a PR), so that push is rejected (GH013) and the
+# workflow can never heal dist/. Instead, every PR must carry its own complete,
+# freshly-built dist/ — the sync agent rebuilds it cleanly (`rm -rf dist && npm
+# run build`, then `git add dist/ --force`) inside each override PR. This job is
+# the guard: it rebuilds dist/ from a clean tree and fails if the committed dist/
+# drifts (missing new modules, leftover deleted modules, or stale output).
+# See claude-hud-sync-routine-prompt.md (dist/ handling + the build-dist override).
+
 on:
-  push:
+  pull_request:
     branches: [main]
-
-concurrency:
-  group: build-dist
-  cancel-in-progress: false
-
-permissions:
-  contents: write
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
 
 jobs:
-  build:
+  verify-dist:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[auto]')"
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v6
         with:
@@ -27,16 +32,18 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-      - run: npm test
-      - run: npm run build
 
-      - name: Verify build output
-        run: test -f dist/index.js || exit 1
-
-      - name: Commit dist/
+      - name: Clean rebuild dist/
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          rm -rf dist
+          npm run build
+
+      - name: Verify committed dist/ matches a clean build
+        run: |
           git add dist/ --force
-          git diff --staged --quiet || git commit -m "build: compile dist/ [auto]"
-          git push
+          if ! git diff --cached --quiet; then
+            echo "::error::dist/ is out of sync with src/. Rebuild with 'rm -rf dist && npm run build', stage it with 'git add dist/ --force', and commit. Never patch dist/ by hand."
+            git diff --cached --stat
+            exit 1
+          fi
+          echo "dist/ is complete and matches a clean build."

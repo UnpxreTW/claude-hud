@@ -58,7 +58,7 @@ test('renderIdentityLine shows percent by default', () => {
   const ctx = baseContext();
   const line = stripAnsi(renderIdentityLine(ctx));
   assert.ok(line.includes('Context'));
-  assert.ok(line.includes('5%'));
+  assert.ok(line.includes('  5 %'));
 });
 
 test('renderIdentityLine shows context in tokens mode', () => {
@@ -72,7 +72,7 @@ test('renderIdentityLine shows context in both mode', () => {
   const ctx = baseContext();
   ctx.config.display.contextValue = 'both';
   const line = stripAnsi(renderIdentityLine(ctx));
-  assert.ok(line.includes('5%'));
+  assert.ok(line.includes('  5 %'));
   assert.ok(line.includes('10k/200k'));
 });
 
@@ -80,7 +80,7 @@ test('renderIdentityLine shows context in remaining mode', () => {
   const ctx = baseContext();
   ctx.config.display.contextValue = 'remaining';
   const line = stripAnsi(renderIdentityLine(ctx));
-  assert.ok(line.includes('95%'));
+  assert.ok(line.includes(' 95 %'));
 });
 
 test('renderIdentityLine shows tokens mode with no context_window_size', () => {
@@ -98,7 +98,7 @@ test('renderIdentityLine shows both mode with no context_window_size', () => {
   ctx.stdin.context_window.context_window_size = 0;
   const line = stripAnsi(renderIdentityLine(ctx));
   // Without a window size, both mode just shows percent
-  assert.match(line, /\d+%/);
+  assert.match(line, /\d+ %/);
 });
 
 test('renderIdentityLine hides context bar when showContextBar is false', () => {
@@ -160,7 +160,7 @@ test('renderIdentityLine disables autocompact buffer when set to disabled', () =
   const line = stripAnsi(renderIdentityLine(ctx));
   assert.ok(line.includes('Context'));
   // Should show raw percent
-  assert.ok(line.includes('5%'));
+  assert.ok(line.includes('  5 %'));
 });
 
 test('renderIdentityLine formats million-scale tokens correctly', () => {

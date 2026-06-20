@@ -1,7 +1,6 @@
-import { isLimitReached } from '../types.js';
 import { getContextPercent, getBufferedPercent, getModelName, formatModelName, shouldHideUsage } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
+import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 import { renderCostEstimate } from './lines/cost.js';
 import { renderPromptCacheLine } from './lines/prompt-cache.js';
@@ -12,6 +11,7 @@ import { formatResetTime } from './format-reset-time.js';
 import { formatTokens, formatContextValue } from '../utils/format.js';
 import { createDebug } from '../debug.js';
 import { formatModelDisplay } from './model-display.js';
+import { formatPercent } from './format-percent.js';
 const debug = createDebug('context');
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
@@ -37,7 +37,6 @@ export function renderSessionLine(ctx) {
     const bar = coloredBar(percent, barWidth, colors, contextThresholds);
     const parts = [];
     const timeFormat = display?.timeFormat ?? 'relative';
-    const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
     const contextValueMode = display?.contextValue ?? 'percent';
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors, contextThresholds)}${contextValue}${RESET}`;
@@ -155,23 +154,9 @@ export function renderSessionLine(ctx) {
         const showResetLabel = display?.showResetLabel ?? true;
         const usageValueMode = display?.usageValue ?? 'percent';
         const hasWindowData = ctx.usageData.fiveHour !== null || ctx.usageData.sevenDay !== null;
-        if (isLimitReached(ctx.usageData)) {
-            const resetTime = ctx.usageData.fiveHour === 100
-                ? formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat)
-                : formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
-            if (usageCompact) {
-                parts.push(critical(`⚠ Limit${resetTime ? ` (${resetTime})` : ''}`, colors));
-            }
-            else {
-                const resetSuffix = resetTime
-                    ? showResetLabel
-                        ? ` (${t(resetsKey)} ${resetTime})`
-                        : ` (${resetTime})`
-                    : '';
-                parts.push(critical(`⚠ ${t('status.limitReached')}${resetSuffix}`, colors));
-            }
-        }
-        else {
+        // Fork override: no limit-reached branch — a maxed-out window renders a full
+        // bar naturally through the normal usage rendering below.
+        {
             const usageThreshold = display?.usageThreshold ?? 0;
             const fiveHour = ctx.usageData.fiveHour;
             const sevenDay = ctx.usageData.sevenDay;
@@ -280,7 +265,11 @@ export function renderSessionLine(ctx) {
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
+        const durationLabel = t('label.duration');
+        const durationText = durationLabel
+            ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
+            : `⏱️  ${ctx.sessionDuration}`;
+        parts.push(label(durationText, colors));
     }
     const sessionTimeLine = renderSessionTimeLine(ctx);
     if (sessionTimeLine) {
@@ -323,7 +312,7 @@ function formatCompactWindowPart(windowLabel, percent, resetAt, timeFormat, colo
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(`${windowLabel}:`, colors);
     return reset
-        ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
+        ? `${styledLabel} ${usageDisplay} ${label(`│ ${reset}`, colors)}`
         : `${styledLabel} ${usageDisplay}`;
 }
 function formatUsagePercent(percent, colors, mode = 'percent') {
@@ -332,30 +321,22 @@ function formatUsagePercent(percent, colors, mode = 'percent') {
     }
     const color = getQuotaColor(percent, colors);
     const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
-    return `${color}${displayPercent}%${RESET}`;
+    return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
 function formatUsageWindowPart({ label: windowLabel, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, usageValueMode = 'percent', }) {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
     const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = label(windowLabel, colors);
-    // "resets in X" for relative/both; "resets X" for absolute (avoids "resets in at 14:30")
-    const resetsKey = timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn';
+    // Fork override: the reset time is always shown bare with a "│" separator,
+    // without the "resets in/at" wording, the showResetLabel toggle, or the
+    // relative "/ windowLabel" suffix.
+    const resetSuffix = reset ? `│ ${reset}` : '';
     if (usageBarEnabled) {
-        // Relative mode keeps the upstream "(duration / windowLabel)" pattern (e.g. "2h 30m / 5h").
-        // Absolute/both modes use the preposition form instead — "(at 14:30 / 5h)" is incoherent.
-        const barReset = timeFormat === 'relative'
-            ? (reset ? `${reset} / ${windowLabel}` : null)
-            : (reset ? (showResetLabel ? `${t(resetsKey)} ${reset}` : reset) : null);
-        const body = barReset
-            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${barReset})`
+        const body = resetSuffix
+            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} ${resetSuffix}`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
         return forceLabel ? `${styledLabel} ${body}` : body;
     }
-    const resetSuffix = reset
-        ? showResetLabel
-            ? `(${t(resetsKey)} ${reset})`
-            : `(${reset})`
-        : '';
     return resetSuffix
         ? `${styledLabel} ${usageDisplay} ${resetSuffix}`
         : `${styledLabel} ${usageDisplay}`;

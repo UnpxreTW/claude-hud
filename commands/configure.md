@@ -67,8 +67,9 @@ Questions: **Turn Off → Turn On → Git Style → Layout/Reset → Language �
 - options:
   - "English (Recommended)" - Default, simplest onboarding path
   - "中文" - Show HUD labels and status text in Chinese
+  - "繁體中文（台灣）" - Show HUD labels and status text in Traditional Chinese
 
-Save as `language: "en"` or `language: "zh-Hans"`.
+Save as `language: "en"`, `language: "zh-Hans"`, or `language: "zh-TW"`.
 
 ### Q4: Turn Off (based on chosen preset)
 - header: "Turn Off"
@@ -213,10 +214,12 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
   - "Keep current" - No change
   - "English (Recommended)" - Use English HUD labels
   - "中文" - Use Chinese HUD labels
+  - "繁體中文（台灣）" - Use Traditional Chinese HUD labels
 
 If user chooses "Keep current", leave `language` unchanged.
 If user chooses "English (Recommended)", save `language: "en"`.
 If user chooses "中文", save `language: "zh-Hans"`.
+If user chooses "繁體中文（台灣）", save `language: "zh-TW"`.
 
 ### Q6: Custom Line (optional)
 - header: "Custom Line"
@@ -267,6 +270,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 |--------|--------|
 | English (Recommended) | `language: "en"` |
 | 中文 | `language: "zh-Hans"` |
+| 繁體中文（台灣） | `language: "zh-TW"` |
 
 ---
 

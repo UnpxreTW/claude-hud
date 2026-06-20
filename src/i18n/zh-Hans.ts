@@ -15,6 +15,7 @@ export const zhHans: Messages = {
   "label.sessionStarted": "开始",
   "label.lastReply": "上次回复",
   "label.advisor": "顾问",
+  "label.duration": "",
   "label.compactions": "压缩次数",
 
   // Status
