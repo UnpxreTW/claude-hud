@@ -22,7 +22,7 @@ export const en = {
     // Format
     "format.resets": "resets",
     "format.resetsIn": "resets in",
-    "format.at": "at",
+    "format.absoluteTime": "at {time}",
     "format.in": "in",
     "format.cache": "cache",
     "format.out": "out",
@@ -30,6 +30,9 @@ export const en = {
     "format.tokPerSec": "tok/s",
     "format.justNow": "just now",
     "format.relativeTime": "{value} ago",
+    "format.durationUnderMin": "<1m",
+    "format.durationMin": "{mins}m",
+    "format.durationHm": "{hours}h {mins}m",
     // Init
     "init.initializing": "[claude-hud] Initializing...",
     "init.macosNote": "[claude-hud] Note: On macOS, you may need to restart Claude Code for the HUD to appear.",

@@ -26,7 +26,7 @@ export const zhHant: Messages = {
   // Format
   "format.resets": "重置於",
   "format.resetsIn": "",
-  "format.at": "",
+  "format.absoluteTime": "{time}",
   "format.in": "輸入",
   "format.cache": "快取",
   "format.out": "輸出",
@@ -34,6 +34,9 @@ export const zhHant: Messages = {
   "format.tokPerSec": "tok/s",
   "format.justNow": "剛剛",
   "format.relativeTime": "{value} 前",
+  "format.durationUnderMin": "< 1 分鐘",
+  "format.durationMin": "{mins} 分鐘",
+  "format.durationHm": "{hours} 小時 {mins} 分鐘",
 
   // Init
   "init.initializing": "[claude-hud] 正在初始化...",

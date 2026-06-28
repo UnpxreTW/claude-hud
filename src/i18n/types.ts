@@ -22,7 +22,7 @@ export type MessageKey =
   // Format
   | "format.resets"
   | "format.resetsIn"
-  | "format.at"
+  | "format.absoluteTime"
   | "format.in"
   | "format.cache"
   | "format.out"
@@ -30,6 +30,9 @@ export type MessageKey =
   | "format.tokPerSec"
   | "format.justNow"
   | "format.relativeTime"
+  | "format.durationUnderMin"
+  | "format.durationMin"
+  | "format.durationHm"
   // Init
   | "init.initializing"
   | "init.macosNote";

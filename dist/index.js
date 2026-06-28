@@ -10,7 +10,7 @@ import { getMemoryUsage } from "./memory.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { getCanonicalLanguage, setLanguage, t } from "./i18n/index.js";
+import { format, setLanguage, t } from "./i18n/index.js";
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
@@ -153,20 +153,13 @@ export function formatSessionDuration(sessionStart, now = () => Date.now()) {
     const mins = Math.floor(ms / 60000);
     const hours = Math.floor(mins / 60);
     const remainingMins = mins % 60;
-    // Traditional Chinese renders localized units (other languages keep the
-    // original compact English format).
-    if (getCanonicalLanguage() === "zh-Hant") {
-        if (mins < 1)
-            return "< 1 分鐘";
-        if (mins < 60)
-            return `${mins} 分鐘`;
-        return `${hours} 小時 ${remainingMins} 分鐘`;
-    }
+    // Units live in each locale's pattern (en keeps compact "{mins}m" / "{hours}h {mins}m";
+    // zh-Hant localizes to 分鐘 / 小時). No hardcoded language branch here.
     if (mins < 1)
-        return "<1m";
+        return t("format.durationUnderMin");
     if (mins < 60)
-        return `${mins}m`;
-    return `${hours}h ${remainingMins}m`;
+        return format(t("format.durationMin"), { mins });
+    return format(t("format.durationHm"), { hours, mins: remainingMins });
 }
 const scriptPath = fileURLToPath(import.meta.url);
 const argvPath = process.argv[1];
