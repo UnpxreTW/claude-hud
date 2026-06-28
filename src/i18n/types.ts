@@ -29,7 +29,7 @@ export type MessageKey =
   | "format.tok"
   | "format.tokPerSec"
   | "format.justNow"
-  | "format.ago"
+  | "format.relativeTime"
   // Init
   | "init.initializing"
   | "init.macosNote";

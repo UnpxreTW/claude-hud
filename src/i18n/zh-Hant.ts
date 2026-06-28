@@ -33,7 +33,7 @@ export const zhHant: Messages = {
   "format.tok": "tok",
   "format.tokPerSec": "tok/s",
   "format.justNow": "剛剛",
-  "format.ago": "前",
+  "format.relativeTime": "{value} 前",
 
   // Init
   "init.initializing": "[claude-hud] 正在初始化...",

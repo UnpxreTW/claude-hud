@@ -33,7 +33,7 @@ export const en: Messages = {
   "format.tok": "tok",
   "format.tokPerSec": "tok/s",
   "format.justNow": "just now",
-  "format.ago": "ago",
+  "format.relativeTime": "{value} ago",
 
   // Init
   "init.initializing": "[claude-hud] Initializing...",

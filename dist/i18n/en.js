@@ -29,7 +29,7 @@ export const en = {
     "format.tok": "tok",
     "format.tokPerSec": "tok/s",
     "format.justNow": "just now",
-    "format.ago": "ago",
+    "format.relativeTime": "{value} ago",
     // Init
     "init.initializing": "[claude-hud] Initializing...",
     "init.macosNote": "[claude-hud] Note: On macOS, you may need to restart Claude Code for the HUD to appear.",

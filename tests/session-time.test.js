@@ -167,7 +167,7 @@ test('renders localized labels and relative suffix', () => {
     assert.ok(result);
     assert.ok(result.includes('开始:'));
     assert.ok(result.includes('上次回复:'));
-    assert.ok(result.includes('5m前'));
+    assert.ok(result.includes('5m 前'));
   } finally {
     setLanguage('en');
   }

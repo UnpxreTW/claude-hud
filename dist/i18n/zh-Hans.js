@@ -29,7 +29,7 @@ export const zhHans = {
     "format.tok": "词元",
     "format.tokPerSec": "tok/s",
     "format.justNow": "刚刚",
-    "format.ago": "前",
+    "format.relativeTime": "{value} 前",
     // Init
     "init.initializing": "[claude-hud] 正在初始化...",
     "init.macosNote": "[claude-hud] 注意：在 macOS 上，您可能需要重启 Claude Code 才能显示 HUD。",
