@@ -1,5 +1,5 @@
 import { label } from '../colors.js';
-import { format, t } from '../../i18n/index.js';
+import { interpolate, t } from '../../i18n/index.js';
 function pad(n) {
     return n < 10 ? `0${n}` : `${n}`;
 }
@@ -15,7 +15,7 @@ function formatRelativeTime(ms) {
     if (ms < 0) {
         return t('format.justNow');
     }
-    const withAgo = (value) => format(t('format.relativeTime'), { value });
+    const withAgo = (value) => interpolate(t('format.relativeTime'), { value });
     const seconds = Math.floor(ms / 1000);
     if (seconds < 60) {
         return withAgo(`${seconds}s`);

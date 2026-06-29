@@ -10,7 +10,7 @@ import { getMemoryUsage } from "./memory.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { format, setLanguage, t } from "./i18n/index.js";
+import { interpolate, setLanguage, t } from "./i18n/index.js";
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
@@ -158,8 +158,8 @@ export function formatSessionDuration(sessionStart, now = () => Date.now()) {
     if (mins < 1)
         return t("format.durationUnderMin");
     if (mins < 60)
-        return format(t("format.durationMin"), { mins });
-    return format(t("format.durationHm"), { hours, mins: remainingMins });
+        return interpolate(t("format.durationMin"), { mins });
+    return interpolate(t("format.durationHm"), { hours, mins: remainingMins });
 }
 const scriptPath = fileURLToPath(import.meta.url);
 const argvPath = process.argv[1];

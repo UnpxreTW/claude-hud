@@ -55,6 +55,6 @@ export function t(key: MessageKey): string {
 // Minimal named-placeholder interpolation. Layout that varies by language
 // (spacing, affix position) lives in each locale's pattern string rather than in
 // render code. Unknown placeholders render as empty string (kept lenient).
-export function format(pattern: string, params: Record<string, string | number>): string {
+export function interpolate(pattern: string, params: Record<string, string | number>): string {
   return pattern.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ""));
 }

@@ -10,7 +10,7 @@ import { getMemoryUsage } from "./memory.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { format, setLanguage, t } from "./i18n/index.js";
+import { interpolate, setLanguage, t } from "./i18n/index.js";
 import type { RenderContext } from "./types.js";
 
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
@@ -206,8 +206,8 @@ export function formatSessionDuration(
   // Units live in each locale's pattern (en keeps compact "{mins}m" / "{hours}h {mins}m";
   // zh-Hant localizes to 分鐘 / 小時). No hardcoded language branch here.
   if (mins < 1) return t("format.durationUnderMin");
-  if (mins < 60) return format(t("format.durationMin"), { mins });
-  return format(t("format.durationHm"), { hours, mins: remainingMins });
+  if (mins < 60) return interpolate(t("format.durationMin"), { mins });
+  return interpolate(t("format.durationHm"), { hours, mins: remainingMins });
 }
 
 const scriptPath = fileURLToPath(import.meta.url);

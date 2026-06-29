@@ -41,7 +41,7 @@ export function t(key) {
 // Minimal named-placeholder interpolation. Layout that varies by language
 // (spacing, affix position) lives in each locale's pattern string rather than in
 // render code. Unknown placeholders render as empty string (kept lenient).
-export function format(pattern, params) {
+export function interpolate(pattern, params) {
     return pattern.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ""));
 }
 //# sourceMappingURL=index.js.map

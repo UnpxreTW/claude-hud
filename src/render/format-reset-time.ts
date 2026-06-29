@@ -1,5 +1,5 @@
 import type { TimeFormatMode } from '../config.js';
-import { format, t } from '../i18n/index.js';
+import { interpolate, t } from '../i18n/index.js';
 
 /**
  * Formats a usage-window reset timestamp for display in the HUD.
@@ -60,9 +60,9 @@ function formatAbsolute(resetAt: Date, now: Date): string {
 
   // Show the date only when the reset falls on a different calendar day
   if (resetAt.toDateString() === now.toDateString()) {
-    return format(t('format.absoluteTime'), { time: timeStr });
+    return interpolate(t('format.absoluteTime'), { time: timeStr });
   }
 
   const dateStr = resetAt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  return format(t('format.absoluteTime'), { time: `${dateStr} ${timeStr}` });
+  return interpolate(t('format.absoluteTime'), { time: `${dateStr} ${timeStr}` });
 }

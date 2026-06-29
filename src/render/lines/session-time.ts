@@ -1,6 +1,6 @@
 import type { RenderContext } from '../../types.js';
 import { label } from '../colors.js';
-import { format, t } from '../../i18n/index.js';
+import { interpolate, t } from '../../i18n/index.js';
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -20,7 +20,7 @@ function formatRelativeTime(ms: number): string {
     return t('format.justNow');
   }
 
-  const withAgo = (value: string): string => format(t('format.relativeTime'), { value });
+  const withAgo = (value: string): string => interpolate(t('format.relativeTime'), { value });
 
   const seconds = Math.floor(ms / 1000);
   if (seconds < 60) {
