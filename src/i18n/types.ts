@@ -21,14 +21,14 @@ export type MessageKey =
   // Format
   | "format.resets"
   | "format.resetsIn"
-  | "format.at"
+  | "format.absoluteTime"
   | "format.in"
   | "format.cache"
   | "format.out"
   | "format.tok"
   | "format.tokPerSec"
   | "format.justNow"
-  | "format.ago"
+  | "format.relativeTime"
   // Init
   | "init.initializing"
   | "init.macosNote";
