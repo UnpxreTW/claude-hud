@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0-unpxre.1] - 2026-07-13
+
+Unpxre fork release re-synced on top of upstream `0.4.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.4.0` main (opt-in routed-provider cost for Bedrock/Vertex, opt-in auth method and account display, native Traditional Chinese `zh-Hant`/`zh-TW` locale, opt-in transcript/auto model-source for proxy users, `ultracode(xhigh)` effort display, interpolation-based locale time layout, bounded assistant-usage dedup, compact cache-token summaries, symlinked-rules traversal fix, and removal of the `ps`-based effort fallback) and re-applied the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
+
 ## [0.3.0-unpxre.1] - 2026-06-20
 
 Unpxre fork release re-synced on top of upstream `0.3.0` main.

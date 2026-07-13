@@ -67,11 +67,13 @@ test('loadConfig returns valid config structure', async () => {
   assert.equal(typeof config.display.showPromptCache, 'boolean');
   assert.equal(typeof config.display.promptCacheTtlSeconds, 'number');
   assert.equal(typeof config.display.showCost, 'boolean');
+  assert.equal(typeof config.display.showRoutedCost, 'boolean');
   assert.equal(typeof config.display.showOutputStyle, 'boolean');
   assert.equal(typeof config.display.externalUsagePath, 'string');
   assert.equal(typeof config.display.externalUsageFreshnessMs, 'number');
   assert.ok(['full', 'compact', 'short'].includes(config.display.modelFormat), 'modelFormat should be valid');
   assert.equal(typeof config.display.modelOverride, 'string', 'modelOverride should be string');
+  assert.ok(['stdin', 'auto', 'transcript'].includes(config.display.modelSource), 'modelSource should be valid');
   assert.equal(typeof config.colors, 'object');
   for (const key of ['context', 'usage', 'warning', 'usageWarning', 'critical', 'model', 'project', 'git', 'gitBranch', 'label', 'custom']) {
     const t = typeof config.colors[key];
@@ -131,6 +133,17 @@ test('mergeConfig preserves provider options and caps providerName length', () =
   const config = mergeConfig({ display: { showProvider: true, providerName: 'x'.repeat(60) } });
   assert.equal(config.display.showProvider, true);
   assert.equal(config.display.providerName.length, 40);
+});
+
+test('mergeConfig defaults showRoutedCost to false', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showRoutedCost, false);
+  assert.equal(DEFAULT_CONFIG.display.showRoutedCost, false);
+});
+
+test('mergeConfig preserves explicit showRoutedCost=true', () => {
+  const config = mergeConfig({ display: { showRoutedCost: true } });
+  assert.equal(config.display.showRoutedCost, true);
 });
 
 test('mergeConfig defaults showClaudeCodeVersion to false', () => {
@@ -309,6 +322,22 @@ test('mergeConfig preserves modelOverride and truncates long values', () => {
   const config = mergeConfig({ display: { modelOverride: override } });
   assert.equal(config.display.modelOverride.length, 80);
   assert.equal(config.display.modelOverride, override.slice(0, 80));
+});
+
+test('mergeConfig defaults modelSource to stdin', () => {
+  assert.equal(DEFAULT_CONFIG.display.modelSource, 'stdin');
+  assert.equal(mergeConfig({}).display.modelSource, 'stdin');
+});
+
+test('mergeConfig preserves valid modelSource values', () => {
+  assert.equal(mergeConfig({ display: { modelSource: 'stdin' } }).display.modelSource, 'stdin');
+  assert.equal(mergeConfig({ display: { modelSource: 'auto' } }).display.modelSource, 'auto');
+  assert.equal(mergeConfig({ display: { modelSource: 'transcript' } }).display.modelSource, 'transcript');
+});
+
+test('mergeConfig falls back to stdin for invalid modelSource values', () => {
+  assert.equal(mergeConfig({ display: { modelSource: 'proxy' } }).display.modelSource, 'stdin');
+  assert.equal(mergeConfig({ display: { modelSource: 42 } }).display.modelSource, 'stdin');
 });
 
 test('mergeConfig defaults external usage fallback settings', () => {

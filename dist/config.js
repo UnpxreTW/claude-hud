@@ -50,6 +50,7 @@ export const DEFAULT_CONFIG = {
         contextValue: 'percent',
         showConfigCounts: false,
         showCost: false,
+        showRoutedCost: false,
         showDuration: false,
         showSpeed: false,
         showTokenBreakdown: true,
@@ -66,6 +67,9 @@ export const DEFAULT_CONFIG = {
         showAgents: false,
         showTodos: false,
         showSessionName: false,
+        showAuth: false,
+        showAuthUser: false,
+        authUserLength: 8,
         showClaudeCodeVersion: false,
         showEffortLevel: false,
         showMemoryUsage: false,
@@ -88,6 +92,7 @@ export const DEFAULT_CONFIG = {
         externalUsageFreshnessMs: 300000,
         modelFormat: 'full',
         modelOverride: '',
+        modelSource: 'stdin',
         showProvider: false,
         providerName: '',
         customLine: '',
@@ -136,8 +141,7 @@ function validateUsageValue(value) {
     return value === 'percent' || value === 'remaining';
 }
 function validateLanguage(value) {
-    return value === 'en' || value === 'zh' || value === 'zh-Hans'
-        || value === 'zh-Hant' || value === 'zh-TW';
+    return value === 'en' || value === 'zh' || value === 'zh-Hans' || value === 'zh-Hant' || value === 'zh-TW';
 }
 function validateModelFormat(value) {
     return value === 'full' || value === 'compact' || value === 'short';
@@ -380,6 +384,9 @@ export function mergeConfig(userConfig) {
         showCost: typeof migrated.display?.showCost === 'boolean'
             ? migrated.display.showCost
             : DEFAULT_CONFIG.display.showCost,
+        showRoutedCost: typeof migrated.display?.showRoutedCost === 'boolean'
+            ? migrated.display.showRoutedCost
+            : DEFAULT_CONFIG.display.showRoutedCost,
         showDuration: typeof migrated.display?.showDuration === 'boolean'
             ? migrated.display.showDuration
             : DEFAULT_CONFIG.display.showDuration,
@@ -424,6 +431,13 @@ export function mergeConfig(userConfig) {
         showSessionName: typeof migrated.display?.showSessionName === 'boolean'
             ? migrated.display.showSessionName
             : DEFAULT_CONFIG.display.showSessionName,
+        showAuth: typeof migrated.display?.showAuth === 'boolean'
+            ? migrated.display.showAuth
+            : DEFAULT_CONFIG.display.showAuth,
+        showAuthUser: typeof migrated.display?.showAuthUser === 'boolean'
+            ? migrated.display.showAuthUser
+            : DEFAULT_CONFIG.display.showAuthUser,
+        authUserLength: validateNonNegativeInteger(migrated.display?.authUserLength, DEFAULT_CONFIG.display.authUserLength),
         showClaudeCodeVersion: typeof migrated.display?.showClaudeCodeVersion === 'boolean'
             ? migrated.display.showClaudeCodeVersion
             : DEFAULT_CONFIG.display.showClaudeCodeVersion,
@@ -470,6 +484,9 @@ export function mergeConfig(userConfig) {
         modelOverride: typeof migrated.display?.modelOverride === 'string'
             ? migrated.display.modelOverride.slice(0, 80)
             : DEFAULT_CONFIG.display.modelOverride,
+        modelSource: ['auto', 'stdin', 'transcript'].includes(migrated.display?.modelSource)
+            ? migrated.display.modelSource
+            : DEFAULT_CONFIG.display.modelSource,
         showProvider: typeof migrated.display?.showProvider === 'boolean'
             ? migrated.display.showProvider
             : DEFAULT_CONFIG.display.showProvider,

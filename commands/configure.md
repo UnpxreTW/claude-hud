@@ -19,12 +19,13 @@ enabled — toggle them by editing `config.json` directly if needed:
 
 Advanced settings such as `colors.*`, `pathLevels`, `maxWidth`, `forceMaxWidth`,
 `elementOrder`, `display.mergeGroups`, `display.timeFormat`, `display.contextValue`,
-`display.modelFormat`, `display.modelOverride`, `display.showProvider`,
+`display.modelFormat`, `display.modelOverride`, `display.modelSource`, `display.showProvider`,
 `display.providerName`, `display.autocompactBuffer`,
 `display.autoCompactWindow`, `display.promptCacheTtlSeconds`,
 `display.usageThreshold`, `display.sevenDayThreshold`,
 `display.environmentThreshold`, `display.contextWarningThreshold`,
-`display.contextCriticalThreshold`, `display.advisorOverride`, and the
+`display.contextCriticalThreshold`, `display.advisorOverride`,
+`display.showAuth`, `display.showAuthUser`, `display.authUserLength`, and the
 `display.externalUsage*` keys are preserved when saving but are not edited by
 this guided flow.
 
@@ -66,7 +67,7 @@ Questions: **Turn Off → Turn On → Git Style → Layout/Reset → Language �
 - multiSelect: false
 - options:
   - "English (Recommended)" - Default, simplest onboarding path
-  - "中文" - Show HUD labels and status text in Chinese
+  - "简体中文" - Show HUD labels and status text in Simplified Chinese
   - "繁體中文（台灣）" - Show HUD labels and status text in Traditional Chinese
 
 Save as `language: "en"`, `language: "zh-Hans"`, or `language: "zh-TW"`.
@@ -91,9 +92,10 @@ Save as `language: "en"`, `language: "zh-Hans"`, or `language: "zh-TW"`.
   - "Session duration" - ⏱️ 5m
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
-  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max, or ultracode(xhigh))
   - "Output style" - style: explanatory (current output style name)
   - "Session cost" - 💰 $0.42
+  - "Routed provider cost" - 💰 $0.42 for Bedrock/Vertex (only if Session cost is on)
   - "Skills activity" - active skills count
   - "MCP status" - MCP server status
   - "Memory usage" - process memory footprint
@@ -139,9 +141,10 @@ If user chooses "Enter custom text", use AskUserQuestion to get their text. Save
   - "Git status" - git:(main*) branch indicator
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
-  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max, or ultracode(xhigh))
   - "Output style" - style: explanatory (current output style name)
   - "Session cost" - 💰 $0.42
+  - "Routed provider cost" - 💰 $0.42 for Bedrock/Vertex (only if Session cost is on)
   - "Skills activity" - active skills count
   - "MCP status" - MCP server status
   - "Memory usage" - process memory footprint
@@ -172,9 +175,10 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
   - "Session name" - fix-auth-bug (session slug or custom title)
   - "Session tokens" - Tokens 12.8M (in: 7k, out: 28k, cache: 12.8M)
   - "Session duration" - ⏱️ 5m
-  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max effort)
+  - "Reasoning level" - ◑ high (low/medium/high/xhigh/max, or ultracode(xhigh))
   - "Output style" - style: explanatory (current output style name)
   - "Session cost" - 💰 $0.42
+  - "Routed provider cost" - 💰 $0.42 for Bedrock/Vertex (only if Session cost is on)
   - "Skills activity" - active skills count
   - "MCP status" - MCP server status
   - "Memory usage" - process memory footprint
@@ -208,17 +212,17 @@ Info items (Counts, Tokens, Usage, Speed, Duration) can be turned off via "Reset
 
 ### Q5: Language
 - header: "Language"
-- question: "Update HUD label language? (current: '{English or 中文}')"
+- question: "Update HUD label language? (current: '{English, 简体中文, or 繁體中文}')"
 - multiSelect: false
 - options:
   - "Keep current" - No change
   - "English (Recommended)" - Use English HUD labels
-  - "中文" - Use Chinese HUD labels
+  - "简体中文" - Use Simplified Chinese HUD labels
   - "繁體中文（台灣）" - Use Traditional Chinese HUD labels
 
 If user chooses "Keep current", leave `language` unchanged.
 If user chooses "English (Recommended)", save `language: "en"`.
-If user chooses "中文", save `language: "zh-Hans"`.
+If user chooses "简体中文", save `language: "zh-Hans"`.
 If user chooses "繁體中文（台灣）", save `language: "zh-TW"`.
 
 ### Q6: Custom Line (optional)
@@ -269,7 +273,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Option | Config |
 |--------|--------|
 | English (Recommended) | `language: "en"` |
-| 中文 | `language: "zh-Hans"` |
+| 简体中文 | `language: "zh-Hans"` |
 | 繁體中文（台灣） | `language: "zh-TW"` |
 
 ---
@@ -303,12 +307,15 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Token breakdown | `display.showTokenBreakdown` |
 | Output speed | `display.showSpeed` |
 | Session cost | `display.showCost` |
+| Routed provider cost | `display.showRoutedCost` |
 | Usage limits | `display.showUsage` |
 | Usage bar style | `display.usageBarEnabled` |
 | Compact usage | `display.usageCompact` |
 | Usage value | `display.usageValue` |
 | Usage reset label | `display.showResetLabel` |
 | Session name | `display.showSessionName` |
+| Auth method | `display.showAuth` (plan label, e.g. "Claude Max 20x", own segment at end of first line) |
+| Auth user | `display.showAuthUser` (login account, truncated to `display.authUserLength` chars, 0 = full) |
 | Session duration | `display.showDuration` |
 | Session tokens | `display.showSessionTokens` |
 | Session start date | `display.showSessionStartDate` |

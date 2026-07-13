@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { getModelName, formatModelName } from '../../stdin.js';
+import { formatModelName, resolveModelName } from '../../stdin.js';
 import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, critical as criticalColor, label, model as modelColor, project as projectColor, red, green, yellow, dim, custom as customColor } from '../colors.js';
 import { t } from '../../i18n/index.js';
@@ -9,6 +9,7 @@ import { renderAdvisorLine } from './advisor.js';
 import { normalizeAddedDirs, sanitize as sanitizeDisplayText, basenameOf, truncateBasename, MAX_RENDERED_ADDED_DIRS } from './added-dirs.js';
 import { getFileHref, safeHyperlink } from '../../utils/hyperlinks.js';
 import { formatModelDisplay } from '../model-display.js';
+import { formatAuthSegment } from '../../auth.js';
 function resolvePathWithinCwd(cwd, candidatePath) {
     const resolvedCwd = path.resolve(cwd);
     const resolvedPath = path.resolve(cwd, candidatePath);
@@ -28,7 +29,7 @@ export function renderProjectLine(ctx) {
         parts.push(customColor(customLine, colors));
     }
     if (display?.showModel !== false) {
-        const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
+        const model = formatModelName(resolveModelName(ctx.stdin, ctx.transcript, ctx.config?.display?.modelSource), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
         const modelDisplay = formatModelDisplay(model, ctx);
         parts.push(modelColor(`[${modelDisplay}]`, colors));
     }
@@ -120,7 +121,7 @@ export function renderProjectLine(ctx) {
     if (ctx.extraLabel) {
         parts.push(label(ctx.extraLabel, colors));
     }
-    if (display?.showDuration !== false && ctx.sessionDuration) {
+    if (display?.showDuration === true && ctx.sessionDuration) {
         const durationLabel = t('label.duration');
         const durationText = durationLabel
             ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
@@ -136,6 +137,10 @@ export function renderProjectLine(ctx) {
         if (speed !== null) {
             parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
         }
+    }
+    const authSegment = formatAuthSegment(ctx.authInfo, display);
+    if (authSegment) {
+        parts.push(label(authSegment, colors));
     }
     if (customLine && customLinePosition === 'last') {
         parts.push(customColor(customLine, colors));
