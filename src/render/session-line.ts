@@ -1,5 +1,5 @@
 import type { RenderContext } from '../types.js';
-import { getContextPercent, getBufferedPercent, getModelName, formatModelName, shouldHideUsage } from '../stdin.js';
+import { getContextPercent, getBufferedPercent, formatModelName, resolveModelName, shouldHideUsage } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
 import { coloredBar, git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, getContextColor, getQuotaColor, quotaBar, custom as customColor, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
@@ -11,18 +11,20 @@ import { t } from '../i18n/index.js';
 import type { TimeFormatMode, UsageValueMode } from '../config.js';
 import { formatResetTime } from './format-reset-time.js';
 import { formatTokens, formatContextValue } from '../utils/format.js';
+import { formatAuthSegment } from '../auth.js';
 import { createDebug } from '../debug.js';
 import { formatModelDisplay } from './model-display.js';
+import { formatSessionTokenSummary } from './lines/session-tokens.js';
 import { formatPercent } from './format-percent.js';
 
-const debug = createDebug('context');
+const debug = createDebug('session-line');
 
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
  * Used for compact layout mode.
  */
 export function renderSessionLine(ctx: RenderContext): string {
-  const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
+  const model = formatModelName(resolveModelName(ctx.stdin, ctx.transcript, ctx.config?.display?.modelSource), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
 
   const autoCompactWindow = ctx.config?.display?.autoCompactWindow ?? null;
   const rawPercent = getContextPercent(ctx.stdin, autoCompactWindow);
@@ -142,7 +144,7 @@ export function renderSessionLine(ctx: RenderContext): string {
   }
 
   // Config counts (respects environmentThreshold)
-  if (display?.showConfigCounts !== false) {
+  if (display?.showConfigCounts === true) {
     const totalCounts = ctx.claudeMdCount + ctx.rulesCount + ctx.mcpCount + ctx.hooksCount;
     const envThreshold = display?.environmentThreshold ?? 0;
 
@@ -261,10 +263,9 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   // Session token usage (cumulative)
   if (display?.showSessionTokens && ctx.transcript.sessionTokens) {
-    const st = ctx.transcript.sessionTokens;
-    const total = st.inputTokens + st.outputTokens + st.cacheCreationTokens + st.cacheReadTokens;
-    if (total > 0) {
-      parts.push(label(`${t('format.tok')}: ${formatTokens(total)} (${t('format.in')}: ${formatTokens(st.inputTokens)}, ${t('format.out')}: ${formatTokens(st.outputTokens)})`, colors));
+    const summary = formatSessionTokenSummary(ctx.transcript.sessionTokens, `${t('format.tok')}:`);
+    if (summary) {
+      parts.push(label(summary, colors));
     }
   }
 
@@ -285,7 +286,7 @@ export function renderSessionLine(ctx: RenderContext): string {
     }
   }
 
-  if (display?.showDuration !== false && ctx.sessionDuration) {
+  if (display?.showDuration === true && ctx.sessionDuration) {
     const durationLabel = t('label.duration');
     const durationText = durationLabel
       ? `⏱️ ${durationLabel}：${ctx.sessionDuration}`
@@ -317,6 +318,11 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   if (ctx.extraLabel) {
     parts.push(label(ctx.extraLabel, colors));
+  }
+
+  const authSegment = formatAuthSegment(ctx.authInfo, display);
+  if (authSegment) {
+    parts.push(label(authSegment, colors));
   }
 
   if (customLine && customLinePosition === 'last') {

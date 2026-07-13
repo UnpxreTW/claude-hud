@@ -6,6 +6,7 @@ const locales = {
     zh: zhHans,
     "zh-Hans": zhHans,
     "zh-Hant": zhHant,
+    "zh-TW": zhHant,
 };
 // Resolve short language tags to canonical BCP 47 forms.
 // Based on CLDR likely subtags: zh → zh-Hans-CN
@@ -37,5 +38,11 @@ export function isCjkLanguage() {
 export function t(key) {
     const canon = getCanonicalLanguage();
     return locales[canon]?.[key] ?? locales.en[key] ?? key;
+}
+// Minimal named-placeholder interpolation. Layout that varies by language
+// (spacing, affix position) lives in each locale's pattern string rather than in
+// render code. Unknown placeholders render as empty string (kept lenient).
+export function interpolate(pattern, params) {
+    return pattern.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ""));
 }
 //# sourceMappingURL=index.js.map

@@ -62,6 +62,7 @@ export interface HudConfig {
         contextValue: ContextValueMode;
         showConfigCounts: boolean;
         showCost: boolean;
+        showRoutedCost: boolean;
         showDuration: boolean;
         showSpeed: boolean;
         showTokenBreakdown: boolean;
@@ -78,6 +79,9 @@ export interface HudConfig {
         showAgents: boolean;
         showTodos: boolean;
         showSessionName: boolean;
+        showAuth: boolean;
+        showAuthUser: boolean;
+        authUserLength: number;
         showClaudeCodeVersion: boolean;
         showEffortLevel: boolean;
         showMemoryUsage: boolean;
@@ -100,6 +104,7 @@ export interface HudConfig {
         externalUsageFreshnessMs: number;
         modelFormat: ModelFormatMode;
         modelOverride: string;
+        modelSource: 'auto' | 'stdin' | 'transcript';
         showProvider: boolean;
         providerName: string;
         customLine: string;

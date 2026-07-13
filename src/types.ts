@@ -1,5 +1,6 @@
 import type { HudConfig } from './config.js';
 import type { GitStatus } from './git.js';
+import type { AuthInfo } from './auth.js';
 
 export interface StdinData {
   transcript_path?: string;
@@ -137,6 +138,15 @@ export interface TranscriptData {
   // after `/advisor` is set (e.g. "claude-opus-4-7"). undefined when /advisor
   // is off or no assistant turn has happened yet.
   advisorModel?: string;
+  // Current ultracode effort state from the most recent transcript signal
+  // (`ultra_effort_enter`/`ultra_effort_exit` attachment or `/effort` output).
+  // undefined when ultracode was never entered this session.
+  ultracodeActive?: boolean;
+  // Model ID from the most recent assistant message's `message.model` field.
+  // This reflects what the API actually served — may differ from stdin.model
+  // when a proxy (e.g. cc-switch) routes to a different model. Transcript
+  // parsing sanitizes terminal controls and caps the retained value at 80 chars.
+  lastAssistantModel?: string;
 }
 
 export interface RenderContext {
@@ -156,4 +166,7 @@ export interface RenderContext {
   claudeCodeVersion?: string;
   effortLevel?: string;
   effortSymbol?: string;
+  // Auth method + account for the current login (see auth.ts). Only populated
+  // when display.showAuth or display.showAuthUser is enabled.
+  authInfo?: AuthInfo | null;
 }

@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { parseExtraCmdArg, runExtraCmd } from "./extra-cmd.js";
 import { getClaudeCodeVersion } from "./version.js";
 import { getMemoryUsage } from "./memory.js";
+import { readAuthInfo } from "./auth.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
@@ -30,6 +31,7 @@ export type MainDeps = {
   runExtraCmd: typeof runExtraCmd;
   getClaudeCodeVersion: typeof getClaudeCodeVersion;
   getMemoryUsage: typeof getMemoryUsage;
+  readAuthInfo: typeof readAuthInfo;
   applyContextWindowFallback: typeof applyContextWindowFallback;
   render: typeof render;
   now: () => number;
@@ -71,6 +73,7 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
     runExtraCmd,
     getClaudeCodeVersion,
     getMemoryUsage,
+    readAuthInfo,
     applyContextWindowFallback,
     render,
     now: () => Date.now(),
@@ -154,11 +157,15 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
       ? await deps.getClaudeCodeVersion()
       : undefined;
     const effortInfo = config.display.showEffortLevel
-      ? resolveEffortLevel(stdin.effort)
+      ? resolveEffortLevel(stdin.effort, { ultracodeActive: transcript.ultracodeActive })
       : null;
     const memoryUsage =
       config.display.showMemoryUsage && config.lineLayout === "expanded"
         ? await deps.getMemoryUsage()
+        : null;
+    const authInfo =
+      config.display.showAuth || config.display.showAuthUser
+        ? deps.readAuthInfo()
         : null;
 
     const ctx: RenderContext = {
@@ -178,6 +185,7 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
       claudeCodeVersion,
       effortLevel: effortInfo?.level,
       effortSymbol: effortInfo?.symbol,
+      authInfo,
     };
 
     deps.render(ctx);

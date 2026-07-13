@@ -7,11 +7,12 @@ export type { Language, MessageKey, Messages };
 
 type CanonicalLanguage = "en" | "zh-Hans" | "zh-Hant";
 
-const locales: Record<CanonicalLanguage | "zh", Messages> = {
+const locales: Record<CanonicalLanguage | "zh" | "zh-TW", Messages> = {
   en,
   zh: zhHans,
   "zh-Hans": zhHans,
   "zh-Hant": zhHant,
+  "zh-TW": zhHant,
 };
 
 // Resolve short language tags to canonical BCP 47 forms.
@@ -50,4 +51,11 @@ export function isCjkLanguage(): boolean {
 export function t(key: MessageKey): string {
   const canon = getCanonicalLanguage();
   return locales[canon]?.[key] ?? locales.en[key] ?? key;
+}
+
+// Minimal named-placeholder interpolation. Layout that varies by language
+// (spacing, affix position) lives in each locale's pattern string rather than in
+// render code. Unknown placeholders render as empty string (kept lenient).
+export function interpolate(pattern: string, params: Record<string, string | number>): string {
+  return pattern.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ""));
 }

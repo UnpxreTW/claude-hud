@@ -1,5 +1,6 @@
 import { AUTOCOMPACT_BUFFER_PERCENT } from './constants.js';
 import { createDebug } from './debug.js';
+import { sanitizeTranscriptModel } from './model-source.js';
 const debug = createDebug('stdin');
 const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 250;
 const DEFAULT_IDLE_TIMEOUT_MS = 30;
@@ -193,6 +194,41 @@ export function getModelName(stdin) {
     }
     const normalizedBedrockLabel = normalizeBedrockModelLabel(modelId);
     return normalizedBedrockLabel ?? modelId;
+}
+/**
+ * Returns true if the model string looks like a Claude/Anthropic model.
+ * Used by the "auto" modelSource heuristic to detect proxy redirects.
+ */
+function isClaudeModel(model) {
+    if (!model)
+        return true; // treat missing as Claude (safe fallback)
+    const lower = model.toLowerCase();
+    return lower.startsWith('claude-') || lower.startsWith('anthropic.');
+}
+/**
+ * Resolves the model name to display, respecting `display.modelSource` config.
+ *
+ * - "stdin":      Always use the model from Claude Code's stdin (display_name).
+ * - "transcript": Always use the model from the API response (message.model).
+ *                 Falls back to stdin when transcript has no assistant messages yet.
+ * - "auto": Use stdin for Claude models, transcript for non-Claude.
+ *                      Detects proxy redirects (cc-switch, LiteLLM, etc.) that
+ *                      serve a different model than what Claude Code requested.
+ */
+export function resolveModelName(stdin, transcript, modelSource = 'stdin') {
+    const stdinModel = getModelName(stdin);
+    // Treat TranscriptData as untrusted at the render boundary too. Callers and
+    // poisoned cache objects can bypass parse-time normalization.
+    const transcriptModel = sanitizeTranscriptModel(transcript?.lastAssistantModel);
+    if (modelSource === 'stdin' || !transcriptModel) {
+        return stdinModel;
+    }
+    if (modelSource === 'transcript') {
+        return transcriptModel;
+    }
+    // auto: prefer transcript only when the API served a non-Claude model
+    // (indicates proxy redirect). Claude models keep stdin for pretty formatting.
+    return isClaudeModel(transcriptModel) ? stdinModel : transcriptModel;
 }
 export function isBedrockModelId(modelId) {
     if (!modelId) {

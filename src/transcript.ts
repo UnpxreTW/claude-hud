@@ -7,6 +7,7 @@ import { getHudPluginDir } from './claude-config-dir.js';
 import { createDebug } from './debug.js';
 import type { TranscriptData, ToolEntry, AgentEntry, TodoItem, SessionTokenUsage } from './types.js';
 import { sanitizeDisplayText } from './utils/sanitize.js';
+import { sanitizeTranscriptModel } from './model-source.js';
 
 const debug = createDebug('transcript');
 
@@ -22,7 +23,11 @@ interface TranscriptLine {
   // set. Holds the canonical advisor model ID (e.g. "claude-opus-4-7").
   advisorModel?: string;
   message?: {
-    content?: ContentBlock[];
+    id?: unknown;
+    // Usually an array of content blocks, but slash-command records (e.g.
+    // `/effort`) store their output as a raw string.
+    content?: ContentBlock[] | string;
+    model?: unknown;
     usage?: {
       input_tokens?: number;
       output_tokens?: number;
@@ -35,6 +40,11 @@ interface TranscriptLine {
     preTokens?: number;
     postTokens?: number;
     durationMs?: number;
+  };
+  // Harness state markers; `ultra_effort_enter` / `ultra_effort_exit` track
+  // entering / leaving ultracode effort.
+  attachment?: {
+    type?: string;
   };
 }
 
@@ -76,6 +86,8 @@ interface SerializedTranscriptData {
   lastCompactPostTokens?: number;
   compactionCount?: number;
   advisorModel?: string;
+  ultracodeActive?: boolean;
+  lastAssistantModel?: string;
 }
 
 interface TranscriptCacheFile {
@@ -85,9 +97,11 @@ interface TranscriptCacheFile {
   data: SerializedTranscriptData;
 }
 
-const TRANSCRIPT_CACHE_VERSION = 9;
+const TRANSCRIPT_CACHE_VERSION = 12;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
+const MESSAGE_ID_MAX_LEN = 128;
+const SEEN_MESSAGE_IDS_MAX = 4096;
 
 // Hard cap on the advisor model ID captured from the transcript. Real Claude
 // model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
@@ -103,6 +117,22 @@ function normalizeTokenCount(value: unknown): number {
   }
 
   return Math.max(0, Math.trunc(value));
+}
+
+function normalizeMessageId(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 && value.length <= MESSAGE_ID_MAX_LEN
+    ? value
+    : null;
+}
+
+function rememberMessageId(seenMessageIds: Set<string>, messageId: string): void {
+  if (seenMessageIds.size >= SEEN_MESSAGE_IDS_MAX) {
+    const oldest = seenMessageIds.values().next().value;
+    if (oldest !== undefined) {
+      seenMessageIds.delete(oldest);
+    }
+  }
+  seenMessageIds.add(messageId);
 }
 
 function normalizeSessionTokens(tokens: unknown): SessionTokenUsage | undefined {
@@ -210,6 +240,8 @@ function serializeTranscriptData(data: TranscriptData): SerializedTranscriptData
     lastCompactPostTokens: data.lastCompactPostTokens,
     compactionCount: data.compactionCount,
     advisorModel: data.advisorModel,
+    ultracodeActive: data.ultracodeActive,
+    lastAssistantModel: sanitizeTranscriptModel(data.lastAssistantModel),
   };
 }
 
@@ -240,6 +272,8 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
     advisorModel: typeof data.advisorModel === 'string' && data.advisorModel.length > 0
       ? data.advisorModel.slice(0, ADVISOR_MODEL_MAX_LEN)
       : undefined,
+    ultracodeActive: typeof data.ultracodeActive === 'boolean' ? data.ultracodeActive : undefined,
+    lastAssistantModel: sanitizeTranscriptModel(data.lastAssistantModel),
   };
 }
 
@@ -331,6 +365,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   let latestSlug: string | undefined;
   let customTitle: string | undefined;
   let latestAdvisorModel: string | undefined;
+  let latestUltracodeActive: boolean | undefined;
   let lastCompactBoundaryAt: Date | undefined;
   let lastCompactPostTokens: number | undefined;
   let compactionCount = 0;
@@ -340,6 +375,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     cacheCreationTokens: 0,
     cacheReadTokens: 0,
   };
+  const seenMessageIds = new Set<string>();
   let lastUsageKey: string | undefined;
 
   let parsedCleanly = false;
@@ -377,19 +413,70 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
         ) {
           latestAdvisorModel = entry.advisorModel.slice(0, ADVISOR_MODEL_MAX_LEN);
         }
+        // Current ultracode state, distinguishable only from the transcript
+        // (stdin reports it as plain `xhigh`). Two signals update this in file
+        // order, last wins: the self-correcting ultra_effort_enter/exit
+        // attachment (can lag a turn) and the immediate `/effort` command output.
+        if (entry.type === 'attachment') {
+          const attachmentType = entry.attachment?.type;
+          if (attachmentType === 'ultra_effort_enter') {
+            latestUltracodeActive = true;
+          } else if (attachmentType === 'ultra_effort_exit') {
+            latestUltracodeActive = false;
+          }
+        }
+        // The `/effort` command-output signal. Anchored at the start of a *user*
+        // record's string content, so prose quoting the phrase can't flip state.
+        // Brittle by necessity — couples to Claude Code's /effort wording; if that
+        // changes, the label falls back to the (laggier) attachments.
+        if (entry.type === 'user' && typeof entry.message?.content === 'string') {
+          const effortCommandMatch = entry.message.content.match(
+            /^<local-command-stdout>Set effort level to (\w+)/,
+          );
+          if (effortCommandMatch) {
+            latestUltracodeActive = effortCommandMatch[1].toLowerCase() === 'ultracode';
+          }
+        }
+        // Capture the actual model from the assistant message's `model` field.
+        // This reflects what the API actually served, which may differ from the
+        // model Claude Code thinks it's using (e.g. proxy redirect via cc-switch).
+        if (entry.type === 'assistant') {
+          const transcriptModel = sanitizeTranscriptModel(entry.message?.model);
+          if (transcriptModel) {
+            result.lastAssistantModel = transcriptModel;
+          }
+        }
         // Accumulate token usage from assistant messages.
         // Claude Code can write the same API response to the transcript 2-3 times
-        // consecutively (dual-logging). Skip consecutive duplicates to avoid inflating counts.
+        // (dual-logging). Prefer the API-response-level message.id so duplicates
+        // can be removed even when another record appears between them. Only
+        // bounded string IDs are retained, and the set is capped to keep a
+        // malformed transcript from growing memory without limit. Records with
+        // missing or invalid IDs keep the previous consecutive usage-fingerprint
+        // fallback.
         if (entry.type === 'assistant' && entry.message?.usage) {
           const usage = entry.message.usage;
-          const key = `${usage.input_tokens}|${usage.output_tokens}|${usage.cache_creation_input_tokens}|${usage.cache_read_input_tokens}`;
-          if (key !== lastUsageKey) {
+          const msgId = normalizeMessageId(entry.message.id);
+          let shouldCount = false;
+
+          if (msgId !== null) {
+            lastUsageKey = undefined;
+            if (!seenMessageIds.has(msgId)) {
+              rememberMessageId(seenMessageIds, msgId);
+              shouldCount = true;
+            }
+          } else {
+            const usageKey = `${usage.input_tokens}|${usage.output_tokens}|${usage.cache_creation_input_tokens}|${usage.cache_read_input_tokens}`;
+            shouldCount = usageKey !== lastUsageKey;
+            lastUsageKey = usageKey;
+          }
+
+          if (shouldCount) {
             sessionTokens.inputTokens += normalizeTokenCount(usage.input_tokens);
             sessionTokens.outputTokens += normalizeTokenCount(usage.output_tokens);
             sessionTokens.cacheCreationTokens += normalizeTokenCount(usage.cache_creation_input_tokens);
             sessionTokens.cacheReadTokens += normalizeTokenCount(usage.cache_read_input_tokens);
           }
-          lastUsageKey = key;
         } else {
           lastUsageKey = undefined;
         }
@@ -461,6 +548,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   result.lastCompactPostTokens = lastCompactPostTokens;
   result.compactionCount = compactionCount;
   result.advisorModel = latestAdvisorModel;
+  result.ultracodeActive = latestUltracodeActive;
   if (parsedCleanly) {
     writeTranscriptCache(canonicalTranscriptPath, transcriptState, result);
   }
