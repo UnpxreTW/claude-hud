@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.2-unpxre.1] - 2026-07-15
+
+Unpxre fork release re-synced on top of upstream `0.4.2` main.
+
+### Changed
+- Re-synced the latest upstream `0.4.2` main (detached-HEAD git refs prefer exact tags with a linked short-commit fallback, slash-separated branch names preserved in GitHub branch links, opt-in `--extra-cmd` plain-text label fallback, and control/bidirectional-character stripping in compact git refs) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
+
 ## [0.4.1-unpxre.1] - 2026-07-14
 
 Unpxre fork release re-synced on top of upstream `0.4.1` main.
