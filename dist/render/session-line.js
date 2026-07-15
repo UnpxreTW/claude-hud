@@ -14,6 +14,7 @@ import { createDebug } from '../debug.js';
 import { formatModelDisplay } from './model-display.js';
 import { formatSessionTokenSummary } from './lines/session-tokens.js';
 import { formatPercent } from './format-percent.js';
+import { sanitizeDisplayText } from '../utils/sanitize.js';
 const debug = createDebug('session-line');
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
@@ -77,7 +78,7 @@ export function renderSessionLine(ctx) {
     const showGit = gitConfig?.enabled ?? true;
     const branchOverflow = gitConfig?.branchOverflow ?? 'truncate';
     if (showGit && ctx.gitStatus) {
-        const gitParts = [ctx.gitStatus.branch];
+        const gitParts = [sanitizeDisplayText(ctx.gitStatus.branch)];
         // Show dirty indicator
         if ((gitConfig?.showDirty ?? true) && ctx.gitStatus.isDirty) {
             gitParts.push('*');
