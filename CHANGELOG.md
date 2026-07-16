@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0-unpxre.1] - 2026-07-16
+
+Unpxre fork release re-synced on top of upstream `0.5.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.5.0` main (bounded model-scoped weekly usage windows rendered in expanded and compact layouts with remaining-value, reset-time, threshold, and custom-color modes; sanitized/bounded scoped usage labels and values; and a clean-before-build step that enforces source-to-artifact parity so removed modules cannot linger in `dist/`) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
+
 ## [0.4.2-unpxre.1] - 2026-07-15
 
 Unpxre fork release re-synced on top of upstream `0.4.2` main.
@@ -97,7 +104,6 @@ Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + for
 
 ### Changed
 - `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
-
 ## [0.2.1] - 2026-06-18
 
 ### Fixed

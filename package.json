@@ -1,6 +1,6 @@
 {
   "name": "claude-hud",
-  "version": "0.4.2-unpxre.1",
+  "version": "0.5.0-unpxre.1",
   "description": "Real-time statusline HUD for Claude Code",
   "type": "module",
   "main": "dist/index.js",
@@ -8,10 +8,11 @@
     "dist/",
     "src/",
     "commands/",
+    "scripts/clean-dist.mjs",
     ".claude-plugin/"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/clean-dist.mjs && tsc",
     "dev": "tsc --watch",
     "test": "npm run build && node --test",
     "test:coverage": "npm run build && c8 --reporter=text --reporter=lcov node --test",
