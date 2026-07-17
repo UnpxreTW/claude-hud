@@ -2,12 +2,12 @@ import { shouldHideUsage } from "../../stdin.js";
 import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
-import { progressLabel } from "./label-align.js";
+import { progressLabel, } from "./label-align.js";
 import { formatResetTime } from "../format-reset-time.js";
 import { formatPercent } from "../format-percent.js";
 const FIVE_HOUR_WINDOW_MS = 5 * 60 * 60 * 1000;
 const SEVEN_DAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-export function renderUsageLine(ctx, alignLabels = false) {
+export function renderUsageLine(ctx, labelOptions = {}) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     if (display?.showUsage === false) {
@@ -19,7 +19,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
     if (shouldHideUsage(ctx.stdin)) {
         return null;
     }
-    const usageLabel = progressLabel("label.usage", colors, alignLabels);
+    const usageLabel = progressLabel("label.usage", colors, labelOptions);
     const balanceLabel = ctx.usageData.balanceLabel ?? null;
     const scopedWindows = ctx.usageData.scopedWindows ?? [];
     // Weekly (sevenDay) is rendered by the separate weeklyUsage element; the usage
@@ -48,7 +48,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
                 timeFormat,
                 showResetLabel,
                 forceLabel: true,
-                alignLabels,
+                labelOptions,
                 usageValueMode,
             }))
             .join(' | ')
@@ -96,7 +96,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
     });
     return appendBalance(`${usageLabel} ${fiveHourPart}${scopedSuffix}`, balanceLabel);
 }
-export function renderWeeklyUsageLine(ctx, alignLabels = false) {
+export function renderWeeklyUsageLine(ctx, labelOptions = {}) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     if (display?.showUsage === false) {
@@ -134,7 +134,7 @@ export function renderWeeklyUsageLine(ctx, alignLabels = false) {
         timeFormat,
         showResetLabel,
         forceLabel: true,
-        alignLabels,
+        labelOptions,
         usageValueMode,
     });
 }
@@ -157,11 +157,11 @@ function formatUsagePercent(percent, colors, mode = 'percent') {
     const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
     return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
-function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, windowMs, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, alignLabels = false, usageValueMode = 'percent', }) {
+function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, windowMs, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, labelOptions = {}, usageValueMode = 'percent', }) {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
     const reset = formatWindowTime(resetAt, windowMs, timeFormat);
     const styledLabel = labelKey
-        ? progressLabel(labelKey, colors, alignLabels)
+        ? progressLabel(labelKey, colors, labelOptions)
         : label(windowLabel, colors);
     // Fork override: the reset time is always shown bare with a "│" separator,
     // without the "resets in/at" wording or the showResetLabel toggle.

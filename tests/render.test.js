@@ -595,6 +595,136 @@ test('renderMemoryLine stays hidden in compact layout even when enabled', () => 
   assert.equal(renderMemoryLine(ctx), null);
 });
 
+test('render expanded layout aligns context and memory bars in CJK locales', () => {
+  const ctx = baseContext();
+  ctx.config.language = 'zh-Hans';
+  ctx.config.lineLayout = 'expanded';
+  ctx.config.elementOrder = ['context', 'memory'];
+  ctx.config.display.showMemoryUsage = true;
+  ctx.memoryUsage = {
+    totalBytes: 16 * 1024 ** 3,
+    usedBytes: 10 * 1024 ** 3,
+    freeBytes: 6 * 1024 ** 3,
+    usedPercent: 63,
+  };
+
+  setLanguage('zh-Hans');
+  try {
+    const lines = captureRenderLines(ctx).map(stripAnsi);
+    const contextLine = lines.find(line => line.includes('上下文'));
+    const memoryLine = lines.find(line => line.includes('内存'));
+
+    assert.ok(contextLine?.startsWith('上下文 '), `got: ${contextLine}`);
+    assert.ok(memoryLine?.startsWith('内存   '), `got: ${memoryLine}`);
+  } finally {
+    setLanguage('en');
+  }
+});
+
+test('render expanded layout aligns a combined progress row with separate memory', () => {
+  const ctx = baseContext();
+  ctx.config.lineLayout = 'expanded';
+  ctx.config.elementOrder = ['context', 'usage', 'memory'];
+  ctx.config.display.showMemoryUsage = true;
+  ctx.usageData = {
+    planName: 'Team',
+    fiveHour: 45,
+    sevenDay: 20,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+  ctx.memoryUsage = {
+    totalBytes: 16 * 1024 ** 3,
+    usedBytes: 10 * 1024 ** 3,
+    freeBytes: 6 * 1024 ** 3,
+    usedPercent: 63,
+  };
+
+  const lines = withTerminal(160, () => captureRenderLines(ctx)).map(stripAnsi);
+  const combinedLine = lines.find(line => line.includes('Context') && line.includes('Usage'));
+  const memoryLine = lines.find(line => line.includes('Approx RAM'));
+
+  assert.ok(combinedLine?.startsWith('Context    '), `got: ${combinedLine}`);
+  assert.ok(combinedLine?.includes('Usage     '), `got: ${combinedLine}`);
+  assert.ok(memoryLine?.startsWith('Approx RAM '), `got: ${memoryLine}`);
+});
+
+test('render expanded layout aligns memory only after a custom merged row wraps', () => {
+  const ctx = baseContext();
+  ctx.config.lineLayout = 'expanded';
+  ctx.config.elementOrder = ['context', 'memory'];
+  ctx.config.display.showMemoryUsage = true;
+  ctx.config.display.mergeGroups = [['context', 'memory']];
+  ctx.memoryUsage = {
+    totalBytes: 16 * 1024 ** 3,
+    usedBytes: 10 * 1024 ** 3,
+    freeBytes: 6 * 1024 ** 3,
+    usedPercent: 63,
+  };
+
+  const combined = withTerminal(160, () => captureRenderLines(ctx)).map(stripAnsi);
+  assert.equal(combined.length, 1);
+  assert.ok(combined[0].startsWith('Context '), `got: ${combined[0]}`);
+  assert.ok(!combined[0].startsWith('Context    '), `wide merged labels should stay compact: ${combined[0]}`);
+
+  const stacked = withTerminal(24, () => captureRenderLines(ctx)).map(stripAnsi);
+  const contextLine = stacked.find(line => line.includes('Context'));
+  const memoryLine = stacked.find(line => line.includes('Approx RAM'));
+  assert.ok(contextLine?.startsWith('Context    '), `got: ${contextLine}`);
+  assert.ok(memoryLine?.startsWith('Approx RAM '), `got: ${memoryLine}`);
+});
+
+test('render expanded layout aligns memory when a hidden merge peer leaves it alone', () => {
+  const ctx = baseContext();
+  ctx.config.lineLayout = 'expanded';
+  ctx.config.elementOrder = ['context', 'usage', 'memory'];
+  ctx.config.display.showMemoryUsage = true;
+  ctx.config.display.mergeGroups = [['usage', 'memory']];
+  ctx.usageData = null;
+  ctx.memoryUsage = {
+    totalBytes: 16 * 1024 ** 3,
+    usedBytes: 10 * 1024 ** 3,
+    freeBytes: 6 * 1024 ** 3,
+    usedPercent: 63,
+  };
+
+  setLanguage('zh-Hans');
+  try {
+    const lines = captureRenderLines(ctx).map(stripAnsi);
+    const contextLine = lines.find(line => line.includes('上下文'));
+    const memoryLine = lines.find(line => line.includes('内存'));
+
+    assert.ok(contextLine?.startsWith('上下文 '), `got: ${contextLine}`);
+    assert.ok(memoryLine?.startsWith('内存   '), `got: ${memoryLine}`);
+  } finally {
+    setLanguage('en');
+  }
+});
+
+test('render expanded layout keeps a lone memory progress label compact', () => {
+  const ctx = baseContext();
+  ctx.config.lineLayout = 'expanded';
+  ctx.config.elementOrder = ['usage', 'memory'];
+  ctx.config.display.showMemoryUsage = true;
+  ctx.config.display.mergeGroups = [['usage', 'memory']];
+  ctx.usageData = null;
+  ctx.memoryUsage = {
+    totalBytes: 16 * 1024 ** 3,
+    usedBytes: 10 * 1024 ** 3,
+    freeBytes: 6 * 1024 ** 3,
+    usedPercent: 63,
+  };
+
+  setLanguage('zh-Hans');
+  try {
+    const [memoryLine] = captureRenderLines(ctx).map(stripAnsi);
+    assert.ok(memoryLine.startsWith('内存 '), `got: ${memoryLine}`);
+    assert.ok(!memoryLine.startsWith('内存   '), `lone labels should not pad: ${memoryLine}`);
+  } finally {
+    setLanguage('en');
+  }
+});
+
 test('renderProjectLine includes extraLabel when present', () => {
   const ctx = baseContext();
   ctx.stdin.cwd = '/tmp/my-project';
@@ -906,6 +1036,7 @@ test('label color overrides apply across shared secondary text surfaces', () => 
   assert.ok(renderIdentityLine(ctx).includes(`${expected}Context\x1b[0m`));
   assert.ok(renderUsageLine(ctx)?.includes(`${expected}Usage\x1b[0m`));
   assert.ok(renderUsageLine(ctx, true)?.includes(`${expected}Usage  \x1b[0m`));
+  assert.ok(renderUsageLine(ctx, { align: true })?.includes(`${expected}Usage  \x1b[0m`));
   assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md | 1 rules\x1b[0m`));
   assert.ok(renderMemoryLine({ ...ctx, config: { ...ctx.config, lineLayout: 'expanded', display: { ...ctx.config.display, showMemoryUsage: true } } })?.includes(`${expected}Approx RAM\x1b[0m`));
   assert.ok(renderToolsLine(ctx)?.includes(`${expected}: src/index.ts\x1b[0m`));
@@ -1914,6 +2045,25 @@ test('renderSessionLine displays usage percentages (7d hidden when low)', () => 
   assert.ok(line.includes('5h'), 'should include 5h label');
   assert.ok(!line.includes('Weekly'), 'should NOT include 7d when below 80%');
   assert.ok(line.includes('6 %'), 'should include 5h percentage');
+});
+
+test('default merged config hides low weekly usage in compact and expanded layouts', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({});
+  ctx.usageData = {
+    planName: 'Pro',
+    fiveHour: 10,
+    sevenDay: 0,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+
+  const compactLine = stripAnsi(renderSessionLine(ctx));
+  const expandedLine = stripAnsi(renderUsageLine(ctx) ?? '');
+  assert.ok(compactLine.includes('Usage'), `compact usage should include the 5h window: ${compactLine}`);
+  assert.ok(!compactLine.includes('Weekly'), `compact usage should hide low weekly usage: ${compactLine}`);
+  assert.ok(expandedLine.includes('Usage'), `expanded usage should include the 5h window: ${expandedLine}`);
+  assert.ok(!expandedLine.includes('Weekly'), `expanded usage should hide low weekly usage: ${expandedLine}`);
 });
 
 test('default merged config hides low weekly usage in compact and expanded layouts', () => {
@@ -3397,6 +3547,125 @@ test('renderUsageLine renders 100% with bare absolute reset time', () => {
   assert.ok(plain.includes('100 %'), 'should show full 5h usage at 100%');
   assert.ok(!plain.includes('Limit'), 'should not show a limit warning');
   assert.match(plain, /│ at \d{1,2}:\d{2}/, `should show bare absolute reset time, got: ${plain}`);
+});
+
+test('prettifyAdvisorId expands canonical model IDs', () => {
+  assert.equal(prettifyAdvisorId('claude-opus-4-7'), 'Opus 4.7');
+  assert.equal(prettifyAdvisorId('claude-sonnet-4-6'), 'Sonnet 4.6');
+  assert.equal(prettifyAdvisorId('claude-haiku-4-5-20251001'), 'Haiku 4.5');
+});
+
+test('prettifyAdvisorId handles short aliases and unknown formats', () => {
+  assert.equal(prettifyAdvisorId('opus'), 'Opus');
+  assert.equal(prettifyAdvisorId('sonnet'), 'Sonnet');
+  assert.equal(prettifyAdvisorId('claude-some-future-model-9-9'), 'some-future-model-9-9');
+  assert.equal(prettifyAdvisorId(''), '');
+});
+
+test('renderAdvisorLine returns null when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine returns null when no advisor data is available', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderAdvisorLine prettifies transcript-driven advisor model', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine honours advisorOverride verbatim', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: 'Opus 4.7 (1M)' } });
+  ctx.transcript.advisorModel = 'claude-sonnet-4-6';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.equal(plain, 'Advisor: Opus 4.7 (1M)');
+});
+
+test('renderAdvisorLine strips ANSI ESC and C0 control bytes from advisorModel', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // CSI red sequence + bell + DEL injected around a valid ID. The output
+  // intentionally contains label() colour codes, so assertions run against
+  // the plain (ANSI-stripped) text — the user-attributable bytes must not
+  // survive that stripping.
+  ctx.transcript.advisorModel = '\x1b[31mclaude-opus-4-7\x07\x7f';
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  assert.ok(!plain.includes('\x1b'), 'ESC byte must be stripped before render');
+  assert.ok(!plain.includes('\x07'), 'BEL must be stripped');
+  assert.ok(!plain.includes('\x7f'), 'DEL must be stripped');
+  // After sanitize the surviving text is "[31mclaude-opus-4-7", which doesn't
+  // match the canonical prefix pattern, so prettifyAdvisorId falls through.
+  assert.ok(plain.startsWith('Advisor:'), `unexpected label: ${plain}`);
+});
+
+test('renderAdvisorLine strips bidi marks from advisorOverride', () => {
+  const ctx = baseContext();
+  // RLO (U+202E) + the override text + PDF (U+202C)
+  ctx.config = mergeConfig({ display: { showAdvisor: true, advisorOverride: '‮Opus 4.7‬' } });
+  const out = renderAdvisorLine(ctx);
+  assert.ok(!out.includes('‮'), 'RLO must be stripped');
+  assert.ok(!out.includes('‬'), 'PDF must be stripped');
+  assert.equal(stripAnsi(out), 'Advisor: Opus 4.7');
+});
+
+test('renderAdvisorLine caps oversized advisorModel at the display length limit', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-' + 'x'.repeat(500);
+  const plain = stripAnsi(renderAdvisorLine(ctx));
+  // "Advisor: " prefix (9 chars) + at most 64 chars of payload.
+  const payload = plain.slice('Advisor: '.length);
+  assert.ok(payload.length <= 64, `payload length ${payload.length} exceeds cap`);
+});
+
+test('renderAdvisorLine returns null when sanitized input is empty', () => {
+  const ctx = baseContext();
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  // Only control + bidi bytes — sanitize collapses these to "".
+  ctx.transcript.advisorModel = '\x1b\x07‮‏';
+  assert.equal(renderAdvisorLine(ctx), null);
+});
+
+test('renderProjectLine renders advisor inline on the same row (expanded layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('my-project'), 'project path must still render');
+  // Single line — no embedded newline introduced by the inline placement.
+  assert.ok(!plain.includes('\n'), 'project line must remain one row');
+});
+
+test('renderProjectLine omits advisor when showAdvisor is false', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ display: { showAdvisor: false } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderProjectLine(ctx));
+  assert.ok(!plain.includes('Advisor:'), `advisor must not leak in: ${plain}`);
+});
+
+test('renderSessionLine renders advisor inline on the same row (compact layout)', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config = mergeConfig({ lineLayout: 'compact', display: { showAdvisor: true } });
+  ctx.transcript.advisorModel = 'claude-opus-4-7';
+  const plain = stripAnsi(renderSessionLine(ctx));
+  assert.ok(plain.includes('Advisor: Opus 4.7'), `advisor segment missing: ${plain}`);
+  assert.ok(plain.includes('[Opus]'), 'model badge must still render first');
+  assert.ok(!plain.includes('\n'), 'compact session line must remain one row');
 });
 
 test('prettifyAdvisorId expands canonical model IDs', () => {
