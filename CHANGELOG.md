@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.1-unpxre.1] - 2026-07-17
+
+Unpxre fork release re-synced on top of upstream `0.5.1` main.
+
+### Changed
+- Re-synced the latest upstream `0.5.1` main (align context, usage, and opt-in memory progress bars by terminal cell width in CJK locales across merged and narrow layouts via the new `ProgressLabelInput` label-options API) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The fork's separated weekly usage and context/usage renderers now thread the upstream label-options object so CJK bar alignment applies to them too.
+
 ## [0.5.0-unpxre.1] - 2026-07-16
 
 Unpxre fork release re-synced on top of upstream `0.5.0` main.

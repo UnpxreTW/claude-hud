@@ -1,4 +1,5 @@
 import type { RenderContext } from "../../types.js";
-export declare function renderUsageLine(ctx: RenderContext, alignLabels?: boolean): string | null;
-export declare function renderWeeklyUsageLine(ctx: RenderContext, alignLabels?: boolean): string | null;
+import { type ProgressLabelInput } from "./label-align.js";
+export declare function renderUsageLine(ctx: RenderContext, labelOptions?: ProgressLabelInput): string | null;
+export declare function renderWeeklyUsageLine(ctx: RenderContext, labelOptions?: ProgressLabelInput): string | null;
 //# sourceMappingURL=usage.d.ts.map
