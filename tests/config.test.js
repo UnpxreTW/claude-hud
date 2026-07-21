@@ -7,6 +7,7 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_ELEMENT_ORDER,
   DEFAULT_MERGE_GROUPS,
+  DEFAULT_PROJECT_LINE_ORDER,
 } from '../dist/config.js';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -24,8 +25,8 @@ function restoreEnvVar(name, value) {
 test('loadConfig returns valid config structure', async () => {
   const config = await loadConfig();
 
-  // pathLevels must be 1, 2, or 3
-  assert.ok([1, 2, 3].includes(config.pathLevels), 'pathLevels should be 1, 2, or 3');
+  // pathLevels must be 1, 2, 3, or 'full'
+  assert.ok([1, 2, 3, 'full'].includes(config.pathLevels), 'pathLevels should be 1, 2, 3, or "full"');
 
   // lineLayout must be valid
   const validLineLayouts = ['compact', 'expanded'];
@@ -463,6 +464,16 @@ test('loadConfig reads user config from CLAUDE_CONFIG_DIR', async () => {
     restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
     await rm(customConfigDir, { recursive: true, force: true });
   }
+});
+
+test('mergeConfig accepts pathLevels: "full"', () => {
+  const config = mergeConfig({ pathLevels: 'full' });
+  assert.equal(config.pathLevels, 'full');
+});
+
+test('mergeConfig rejects invalid pathLevels, falls back to default', () => {
+  const config = mergeConfig({ pathLevels: 4 });
+  assert.equal(config.pathLevels, DEFAULT_CONFIG.pathLevels);
 });
 
 // --- migrateConfig tests (via mergeConfig) ---
@@ -944,4 +955,41 @@ test('mergeConfig rejects non-string advisorOverride and non-boolean showAdvisor
   const config = mergeConfig({ display: { showAdvisor: 'yes', advisorOverride: 42 } });
   assert.equal(config.display.showAdvisor, false);
   assert.equal(config.display.advisorOverride, '');
+});
+
+test('mergeConfig defaults projectLineOrder to no reordering', () => {
+  const config = mergeConfig({});
+  assert.deepEqual(config.projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+  assert.deepEqual(DEFAULT_CONFIG.projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+});
+
+test('mergeConfig falls back to default when projectLineOrder is missing or invalid', () => {
+  assert.deepEqual(mergeConfig({ projectLineOrder: 'model' }).projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+  assert.deepEqual(mergeConfig({ projectLineOrder: 42 }).projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+  assert.deepEqual(mergeConfig({ projectLineOrder: null }).projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+  assert.deepEqual(mergeConfig({ projectLineOrder: [] }).projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+  assert.deepEqual(mergeConfig({ projectLineOrder: ['banana', 7, null] }).projectLineOrder, DEFAULT_PROJECT_LINE_ORDER);
+});
+
+test('mergeConfig preserves a full custom projectLineOrder', () => {
+  const reversed = ['auth', 'speed', 'cost', 'duration', 'extra', 'version', 'sessionName', 'advisor', 'project', 'model'];
+  const config = mergeConfig({ projectLineOrder: reversed });
+  assert.deepEqual(config.projectLineOrder, reversed);
+});
+
+test('mergeConfig preserves a partial projectLineOrder as an explicit prefix', () => {
+  const config = mergeConfig({ projectLineOrder: ['project', 'model'] });
+  assert.deepEqual(config.projectLineOrder, ['project', 'model']);
+
+  const authFirst = mergeConfig({ projectLineOrder: ['auth'] });
+  assert.deepEqual(authFirst.projectLineOrder, ['auth']);
+});
+
+test('mergeConfig filters unknown entries and de-duplicates projectLineOrder', () => {
+  const config = mergeConfig({ projectLineOrder: ['project', 'banana', 'model', 'project', 'cost'] });
+  assert.deepEqual(config.projectLineOrder, [
+    'project',
+    'model',
+    'cost',
+  ]);
 });

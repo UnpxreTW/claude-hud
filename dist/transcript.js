@@ -8,7 +8,7 @@ import { createDebug } from './debug.js';
 import { sanitizeDisplayText } from './utils/sanitize.js';
 import { sanitizeTranscriptModel } from './model-source.js';
 const debug = createDebug('transcript');
-const TRANSCRIPT_CACHE_VERSION = 12;
+const TRANSCRIPT_CACHE_VERSION = 13;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
 const MESSAGE_ID_MAX_LEN = 128;
@@ -148,6 +148,7 @@ function deserializeTranscriptData(data) {
         mcpServers: normalizeNameList(data.mcpServers),
         agents: data.agents.map((agent) => ({
             ...agent,
+            model: sanitizeTranscriptModel(agent.model),
             startTime: new Date(agent.startTime),
             endTime: agent.endTime ? new Date(agent.endTime) : undefined,
         })),
@@ -472,7 +473,7 @@ function processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdTo
                 const agentEntry = {
                     id: block.id,
                     type: input?.subagent_type ?? 'agent',
-                    model: input?.model ?? undefined,
+                    model: sanitizeTranscriptModel(input?.model),
                     description: input?.description ?? undefined,
                     status: 'running',
                     startTime: timestamp,
@@ -560,8 +561,17 @@ function processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdTo
                 tool.endTime = timestamp;
             }
             const agent = agentMap.get(block.tool_use_id);
-            if (agent && !agent.background) {
-                agent.endTime = timestamp;
+            if (agent) {
+                // `resolvedModel` is the model the subagent actually ran on, so it wins
+                // over the caller's `model` input (an alias like "opus", and absent
+                // entirely whenever the subagent inherits the session model).
+                const resolvedModel = sanitizeTranscriptModel(entry.toolUseResult?.resolvedModel);
+                if (resolvedModel) {
+                    agent.model = resolvedModel;
+                }
+                if (!agent.background) {
+                    agent.endTime = timestamp;
+                }
             }
         }
     }

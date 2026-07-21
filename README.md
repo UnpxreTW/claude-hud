@@ -21,19 +21,19 @@ Inside a Claude Code instance, run the following commands:
 **Step 2: Install the plugin**
 
 <details>
-<summary><strong>⚠️ Linux users: Click here first</strong></summary>
+<summary><strong>⚠️ Linux users: Click here if install fails with an EXDEV error</strong></summary>
 
-On Linux, `/tmp` is often a separate filesystem (tmpfs), which causes plugin installation to fail with:
+On older Claude Code versions, `/tmp` being a separate filesystem (tmpfs) caused plugin installation to fail with:
 ```
 EXDEV: cross-device link not permitted
 ```
 
-**Fix**: Set TMPDIR before installing:
+This [Claude Code bug](https://github.com/anthropics/claude-code/issues/14799) has since been fixed — if you hit it, update Claude Code first. If you can't update, set TMPDIR before installing:
 ```bash
 mkdir -p ~/.cache/tmp && TMPDIR=~/.cache/tmp claude
 ```
 
-Then run the install command below in that session. This is a [Claude Code platform limitation](https://github.com/anthropics/claude-code/issues/14799).
+Then run the install command below in that session.
 
 </details>
 
@@ -41,12 +41,23 @@ Then run the install command below in that session. This is a [Claude Code platf
 /plugin install claude-hud
 ```
 
-After that, reload plugins:
+After that, reload plugins (no restart needed):
 
 ```
 /reload-plugins
 ```
 
+<details>
+<summary><strong>Prefer the terminal?</strong></summary>
+
+Steps 1–2 can also be done outside a session with the Claude Code CLI:
+```bash
+claude plugin marketplace add jarrodwatts/claude-hud
+claude plugin install claude-hud@claude-hud
+```
+Then run `/reload-plugins` inside your session (or start a new one).
+
+</details>
 
 **Step 3: Configure the statusline**
 ```
@@ -64,9 +75,7 @@ Then restart your shell and run `/claude-hud:setup` again.
 
 </details>
 
-Done! Restart Claude Code to load the new statusLine config, then the HUD will appear.
-
-On Windows, make that a full Claude Code restart after setup writes the new `statusLine` config.
+Done! Claude Code reloads settings automatically — the HUD appears after your next message, no restart needed. If it doesn't show up, restart Claude Code (older versions require a restart to pick up statusLine changes).
 
 ---
 
@@ -114,7 +123,7 @@ Claude Code → stdin JSON → claude-hud → stdout → displayed in your termi
 - Native token data from Claude Code (not estimated)
 - Scales with Claude Code's reported context window size, including newer 1M-context sessions
 - Parses the transcript for tool/agent activity
-- Updates every ~300ms
+- Re-renders after each interaction (new assistant messages, `/compact`, permission changes, vim-mode toggles), debounced at 300ms
 
 ---
 
@@ -158,10 +167,11 @@ Simplified and Traditional Chinese HUD labels are available as explicit opt-ins.
 |--------|------|---------|-------------|
 | `language` | `en` \| `zh` \| `zh-Hans` \| `zh-Hant` \| `zh-TW` | `en` | HUD label language. Use `zh` or `zh-Hans` for Simplified Chinese and `zh-Hant` or `zh-TW` for Traditional Chinese. |
 | `lineLayout` | string | `expanded` | Layout: `expanded` (multi-line) or `compact` (single line) |
-| `pathLevels` | 1-3 | 1 | Directory levels to show in project path |
+| `pathLevels` | 1-3 \| `full` | 1 | Directory levels to show in project path, or `full` to show the entire absolute path |
 | `maxWidth` | number \| `null` | `null` | Optional fallback width used only when terminal width detection fails completely |
 | `forceMaxWidth` | boolean | false | Always use `maxWidth` when it is set, even if terminal width detection returns a smaller value |
 | `elementOrder` | string[] | `["project","addedDirs","context","usage","promptCache","memory","environment","tools","skills","mcp","agents","todos","sessionTime"]` | Expanded-mode element order. Omit entries to hide them in expanded mode. Existing configs keep their explicit order until updated. |
+| `projectLineOrder` | string[] | `[]` | Optional leading order of segments *within* the first line, in both layouts. Visibility stays with the `display.show*` flags, and omitted segments retain their existing renderer order. `model` covers provider + model + effort (plus the context bar in compact mode); `project` covers path + added dirs + git as one segment. Example: `["project","model"]` puts the project/git block before the model badge. |
 | `display.mergeGroups` | string[][] | `[["context","usage"]]` | Expanded-mode groups that should share a line when adjacent. Set `[]` to disable merged lines. |
 | `gitStatus.enabled` | boolean | true | Show git branch in HUD |
 | `gitStatus.showDirty` | boolean | true | Show `*` for uncommitted changes |
@@ -319,6 +329,7 @@ Example fallback snapshot:
   "lineLayout": "expanded",
   "pathLevels": 2,
   "elementOrder": ["project", "tools", "skills", "mcp", "context", "usage", "memory", "environment", "agents", "todos", "sessionTime"],
+  "projectLineOrder": ["project", "model"],
   "gitStatus": {
     "enabled": true,
     "showDirty": true,
@@ -367,6 +378,22 @@ Example fallback snapshot:
 - `!` = modified files, `+` = added/staged, `✘` = deleted, `?` = untracked
 - Counts of 0 are omitted for cleaner display
 
+### Auto-Refresh
+
+Claude Code only re-runs the statusline after an interaction (a new assistant message, `/compact` finishing, a permission-mode change, or a vim-mode toggle), so time-based HUD info — session duration, usage reset countdowns, the prompt-cache countdown — goes stale between messages. To keep it ticking, add `refreshInterval` (seconds, minimum 1) to the `statusLine` entry in `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "...",
+    "refreshInterval": 5
+  }
+}
+```
+
+`/claude-hud:setup` offers this during installation. Each refresh re-runs the HUD command, so 5 seconds is a good default; use 1 second only if you want visibly smooth countdowns.
+
 ### Disabling the HUD Temporarily
 
 Set the `CLAUDE_HUD_DISABLE` environment variable to launch a session without the HUD — no need to remove the `statusLine` entry from `settings.json`:
@@ -381,7 +408,7 @@ Leaving it unset (or setting an explicit negative: `0`, `false`, `off`, `no`) ke
 
 **Config not applying?**
 - Check for JSON syntax errors: invalid JSON silently falls back to defaults
-- Ensure valid values: `pathLevels` must be 1, 2, or 3; `lineLayout` must be `expanded` or `compact`; `maxWidth` must be a positive number
+- Ensure valid values: `pathLevels` must be 1, 2, 3, or `full`; `lineLayout` must be `expanded` or `compact`; `maxWidth` must be a positive number
 - Delete config and run `/claude-hud:configure` to regenerate
 
 **Git status missing?**
@@ -393,8 +420,8 @@ Leaving it unset (or setting an explicit negative: `0`, `false`, `off`, `no`) ke
 - They also only appear when there's activity to show
 
 **HUD not appearing after setup?**
-- Restart Claude Code so it picks up the new statusLine config
-- On macOS, fully quit Claude Code and run `claude` again in your terminal
+- Send any message — settings reload automatically, but the statusline only renders after your next interaction
+- If it still doesn't appear, restart Claude Code (fully quit and run `claude` again) — older Claude Code versions require a restart to pick up statusLine changes
 - Make sure `CLAUDE_HUD_DISABLE` is not set in your environment (e.g. exported from a shell profile) — it silences the HUD entirely, including setup verification
 
 ---
