@@ -32,7 +32,7 @@ export function isHudDisabled(env = process.env) {
 export async function main(overrides = {}) {
     if (isHudDisabled()) {
         // Print nothing so Claude Code renders an empty statusline, and skip all
-        // work (stdin parse, transcript scan, git) for the ~300ms polling loop.
+        // work (stdin parse, transcript scan, git) on each event-driven refresh.
         return;
     }
     const deps = {
