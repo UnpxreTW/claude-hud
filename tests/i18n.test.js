@@ -5,6 +5,7 @@ import { en } from "../dist/i18n/en.js";
 import { zhHant } from "../dist/i18n/zh-Hant.js";
 import { mergeConfig } from "../dist/config.js";
 import { renderSessionTokensLine } from "../dist/render/lines/session-tokens.js";
+import { renderAdvisorLine } from "../dist/render/lines/advisor.js";
 
 function stripAnsi(s) {
   return s.replace(/\x1b\[[0-9;]*m/g, "");
@@ -104,9 +105,11 @@ test("renderSessionTokensLine uses translated labels in Chinese", () => {
   setLanguage("zh");
   const line = stripAnsi(renderSessionTokensLine(makeCtx()) ?? "");
   assert.ok(line.includes("词元"), `expected '词元' in ${line}`);
-  assert.ok(line.includes("输入:"), `expected '输入:' in ${line}`);
-  assert.ok(line.includes("输出:"), `expected '输出:' in ${line}`);
-  assert.ok(line.includes("缓存:"), `expected '缓存:' in ${line}`);
+  assert.ok(line.includes("输入："), `expected '输入：' in ${line}`);
+  assert.ok(line.includes("输出："), `expected '输出：' in ${line}`);
+  assert.ok(line.includes("缓存："), `expected '缓存：' in ${line}`);
+  // Fullwidth colon only: no halfwidth colon leaks into CJK output
+  assert.ok(!line.includes(":"), `unexpected halfwidth colon in zh output: ${line}`);
   // No leftover English labels
   assert.ok(!line.includes("in:"), `unexpected bare 'in:' label in zh output: ${line}`);
   assert.ok(!line.includes("out:"), `unexpected bare 'out:' label in zh output: ${line}`);
@@ -221,13 +224,45 @@ test("renderSessionTokensLine uses Traditional Chinese labels for zh-Hant", () =
   setLanguage("zh-Hant");
   const line = stripAnsi(renderSessionTokensLine(makeCtx()) ?? "");
   assert.ok(line.includes("Token"), `expected 'Token' in ${line}`);
-  assert.ok(line.includes("輸入:"), `expected '輸入:' in ${line}`);
-  assert.ok(line.includes("輸出:"), `expected '輸出:' in ${line}`);
-  assert.ok(line.includes("快取:"), `expected '快取:' in ${line}`);
+  assert.ok(line.includes("輸入："), `expected '輸入：' in ${line}`);
+  assert.ok(line.includes("輸出："), `expected '輸出：' in ${line}`);
+  assert.ok(line.includes("快取："), `expected '快取：' in ${line}`);
   assert.ok(!line.includes("in:"), `unexpected bare 'in:' in zh-Hant output: ${line}`);
   assert.ok(!line.includes("out:"), `unexpected bare 'out:' in zh-Hant output: ${line}`);
   assert.ok(!line.includes("cache:"), `unexpected bare 'cache:' in zh-Hant output: ${line}`);
+  assert.ok(!line.includes(":"), `unexpected halfwidth colon in zh-Hant output: ${line}`);
   setLanguage("en");
+});
+
+test("format.labelSeparator carries its own spacing per locale", () => {
+  setLanguage("en");
+  assert.equal(t("format.labelSeparator"), ": ");
+  setLanguage("zh");
+  assert.equal(t("format.labelSeparator"), "：");
+  setLanguage("zh-Hant");
+  assert.equal(t("format.labelSeparator"), "：");
+  setLanguage("en");
+});
+
+test("label/value separator comes from the locale, not the render code", () => {
+  const ctx = makeCtx({
+    config: {
+      display: { showAdvisor: true, advisorOverride: "Opus 4.7" },
+      colors: { label: "dim" },
+    },
+  });
+
+  setLanguage("en");
+  assert.equal(stripAnsi(renderAdvisorLine(ctx) ?? ""), "Advisor: Opus 4.7");
+
+  try {
+    setLanguage("zh-Hant");
+    // Fullwidth colon already supplies the advance width, so no ASCII space
+    // may follow it.
+    assert.equal(stripAnsi(renderAdvisorLine(ctx) ?? ""), "顧問：Opus 4.7");
+  } finally {
+    setLanguage("en");
+  }
 });
 
 test("mergeConfig accepts zh-Hant as valid language", () => {

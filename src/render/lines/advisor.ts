@@ -75,5 +75,5 @@ export function renderAdvisorLine(ctx: RenderContext): string | null {
   }
 
   const colors = ctx.config?.colors;
-  return `${label(`${t('label.advisor')}:`, colors)} ${safePretty}`;
+  return `${label(`${t('label.advisor')}${t('format.labelSeparator')}`, colors)}${safePretty}`;
 }

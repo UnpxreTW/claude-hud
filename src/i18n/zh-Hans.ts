@@ -23,6 +23,7 @@ export const zhHans: Messages = {
   "status.expired": "已过期",
 
   // Format
+  "format.labelSeparator": "：",
   "format.resets": "重置于",
   "format.resetsIn": "重置剩余",
   "format.absoluteTime": "{time}",

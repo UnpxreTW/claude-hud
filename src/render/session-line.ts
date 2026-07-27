@@ -316,7 +316,7 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   // Session token usage (cumulative)
   if (display?.showSessionTokens && ctx.transcript.sessionTokens) {
-    const summary = formatSessionTokenSummary(ctx.transcript.sessionTokens, `${t('format.tok')}:`);
+    const summary = formatSessionTokenSummary(ctx.transcript.sessionTokens, t('format.tok'), t('format.labelSeparator'));
     if (summary) {
       push(label(summary, colors));
     }
@@ -327,7 +327,7 @@ export function renderSessionLine(ctx: RenderContext): string {
   if (display?.showCompactions) {
     const compactions = ctx.transcript.compactionCount ?? 0;
     if (compactions > 0) {
-      push(label(`${t('label.compactions')}: ${compactions}`, colors));
+      push(label(`${t('label.compactions')}${t('format.labelSeparator')}${compactions}`, colors));
     }
   }
 
@@ -361,7 +361,7 @@ export function renderSessionLine(ctx: RenderContext): string {
   if (display?.showSpeed) {
     const speed = getOutputSpeed(ctx.stdin);
     if (speed !== null) {
-      push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors), 'speed');
+      push(label(`${t('format.out')}${t('format.labelSeparator')}${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors), 'speed');
     }
   }
 
@@ -387,7 +387,7 @@ export function renderSessionLine(ctx: RenderContext): string {
     if (usage) {
       const input = formatTokens(usage.input_tokens ?? 0);
       const cache = formatTokens((usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0));
-      line += label(` (${t('format.in')}: ${input}, ${t('format.cache')}: ${cache})`, colors);
+      line += label(` (${t('format.in')}${t('format.labelSeparator')}${input}, ${t('format.cache')}${t('format.labelSeparator')}${cache})`, colors);
     }
   }
 
@@ -404,10 +404,10 @@ function formatCompactWindowPart(
 ): string {
   const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
   const reset = formatResetTime(resetAt, timeFormat);
-  const styledLabel = label(`${windowLabel}:`, colors);
+  const styledLabel = label(`${windowLabel}${t('format.labelSeparator')}`, colors);
   return reset
-    ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
-    : `${styledLabel} ${usageDisplay}`;
+    ? `${styledLabel}${usageDisplay} ${label(`(${reset})`, colors)}`
+    : `${styledLabel}${usageDisplay}`;
 }
 
 function formatUsagePercent(

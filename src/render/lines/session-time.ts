@@ -54,13 +54,13 @@ export function renderSessionTimeLine(ctx: RenderContext, nowFn?: () => number):
 
   if (showStart && ctx.transcript.sessionStart) {
     const startStr = formatStartDate(ctx.transcript.sessionStart);
-    parts.push(`${label(`${t('label.sessionStarted')}:`, colors)} ${startStr}`);
+    parts.push(`${label(`${t('label.sessionStarted')}${t('format.labelSeparator')}`, colors)}${startStr}`);
   }
 
   if (showLastReply && ctx.transcript.lastAssistantResponseAt) {
     const now = nowFn ? nowFn() : Date.now();
     const elapsed = now - ctx.transcript.lastAssistantResponseAt.getTime();
-    parts.push(`${label(`${t('label.lastReply')}:`, colors)} ${formatRelativeTime(elapsed)}`);
+    parts.push(`${label(`${t('label.lastReply')}${t('format.labelSeparator')}`, colors)}${formatRelativeTime(elapsed)}`);
   }
 
   if (parts.length === 0) {

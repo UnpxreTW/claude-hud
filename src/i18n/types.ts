@@ -19,6 +19,7 @@ export type MessageKey =
   | "status.allTodosComplete"
   | "status.expired"
   // Format
+  | "format.labelSeparator"
   | "format.resets"
   | "format.resetsIn"
   | "format.absoluteTime"

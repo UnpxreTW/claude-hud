@@ -6,22 +6,29 @@ import { formatTokens } from '../../utils/format.js';
 export function formatSessionTokenSummary(
   tokens: NonNullable<RenderContext['transcript']['sessionTokens']>,
   prefix: string,
+  /**
+   * Separator between the prefix and the total. Defaults to a plain space for
+   * the expanded line, whose prefix is a bare noun rather than a label; the
+   * compact line passes the locale's label separator instead.
+   */
+  prefixSeparator = ' ',
 ): string | null {
   const total = tokens.inputTokens + tokens.outputTokens + tokens.cacheCreationTokens + tokens.cacheReadTokens;
   if (total === 0) {
     return null;
   }
 
+  const separator = t('format.labelSeparator');
   const parts: string[] = [
-    `${t('format.in')}: ${formatTokens(tokens.inputTokens)}`,
-    `${t('format.out')}: ${formatTokens(tokens.outputTokens)}`,
+    `${t('format.in')}${separator}${formatTokens(tokens.inputTokens)}`,
+    `${t('format.out')}${separator}${formatTokens(tokens.outputTokens)}`,
   ];
 
   if (tokens.cacheCreationTokens > 0 || tokens.cacheReadTokens > 0) {
-    parts.push(`${t('format.cache')}: ${formatTokens(tokens.cacheCreationTokens + tokens.cacheReadTokens)}`);
+    parts.push(`${t('format.cache')}${separator}${formatTokens(tokens.cacheCreationTokens + tokens.cacheReadTokens)}`);
   }
 
-  return `${prefix} ${formatTokens(total)} (${parts.join(', ')})`;
+  return `${prefix}${prefixSeparator}${formatTokens(total)} (${parts.join(', ')})`;
 }
 
 export function renderSessionTokensLine(ctx: RenderContext): string | null {

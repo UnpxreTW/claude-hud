@@ -204,10 +204,10 @@ function formatCompactWindowPart(
 ): string {
   const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
   const reset = formatWindowTime(resetAt, windowMs, timeFormat);
-  const styledLabel = label(`${windowLabel}:`, colors);
+  const styledLabel = label(`${windowLabel}${t("format.labelSeparator")}`, colors);
   return reset
-    ? `${styledLabel} ${usageDisplay} ${label(`(${reset})`, colors)}`
-    : `${styledLabel} ${usageDisplay}`;
+    ? `${styledLabel}${usageDisplay} ${label(`(${reset})`, colors)}`
+    : `${styledLabel}${usageDisplay}`;
 }
 
 function formatUsagePercent(

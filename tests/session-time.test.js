@@ -165,8 +165,8 @@ test('renders localized labels and relative suffix', () => {
     });
     const result = renderSessionTimeLine(ctx, () => now);
     assert.ok(result);
-    assert.ok(result.includes('开始:'));
-    assert.ok(result.includes('上次回复:'));
+    assert.ok(result.includes('开始：'));
+    assert.ok(result.includes('上次回复：'));
     assert.ok(result.includes('5m 前'));
   } finally {
     setLanguage('en');
@@ -185,7 +185,7 @@ test('renders Traditional Chinese relative time through the locale pattern', () 
 
     const result = renderSessionTimeLine(ctx, () => now);
     assert.ok(result);
-    assert.ok(result.includes('上次回覆:'));
+    assert.ok(result.includes('上次回覆：'));
     assert.ok(result.includes('5m 前'));
   } finally {
     setLanguage('en');

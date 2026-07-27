@@ -23,6 +23,10 @@ export const en: Messages = {
   "status.expired": "expired",
 
   // Format
+  // Separator between a label and its value, including any spacing that
+  // belongs with it. Latin scripts need a trailing space after the colon;
+  // CJK use a fullwidth colon that already carries its own advance width.
+  "format.labelSeparator": ": ",
   "format.resets": "resets",
   "format.resetsIn": "resets in",
   "format.absoluteTime": "at {time}",

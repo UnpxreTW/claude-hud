@@ -155,7 +155,7 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   if (display?.showSpeed) {
     const speed = getOutputSpeed(ctx.stdin);
     if (speed !== null) {
-      push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors), 'speed');
+      push(label(`${t('format.out')}${t('format.labelSeparator')}${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors), 'speed');
     }
   }
 

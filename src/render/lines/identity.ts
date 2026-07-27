@@ -55,7 +55,7 @@ export function renderIdentityLine(
           (usage.cache_read_input_tokens ?? 0),
       );
       line += label(
-        ` (${t("format.in")}: ${input}, ${t("format.cache")}: ${cache})`,
+        ` (${t("format.in")}${t("format.labelSeparator")}${input}, ${t("format.cache")}${t("format.labelSeparator")}${cache})`,
         colors,
       );
     }

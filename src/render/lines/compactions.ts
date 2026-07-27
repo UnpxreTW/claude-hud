@@ -14,5 +14,5 @@ export function renderCompactionsLine(ctx: RenderContext): string | null {
   }
 
   const colors = ctx.config?.colors;
-  return label(`${t('label.compactions')}: ${compactions}`, colors);
+  return label(`${t('label.compactions')}${t('format.labelSeparator')}${compactions}`, colors);
 }
