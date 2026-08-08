@@ -794,6 +794,9 @@ test('width math counts ambiguous chars as 2 cells only in CJK mode', async () =
     assert.equal(isCjkAmbiguousWide(), true);
     assert.equal(codePointCellWidth(0x2588, isCjkAmbiguousWide()), 2);
     assert.equal(codePointCellWidth(0x0041, isCjkAmbiguousWide()), 1);
+    assert.equal(codePointCellWidth(0xFE0E, isCjkAmbiguousWide()), 0);
+    assert.equal(codePointCellWidth(0xFE0F, isCjkAmbiguousWide()), 0);
+    assert.equal(codePointCellWidth(0xE0100, isCjkAmbiguousWide()), 0);
   } finally {
     setLanguage('en');
   }

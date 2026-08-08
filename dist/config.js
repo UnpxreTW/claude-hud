@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { getHudPluginDir } from './claude-config-dir.js';
 import { createDebug } from './debug.js';
+import { MAX_TERMINAL_WIDTH } from './utils/terminal.js';
 const debug = createDebug('config');
 export const DEFAULT_ELEMENT_ORDER = [
     'project',
@@ -103,6 +104,7 @@ export const DEFAULT_CONFIG = {
         showLastResponseAt: false,
         showCompactions: false,
         mergeGroups: DEFAULT_MERGE_GROUPS.map(group => [...group]),
+        rightAlign: [],
         autocompactBuffer: 'enabled',
         contextWarningThreshold: 70,
         contextCriticalThreshold: 85,
@@ -120,6 +122,8 @@ export const DEFAULT_CONFIG = {
         customLine: '',
         customLinePosition: 'last',
         timeFormat: 'relative',
+        hourCycle: 'auto',
+        showClockSeconds: false,
         showAdvisor: false,
         advisorOverride: '',
         autoCompactWindow: null,
@@ -177,6 +181,9 @@ function validateTimeFormat(value) {
 }
 function validateCustomLinePosition(value) {
     return value === 'first' || value === 'last';
+}
+function validateHourCycle(value) {
+    return value === 'auto' || value === 'h11' || value === 'h12' || value === 'h23' || value === 'h24';
 }
 function validateColorName(value) {
     return value === 'dim'
@@ -251,6 +258,25 @@ function validateProjectLineOrder(value) {
         order.push(segment);
     }
     return order;
+}
+function validateRightAlign(value) {
+    if (!Array.isArray(value)) {
+        return [...DEFAULT_CONFIG.display.rightAlign];
+    }
+    const seen = new Set();
+    const elements = [];
+    for (const item of value) {
+        if (typeof item !== 'string' || !KNOWN_ELEMENTS.has(item)) {
+            continue;
+        }
+        const element = item;
+        if (seen.has(element)) {
+            continue;
+        }
+        seen.add(element);
+        elements.push(element);
+    }
+    return elements;
 }
 function validateMergeGroups(value) {
     if (!Array.isArray(value)) {
@@ -378,7 +404,7 @@ export function mergeConfig(userConfig) {
         : DEFAULT_CONFIG.pathLevels;
     const rawMaxWidth = migrated.maxWidth;
     const maxWidth = (typeof rawMaxWidth === 'number' && Number.isFinite(rawMaxWidth) && rawMaxWidth > 0)
-        ? Math.floor(rawMaxWidth)
+        ? Math.min(Math.floor(rawMaxWidth), MAX_TERMINAL_WIDTH)
         : null;
     const elementOrder = validateElementOrder(migrated.elementOrder);
     const projectLineOrder = validateProjectLineOrder(migrated.projectLineOrder);
@@ -523,6 +549,7 @@ export function mergeConfig(userConfig) {
             ? migrated.display.showCompactions
             : DEFAULT_CONFIG.display.showCompactions,
         mergeGroups: validateMergeGroups(migrated.display?.mergeGroups),
+        rightAlign: validateRightAlign(migrated.display?.rightAlign),
         autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
             ? migrated.display.autocompactBuffer
             : DEFAULT_CONFIG.display.autocompactBuffer,
@@ -558,6 +585,12 @@ export function mergeConfig(userConfig) {
         timeFormat: validateTimeFormat(migrated.display?.timeFormat)
             ? migrated.display.timeFormat
             : DEFAULT_CONFIG.display.timeFormat,
+        hourCycle: validateHourCycle(migrated.display?.hourCycle)
+            ? migrated.display.hourCycle
+            : DEFAULT_CONFIG.display.hourCycle,
+        showClockSeconds: typeof migrated.display?.showClockSeconds === 'boolean'
+            ? migrated.display.showClockSeconds
+            : DEFAULT_CONFIG.display.showClockSeconds,
         showAdvisor: typeof migrated.display?.showAdvisor === 'boolean'
             ? migrated.display.showAdvisor
             : DEFAULT_CONFIG.display.showAdvisor,

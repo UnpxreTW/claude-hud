@@ -14,6 +14,7 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
 export type CustomLinePosition = 'first' | 'last';
+export type HourCycleMode = 'auto' | 'h11' | 'h12' | 'h23' | 'h24';
 /**
  * Controls how many directory segments of cwd are shown in the project badge.
  *
@@ -124,6 +125,7 @@ export interface HudConfig {
         showLastResponseAt: boolean;
         showCompactions: boolean;
         mergeGroups: HudElement[][];
+        rightAlign: HudElement[];
         autocompactBuffer: AutocompactBufferMode;
         contextWarningThreshold: number;
         contextCriticalThreshold: number;
@@ -141,6 +143,8 @@ export interface HudConfig {
         customLine: string;
         customLinePosition: CustomLinePosition;
         timeFormat: TimeFormatMode;
+        hourCycle: HourCycleMode;
+        showClockSeconds: boolean;
         showAdvisor: boolean;
         advisorOverride: string;
         autoCompactWindow: number | null;

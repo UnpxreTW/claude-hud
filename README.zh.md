@@ -98,7 +98,7 @@ Claude HUD 让你在 Claude Code 会话中获得更清晰的洞察。
 [Opus] │ my-project git:(main*)
 上下文 █████░░░░░ 45% │ 使用率 ██░░░░░░░░ 25%（1小时30分 / 5小时）
 ```
-- **第 1 行** — 模型、提供商标签（如能正面识别，例如 `Bedrock`、`Vertex`）、项目路径、git 分支
+- **第 1 行** — 模型、提供商标签（如能正面识别，例如 `Bedrock`、`Vertex`、`MiniMax`）、项目路径、git 分支
 - **第 2 行** — 上下文进度条（绿 → 黄 → 红）和使用率限制
 
 ### 可选行（通过 `/claude-hud:configure` 启用）
@@ -169,6 +169,7 @@ Claude Code → stdin JSON → claude-hud → stdout → 在终端中显示
 | `elementOrder` | string[] | `["project","context","usage","promptCache","memory","environment","tools","agents","todos","sessionTime"]` | 展开模式下元素的顺序。省略的条目在展开模式下隐藏。现有配置会保留其显式顺序直到更新 |
 | `projectLineOrder` | string[] | `[]` | 可选的首行片段前置顺序，适用于两种布局。可见性仍由 `display.show*` 控制；省略的片段保持渲染器原有顺序。例如 `["project","model"]` 会将项目和 Git 放到模型徽标之前 |
 | `display.mergeGroups` | string[][] | `[["context","usage"]]` | 展开模式下相邻时应共享一行的元素分组。设为 `[]` 可禁用合并行 |
+| `display.rightAlign` | string[] | `[]` | 以合并行中第一个列出的元素作为右对齐后缀的起点，保持 `elementOrder` 并用空格填充间隔。锚点必须位于实际合并渲染的 `display.mergeGroups` 分组中。终端宽度未知、锚点位于首位或空间不足时回退到普通的 ` │ ` 连接。示例：分组为 `["project","context","usage"]` 时设为 `["context"]`，项目/git 保持在左侧，context 与 usage 靠右对齐。 |
 | `gitStatus.enabled` | boolean | true | 在 HUD 中显示 git 分支 |
 | `gitStatus.showDirty` | boolean | true | 显示 `*` 表示未提交的更改 |
 | `gitStatus.showAheadBehind` | boolean | false | 显示 `↑N ↓N` 表示领先/落后远程的提交数 |
@@ -197,8 +198,10 @@ Claude Code → stdin JSON → claude-hud → stdout → 在终端中显示
 | `display.usageCompact` | boolean | false | 以较短的文本形式显示使用率，如 `5h: 25% (1h 30m)`；优先于 `display.usageBarEnabled` |
 | `display.showResetLabel` | boolean | true | 在使用率倒计时前显示 `resets in` 前缀 |
 | `display.timeFormat` | `relative` \| `absolute` \| `both` \| `elapsed` \| `elapsedAndAbsolute` | `relative` | 控制使用率窗口时间的显示方式：仅倒计时（`resets in 2h 30m`）、墙钟重置时间（`resets at 14:30`）、两者同时显示、窗口已过百分比（`53% elapsed`），或已过百分比加墙钟重置时间 |
+| `display.hourCycle` | `auto` \| `h11` \| `h12` \| `h23` \| `h24` | `auto` | 墙钟重置时间（`absolute`/`both`/`elapsedAndAbsolute` 模式）的时制。`auto` 跟随系统区域设置；`h23` 强制使用 24 小时制（`14:30`），不受区域设置影响 |
+| `display.showClockSeconds` | boolean | false | 在墙钟重置时间中显示秒数，如 `at 14:30:07` |
 | `display.sevenDayThreshold` | 0-100 | 80 | 当 7 天使用率 ≥ 阈值时显示（0 = 始终显示） |
-| `display.externalUsagePath` | string | `""` | 可选的本地使用率快照文件路径，仅在 stdin `rate_limits` 缺失时使用 |
+| `display.externalUsagePath` | string | `""` | 可选的本地使用率快照文件路径。stdin `rate_limits` 存在时会附加 `balance_label`，并在 stdin 缺少 `model_scoped` 窗口时用快照补齐；stdin 窗口缺失时可整体作为回退 |
 | `display.externalUsageWritePath` | string | `""` | 可选的绝对 `.json` 路径，父目录必须已存在。当 stdin `rate_limits` 存在时，ClaudeHUD 会写入私有权限快照供其他本地工具读取。相对路径、非 json 文件和缺失父目录会被忽略 |
 | `display.externalUsageFreshnessMs` | number | `300000` | 外部使用率快照允许的最长存活时间，超时后会被忽略 |
 | `display.showTokenBreakdown` | boolean | true | 在高上下文时（85%+）显示 Token 详情 |
@@ -239,6 +242,8 @@ Claude Code → stdin JSON → claude-hud → stdout → 在终端中显示
 
 `display.showCost` 为完全 opt-in 选项。ClaudeHUD 优先使用 Claude Code 在 stdin 上提供的原生 `cost.total_cost_usd` 字段（可用时）。如果该字段缺失或对直连 Anthropic 会话无效，ClaudeHUD 会回退到现有的基于本地转录文件的估算方案，确保费用行在旧负载下仍能工作。原生字段在会话中首个 API 响应之前为空，因此费用显示可能在响应到达前保持隐藏。对于已知的路由提供商（如 Bedrock、Vertex AI），ClaudeHUD 也会隐藏费用显示，因为云提供商计费会话可能报告 `$0.00` 或省略该字段，即使会话并非真正免费。设置 `display.showRoutedCost: true`（并同时开启 `showCost`）即可为这些提供商启用费用显示：原生 `cost.total_cost_usd` 为正值时显示为 `Cost`，否则回退到基于 Anthropic 定价表的 token 估算 `Est.`。
 
+官方 MiniMax Anthropic 兼容端点会显示 `MiniMax` 提供商标签。MiniMax M2.7 可使用其公开 token 和缓存价格进行本地估算；M3 的价格取决于单次请求的上下文层级，而累计会话 token 无法安全推断该层级，因此不会猜测 M3 费用。
+
 `display.showPromptCache` 为完全 opt-in 选项。启用后，ClaudeHUD 会读取本地 transcript 中最后一次 assistant 响应的时间戳，并显示距离 prompt cache 过期还剩多久。默认 TTL 为 5 分钟（`300` 秒）。如果你想按 1 小时的 Max 风格窗口显示，可将 `display.promptCacheTtlSeconds` 设为 `3600`。如果 transcript 里还没有 assistant 时间戳，这个元素会继续隐藏。
 
 ### 使用率限制
@@ -249,7 +254,20 @@ Claude Code → stdin JSON → claude-hud → stdout → 在终端中显示
 
 ClaudeHUD 优先使用官方 statusline stdin 负载中的使用率数据。如果 `rate_limits` 缺失，你可以通过 `display.externalUsagePath` 显式启用本地 sidecar 快照回退，例如让代理程序写入 JSON 文件。只要 stdin 和 sidecar 同时存在，stdin 始终优先。
 
-回退快照必须足够新（由 `display.externalUsageFreshnessMs` 控制），并且包含有效的 `updated_at`、以及 `five_hour` 窗口、`seven_day` 窗口或 `balance_label`。`balance_label` 是预付费提供商余额的可选文本；显示前会进行裁剪、长度限制和清理。非法 JSON、过期文件或非法时间戳都会被静默忽略。
+回退快照必须足够新（由 `display.externalUsageFreshnessMs` 控制），并且包含有效的 `updated_at`、以及 `five_hour` 窗口、`seven_day` 窗口、`balance_label` 或 `model_scoped` 数组。`balance_label` 是预付费提供商余额的可选文本；显示前会进行裁剪、长度限制和清理。非法 JSON、过期文件或非法时间戳都会被静默忽略。
+
+快照还可以携带 `model_scoped` 窗口，格式与 Claude Code 为 stdin 定义的 schema 相同（`display_name`、0-100 的 `utilization`、ISO 格式 `resets_at`），渲染方式与 stdin 提供的按模型窗口完全一致，且 stdin 自带 `model_scoped` 数据时始终优先。借此本地喂送程序可以显示 statusline 负载暂未包含的按模型每周配额（例如 Fable）：
+
+```json
+{
+  "updated_at": "2026-07-24T14:12:37Z",
+  "model_scoped": [
+    { "display_name": "Fable", "utilization": 89, "resets_at": "2026-07-27T11:00:00Z" }
+  ]
+}
+```
+
+生成此类快照的一种零凭证方式是 Claude Code 自带的 `get_usage` 控制请求：它会返回 `rate_limits.model_scoped` 且不消耗任何 token，定时任务可将其经 `jq` 写入快照文件。HUD 本身从不发起任何请求，只读取该文件。
 
 如果希望 ClaudeHUD 将官方 stdin `rate_limits` 写入本地快照供其他工具使用，可设置 `display.externalUsageWritePath`。该路径必须为绝对路径、以 `.json` 结尾，并位于已存在的目录中。ClaudeHUD 会使用私有权限写入该文件，并静默忽略无效路径。
 
@@ -264,6 +282,8 @@ ClaudeHUD 优先使用官方 statusline stdin 负载中的使用率数据。如�
 如需禁用，请将 `display.showUsage` 设为 `false`。
 
 重置时间默认显示为相对倒计时。将 `display.timeFormat` 设为 `absolute` 可显示墙钟时间，设为 `both` 可同时显示两种形式，设为 `elapsed` 可显示当前使用率窗口已过百分比，设为 `elapsedAndAbsolute` 可同时显示已过百分比和墙钟重置时间。该设置目前只能手动编辑；`/claude-hud:configure` 会保留它，但不会修改它。
+
+墙钟重置时间（`absolute`/`both`/`elapsedAndAbsolute`）默认跟随系统区域设置决定 12/24 小时制。将 `display.hourCycle` 设为 `h23` 可强制使用 24 小时制，不受区域设置影响；设为 `h12`/`h11` 可强制使用带 AM/PM 的 12 小时制。将 `display.showClockSeconds` 设为 `true` 可在墙钟时间中显示秒数，如 `at 14:30:07`。
 
 将 `display.showResetLabel` 设为 `false` 可使用较短的使用率倒计时格式，如 `(3h 17m)` 而非 `(resets in 3h 17m)`。
 

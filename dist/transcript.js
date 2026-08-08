@@ -8,11 +8,12 @@ import { createDebug } from './debug.js';
 import { sanitizeDisplayText } from './utils/sanitize.js';
 import { sanitizeTranscriptModel } from './model-source.js';
 const debug = createDebug('transcript');
-const TRANSCRIPT_CACHE_VERSION = 13;
+const TRANSCRIPT_CACHE_VERSION = 15;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
 const MESSAGE_ID_MAX_LEN = 128;
-const SEEN_MESSAGE_IDS_MAX = 4096;
+const MESSAGE_USAGE_MAX = 4096;
+const MCP_ERROR_SERVERS_MAX = 64;
 // Hard cap on the advisor model ID captured from the transcript. Real Claude
 // model IDs (e.g. "claude-haiku-4-5-20251001") fit comfortably under this; the
 // cap exists to prevent a malformed transcript from persisting an oversized
@@ -30,14 +31,30 @@ function normalizeMessageId(value) {
         ? value
         : null;
 }
-function rememberMessageId(seenMessageIds, messageId) {
-    if (seenMessageIds.size >= SEEN_MESSAGE_IDS_MAX) {
-        const oldest = seenMessageIds.values().next().value;
+function accumulateMessageUsage(usageByMessageId, messageId, current, total) {
+    const previous = usageByMessageId.get(messageId);
+    if (!previous && usageByMessageId.size >= MESSAGE_USAGE_MAX) {
+        const oldest = usageByMessageId.keys().next().value;
         if (oldest !== undefined) {
-            seenMessageIds.delete(oldest);
+            usageByMessageId.delete(oldest);
         }
     }
-    seenMessageIds.add(messageId);
+    const prior = previous ?? {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+    };
+    total.inputTokens += Math.max(0, current.inputTokens - prior.inputTokens);
+    total.outputTokens += Math.max(0, current.outputTokens - prior.outputTokens);
+    total.cacheCreationTokens += Math.max(0, current.cacheCreationTokens - prior.cacheCreationTokens);
+    total.cacheReadTokens += Math.max(0, current.cacheReadTokens - prior.cacheReadTokens);
+    usageByMessageId.set(messageId, {
+        inputTokens: Math.max(prior.inputTokens, current.inputTokens),
+        outputTokens: Math.max(prior.outputTokens, current.outputTokens),
+        cacheCreationTokens: Math.max(prior.cacheCreationTokens, current.cacheCreationTokens),
+        cacheReadTokens: Math.max(prior.cacheReadTokens, current.cacheReadTokens),
+    });
 }
 function normalizeSessionTokens(tokens) {
     if (!tokens || typeof tokens !== 'object') {
@@ -119,6 +136,7 @@ function serializeTranscriptData(data) {
         })),
         skills: [...data.skills],
         mcpServers: [...data.mcpServers],
+        mcpErrors: [...data.mcpErrors],
         agents: data.agents.map((agent) => ({
             ...agent,
             startTime: agent.startTime.toISOString(),
@@ -146,6 +164,7 @@ function deserializeTranscriptData(data) {
         })),
         skills: normalizeNameList(data.skills),
         mcpServers: normalizeNameList(data.mcpServers),
+        mcpErrors: normalizeNameList(data.mcpErrors).slice(0, MCP_ERROR_SERVERS_MAX),
         agents: data.agents.map((agent) => ({
             ...agent,
             model: sanitizeTranscriptModel(agent.model),
@@ -223,6 +242,7 @@ export async function parseTranscript(transcriptPath) {
         tools: [],
         skills: [],
         mcpServers: [],
+        mcpErrors: [],
         agents: [],
         todos: [],
     };
@@ -244,6 +264,7 @@ export async function parseTranscript(transcriptPath) {
     const toolMap = new Map();
     const skillSet = new Set();
     const mcpServerSet = new Set();
+    const mcpErrorSet = new Set();
     const agentMap = new Map();
     let latestTodos = [];
     const taskIdToIndex = new Map();
@@ -261,7 +282,7 @@ export async function parseTranscript(transcriptPath) {
         cacheCreationTokens: 0,
         cacheReadTokens: 0,
     };
-    const seenMessageIds = new Set();
+    const usageByMessageId = new Map();
     let lastUsageKey;
     let parsedCleanly = false;
     try {
@@ -337,24 +358,26 @@ export async function parseTranscript(transcriptPath) {
                 if (entry.type === 'assistant' && entry.message?.usage) {
                     const usage = entry.message.usage;
                     const msgId = normalizeMessageId(entry.message.id);
-                    let shouldCount = false;
+                    const normalizedUsage = {
+                        inputTokens: normalizeTokenCount(usage.input_tokens),
+                        outputTokens: normalizeTokenCount(usage.output_tokens),
+                        cacheCreationTokens: normalizeTokenCount(usage.cache_creation_input_tokens),
+                        cacheReadTokens: normalizeTokenCount(usage.cache_read_input_tokens),
+                    };
                     if (msgId !== null) {
                         lastUsageKey = undefined;
-                        if (!seenMessageIds.has(msgId)) {
-                            rememberMessageId(seenMessageIds, msgId);
-                            shouldCount = true;
-                        }
+                        accumulateMessageUsage(usageByMessageId, msgId, normalizedUsage, sessionTokens);
                     }
                     else {
                         const usageKey = `${usage.input_tokens}|${usage.output_tokens}|${usage.cache_creation_input_tokens}|${usage.cache_read_input_tokens}`;
-                        shouldCount = usageKey !== lastUsageKey;
+                        const shouldCount = usageKey !== lastUsageKey;
                         lastUsageKey = usageKey;
-                    }
-                    if (shouldCount) {
-                        sessionTokens.inputTokens += normalizeTokenCount(usage.input_tokens);
-                        sessionTokens.outputTokens += normalizeTokenCount(usage.output_tokens);
-                        sessionTokens.cacheCreationTokens += normalizeTokenCount(usage.cache_creation_input_tokens);
-                        sessionTokens.cacheReadTokens += normalizeTokenCount(usage.cache_read_input_tokens);
+                        if (shouldCount) {
+                            sessionTokens.inputTokens += normalizedUsage.inputTokens;
+                            sessionTokens.outputTokens += normalizedUsage.outputTokens;
+                            sessionTokens.cacheCreationTokens += normalizedUsage.cacheCreationTokens;
+                            sessionTokens.cacheReadTokens += normalizedUsage.cacheReadTokens;
+                        }
                     }
                 }
                 else {
@@ -390,7 +413,7 @@ export async function parseTranscript(transcriptPath) {
                         }
                     }
                 }
-                processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result);
+                processEntry(entry, toolMap, skillSet, mcpServerSet, mcpErrorSet, agentMap, taskIdToIndex, latestTodos, result);
             }
             catch (err) {
                 lastUsageKey = undefined;
@@ -420,6 +443,7 @@ export async function parseTranscript(transcriptPath) {
     result.tools = Array.from(toolMap.values()).slice(-20);
     result.skills = Array.from(skillSet.values());
     result.mcpServers = Array.from(mcpServerSet.values());
+    result.mcpErrors = Array.from(mcpErrorSet.values());
     result.agents = Array.from(agentMap.values()).slice(-10);
     result.todos = latestTodos;
     result.sessionName = customTitle ?? latestSlug;
@@ -437,7 +461,7 @@ export async function parseTranscript(transcriptPath) {
 export function _setCreateReadStreamForTests(impl) {
     createReadStreamImpl = impl ?? fs.createReadStream;
 }
-function processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdToIndex, latestTodos, result) {
+function processEntry(entry, toolMap, skillSet, mcpServerSet, mcpErrorSet, agentMap, taskIdToIndex, latestTodos, result) {
     const timestamp = entry.timestamp ? new Date(entry.timestamp) : new Date();
     const hasValidTimestamp = !Number.isNaN(timestamp.getTime());
     if (!result.sessionStart && entry.timestamp && hasValidTimestamp) {
@@ -559,6 +583,22 @@ function processEntry(entry, toolMap, skillSet, mcpServerSet, agentMap, taskIdTo
             if (tool) {
                 tool.status = block.is_error ? 'error' : 'completed';
                 tool.endTime = timestamp;
+                // Track each server's latest observed result. Tool names are untrusted
+                // transcript data, so reuse the bounded terminal-safe extractor.
+                const mcpServerName = extractMcpServerName(tool.name);
+                if (mcpServerName) {
+                    if (block.is_error) {
+                        if (!mcpErrorSet.has(mcpServerName) && mcpErrorSet.size >= MCP_ERROR_SERVERS_MAX) {
+                            const oldest = mcpErrorSet.values().next().value;
+                            if (oldest !== undefined)
+                                mcpErrorSet.delete(oldest);
+                        }
+                        mcpErrorSet.add(mcpServerName);
+                    }
+                    else {
+                        mcpErrorSet.delete(mcpServerName);
+                    }
+                }
             }
             const agent = agentMap.get(block.tool_use_id);
             if (agent) {

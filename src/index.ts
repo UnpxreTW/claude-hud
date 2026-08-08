@@ -12,7 +12,7 @@ import { readAuthInfo } from "./auth.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { getCanonicalLanguage, setLanguage, t } from "./i18n/index.js";
+import { setLanguage, t } from "./i18n/index.js";
 import type { RenderContext } from "./types.js";
 import type { GitStatus } from "./git.js";
 import type { HudConfig } from "./config.js";
@@ -166,6 +166,13 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
               sevenDay: ext.sevenDay,
               sevenDayResetAt: ext.sevenDayResetAt ?? null,
             }),
+            // Likewise, model-scoped windows (e.g. Fable) are absent from stdin
+            // today (see #669); let an external feeder supply them until
+            // Claude Code forwards rate_limits.model_scoped itself. Stdin wins
+            // whenever it does carry scoped windows.
+            ...(usageData.scopedWindows == null && ext.scopedWindows != null && {
+              scopedWindows: ext.scopedWindows,
+            }),
           };
         }
       }
@@ -233,20 +240,11 @@ export function formatSessionDuration(
   const ms = now() - sessionStart.getTime();
   const mins = Math.floor(ms / 60000);
 
-  const hours = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-
-  // Traditional Chinese renders localized units (other languages keep the
-  // original compact English format).
-  if (getCanonicalLanguage() === "zh-Hant") {
-    if (mins < 1) return "< 1 分鐘";
-    if (mins < 60) return `${mins} 分鐘`;
-    return `${hours} 小時 ${remainingMins} 分鐘`;
-  }
-
   if (mins < 1) return "<1m";
   if (mins < 60) return `${mins}m`;
 
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
   return `${hours}h ${remainingMins}m`;
 }
 

@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import { getHudPluginDir } from './claude-config-dir.js';
 import { createDebug } from './debug.js';
 import type { Language } from './i18n/types.js';
+import { MAX_TERMINAL_WIDTH } from './utils/terminal.js';
 
 const debug = createDebug('config');
 
@@ -24,6 +25,8 @@ export type GitBranchOverflowMode = 'truncate' | 'wrap';
 export type ModelFormatMode = 'full' | 'compact' | 'short';
 export type TimeFormatMode = 'relative' | 'absolute' | 'both' | 'elapsed' | 'elapsedAndAbsolute';
 export type CustomLinePosition = 'first' | 'last';
+// Hour cycle for wall-clock time display; 'auto' defers to the system locale.
+export type HourCycleMode = 'auto' | 'h11' | 'h12' | 'h23' | 'h24';
 
 /**
  * Controls how many directory segments of cwd are shown in the project badge.
@@ -218,6 +221,10 @@ export interface HudConfig {
     // occurred this session, counted from transcript compact_boundary entries.
     showCompactions: boolean;
     mergeGroups: HudElement[][];
+    // Elements that are pushed to the right edge of a combined merge-group
+    // line. Only applies when the group actually renders on one line and the
+    // terminal width is known; otherwise the normal separator join is used.
+    rightAlign: HudElement[];
     autocompactBuffer: AutocompactBufferMode;
     contextWarningThreshold: number;
     contextCriticalThreshold: number;
@@ -247,6 +254,8 @@ export interface HudConfig {
     customLine: string;
     customLinePosition: CustomLinePosition;
     timeFormat: TimeFormatMode;
+    hourCycle: HourCycleMode;
+    showClockSeconds: boolean;
     // Show the advisor model when `/advisor` is configured for the session.
     // The model ID is read from the transcript (see TranscriptData.advisorModel)
     // so it reflects the actual current choice, not a global default.
@@ -323,6 +332,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     showLastResponseAt: false,
     showCompactions: false,
     mergeGroups: DEFAULT_MERGE_GROUPS.map(group => [...group]),
+    rightAlign: [],
     autocompactBuffer: 'enabled',
     contextWarningThreshold: 70,
     contextCriticalThreshold: 85,
@@ -340,6 +350,8 @@ export const DEFAULT_CONFIG: HudConfig = {
     customLine: '',
     customLinePosition: 'last',
     timeFormat: 'relative',
+    hourCycle: 'auto',
+    showClockSeconds: false,
     showAdvisor: false,
     advisorOverride: '',
     autoCompactWindow: null,
@@ -408,6 +420,10 @@ function validateTimeFormat(value: unknown): value is TimeFormatMode {
 
 function validateCustomLinePosition(value: unknown): value is CustomLinePosition {
   return value === 'first' || value === 'last';
+}
+
+function validateHourCycle(value: unknown): value is HourCycleMode {
+  return value === 'auto' || value === 'h11' || value === 'h12' || value === 'h23' || value === 'h24';
 }
 
 function validateColorName(value: unknown): value is HudColorName {
@@ -495,6 +511,31 @@ function validateProjectLineOrder(value: unknown): FirstLineSegment[] {
   }
 
   return order;
+}
+
+function validateRightAlign(value: unknown): HudElement[] {
+  if (!Array.isArray(value)) {
+    return [...DEFAULT_CONFIG.display.rightAlign];
+  }
+
+  const seen = new Set<HudElement>();
+  const elements: HudElement[] = [];
+
+  for (const item of value) {
+    if (typeof item !== 'string' || !KNOWN_ELEMENTS.has(item as HudElement)) {
+      continue;
+    }
+
+    const element = item as HudElement;
+    if (seen.has(element)) {
+      continue;
+    }
+
+    seen.add(element);
+    elements.push(element);
+  }
+
+  return elements;
 }
 
 function validateMergeGroups(value: unknown): HudElement[][] {
@@ -645,7 +686,7 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
 
   const rawMaxWidth = (migrated as Record<string, unknown>).maxWidth;
   const maxWidth = (typeof rawMaxWidth === 'number' && Number.isFinite(rawMaxWidth) && rawMaxWidth > 0)
-    ? Math.floor(rawMaxWidth)
+    ? Math.min(Math.floor(rawMaxWidth), MAX_TERMINAL_WIDTH)
     : null;
 
   const elementOrder = validateElementOrder(migrated.elementOrder);
@@ -806,6 +847,7 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       ? migrated.display.showCompactions
       : DEFAULT_CONFIG.display.showCompactions,
     mergeGroups: validateMergeGroups(migrated.display?.mergeGroups),
+    rightAlign: validateRightAlign(migrated.display?.rightAlign),
     autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
       ? migrated.display.autocompactBuffer
       : DEFAULT_CONFIG.display.autocompactBuffer,
@@ -856,6 +898,12 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     timeFormat: validateTimeFormat(migrated.display?.timeFormat)
       ? migrated.display.timeFormat
       : DEFAULT_CONFIG.display.timeFormat,
+    hourCycle: validateHourCycle(migrated.display?.hourCycle)
+      ? migrated.display.hourCycle
+      : DEFAULT_CONFIG.display.hourCycle,
+    showClockSeconds: typeof migrated.display?.showClockSeconds === 'boolean'
+      ? migrated.display.showClockSeconds
+      : DEFAULT_CONFIG.display.showClockSeconds,
     showAdvisor: typeof migrated.display?.showAdvisor === 'boolean'
       ? migrated.display.showAdvisor
       : DEFAULT_CONFIG.display.showAdvisor,

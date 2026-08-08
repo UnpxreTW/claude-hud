@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0-unpxre.1] - 2026-08-08
+
+Unpxre fork release re-synced on top of upstream `0.7.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.7.0` main (configurable wall-clock reset times via `display.hourCycle` and `display.showClockSeconds`, `display.rightAlign` for merged expanded lines, MiniMax and Claude 5 model pricing plus endpoint labels, opt-in surfacing of failing MCP servers on the environment line, external `model_scoped` usage snapshots, per-message session-token accumulation, and Windows Git process-cleanup hardening via the new `git-runner`) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream now ships a native `zh-Hant` locale and `zh-TW` alias; the fork keeps its Taiwan-specific terminology and its `label.duration` key layered on top, and threads the upstream `WallClockOptions` through the separated weekly-usage renderer.
+
 ## [0.6.0-unpxre.1] - 2026-07-21
 
 Unpxre fork release re-synced on top of upstream `0.6.0` main.

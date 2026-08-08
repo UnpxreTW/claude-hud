@@ -1,4 +1,9 @@
-import type { TimeFormatMode } from '../config.js';
+import type { HourCycleMode, TimeFormatMode } from '../config.js';
+/** Options controlling how wall-clock time is rendered. */
+export interface WallClockOptions {
+    hourCycle: HourCycleMode;
+    showSeconds: boolean;
+}
 /**
  * Formats a usage-window reset timestamp for display in the HUD.
  *
@@ -7,8 +12,9 @@ import type { TimeFormatMode } from '../config.js';
  *   - `'relative'` (default) — duration until reset, e.g. `2h 30m`
  *   - `'absolute'`           — wall-clock time,       e.g. `at 14:30` (locale-aware)
  *   - `'both'`               — both combined,          e.g. `2h 30m, at 14:30` (locale-aware)
+ * @param opts    - Wall-clock rendering options (hourCycle, showSeconds); defaults preserve existing behavior.
  * @returns A formatted string, or an empty string when the reset is in the past
  *          or the date is unknown.
  */
-export declare function formatResetTime(resetAt: Date | null, mode?: TimeFormatMode): string;
+export declare function formatResetTime(resetAt: Date | null, mode?: TimeFormatMode, opts?: WallClockOptions): string;
 //# sourceMappingURL=format-reset-time.d.ts.map
