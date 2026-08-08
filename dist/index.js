@@ -12,7 +12,7 @@ import { readAuthInfo } from "./auth.js";
 import { resolveEffortLevel } from "./effort.js";
 import { applyContextWindowFallback } from "./context-cache.js";
 import { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
-import { getCanonicalLanguage, setLanguage, t } from "./i18n/index.js";
+import { setLanguage, t, getCanonicalLanguage } from "./i18n/index.js";
 export { getUsageFromExternalSnapshot, writeExternalUsageSnapshot } from "./external-usage.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
@@ -124,6 +124,13 @@ export async function main(overrides = {}) {
                         ...(usageData.sevenDay == null && ext.sevenDay != null && {
                             sevenDay: ext.sevenDay,
                             sevenDayResetAt: ext.sevenDayResetAt ?? null,
+                        }),
+                        // Likewise, model-scoped windows (e.g. Fable) are absent from stdin
+                        // today (see #669); let an external feeder supply them until
+                        // Claude Code forwards rate_limits.model_scoped itself. Stdin wins
+                        // whenever it does carry scoped windows.
+                        ...(usageData.scopedWindows == null && ext.scopedWindows != null && {
+                            scopedWindows: ext.scopedWindows,
                         }),
                     };
                 }

@@ -1103,7 +1103,8 @@ test('label color overrides apply across shared secondary text surfaces', () => 
   assert.ok(renderUsageLine(ctx)?.includes(`${expected}Usage\x1b[0m`));
   assert.ok(renderUsageLine(ctx, true)?.includes(`${expected}Usage  \x1b[0m`));
   assert.ok(renderUsageLine(ctx, { align: true })?.includes(`${expected}Usage  \x1b[0m`));
-  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md | 1 rules\x1b[0m`));
+  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md\x1b[0m`));
+  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}1 rules\x1b[0m`));
   assert.ok(renderMemoryLine({ ...ctx, config: { ...ctx.config, lineLayout: 'expanded', display: { ...ctx.config.display, showMemoryUsage: true } } })?.includes(`${expected}Approx RAM\x1b[0m`));
   assert.ok(renderToolsLine(ctx)?.includes(`${expected}: src/index.ts\x1b[0m`));
   assert.ok(renderSkillsLine(ctx)?.includes(`${expected}(1)\x1b[0m`));

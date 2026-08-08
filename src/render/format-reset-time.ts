@@ -1,5 +1,13 @@
-import type { TimeFormatMode } from '../config.js';
+import type { HourCycleMode, TimeFormatMode } from '../config.js';
 import { interpolate, t } from '../i18n/index.js';
+
+/** Options controlling how wall-clock time is rendered. */
+export interface WallClockOptions {
+  hourCycle: HourCycleMode;
+  showSeconds: boolean;
+}
+
+const DEFAULT_WALL_CLOCK_OPTIONS: WallClockOptions = { hourCycle: 'auto', showSeconds: false };
 
 /**
  * Formats a usage-window reset timestamp for display in the HUD.
@@ -9,10 +17,15 @@ import { interpolate, t } from '../i18n/index.js';
  *   - `'relative'` (default) — duration until reset, e.g. `2h 30m`
  *   - `'absolute'`           — wall-clock time,       e.g. `at 14:30` (locale-aware)
  *   - `'both'`               — both combined,          e.g. `2h 30m, at 14:30` (locale-aware)
+ * @param opts    - Wall-clock rendering options (hourCycle, showSeconds); defaults preserve existing behavior.
  * @returns A formatted string, or an empty string when the reset is in the past
  *          or the date is unknown.
  */
-export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 'relative'): string {
+export function formatResetTime(
+  resetAt: Date | null,
+  mode: TimeFormatMode = 'relative',
+  opts: WallClockOptions = DEFAULT_WALL_CLOCK_OPTIONS,
+): string {
   if (!resetAt) return '';
 
   const now = new Date();
@@ -23,7 +36,7 @@ export function formatResetTime(resetAt: Date | null, mode: TimeFormatMode = 're
     return formatRelative(diffMs);
   }
 
-  const absolute = formatAbsolute(resetAt, now);
+  const absolute = formatAbsolute(resetAt, now, opts);
 
   if (mode === 'absolute') {
     return absolute;
@@ -53,10 +66,13 @@ function formatRelative(diffMs: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
-function formatAbsolute(resetAt: Date, now: Date): string {
+function formatAbsolute(resetAt: Date, now: Date, opts: WallClockOptions): string {
   // The preposition + spacing live in each locale's "format.absoluteTime"
   // pattern (en: "at {time}", zh: "{time}" — bare, preposition baked elsewhere).
-  const timeStr = resetAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+  if (opts.showSeconds) timeOpts.second = '2-digit';
+  if (opts.hourCycle !== 'auto') timeOpts.hourCycle = opts.hourCycle;
+  const timeStr = resetAt.toLocaleTimeString([], timeOpts);
 
   // Show the date only when the reset falls on a different calendar day
   if (resetAt.toDateString() === now.toDateString()) {

@@ -29,6 +29,10 @@ export function renderUsageLine(ctx, labelOptions = {}) {
         return `${usageLabel} ${balanceLabel}`;
     }
     const timeFormat = normalizeTimeFormat(display?.timeFormat);
+    const wallClockOpts = {
+        hourCycle: display?.hourCycle ?? 'auto',
+        showSeconds: display?.showClockSeconds ?? false,
+    };
     const showResetLabel = display?.showResetLabel ?? true;
     const usageCompact = display?.usageCompact ?? false;
     const usageValueMode = display?.usageValue ?? 'percent';
@@ -36,7 +40,7 @@ export function renderUsageLine(ctx, labelOptions = {}) {
     const scopedSuffix = scopedWindows.length
         ? ' | ' + scopedWindows
             .map((w) => usageCompact
-            ? formatCompactWindowPart(w.label, w.percent, w.resetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode)
+            ? formatCompactWindowPart(w.label, w.percent, w.resetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode, wallClockOpts)
             : formatUsageWindowPart({
                 label: w.label,
                 percent: w.percent,
@@ -50,6 +54,7 @@ export function renderUsageLine(ctx, labelOptions = {}) {
                 forceLabel: true,
                 labelOptions,
                 usageValueMode,
+                wallClockOpts,
             }))
             .join(' | ')
         : '';
@@ -65,7 +70,7 @@ export function renderUsageLine(ctx, labelOptions = {}) {
     }
     if (usageCompact) {
         const fiveHourPart = fiveHour !== null
-            ? formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode)
+            ? formatCompactWindowPart("5h", fiveHour, ctx.usageData.fiveHourResetAt, FIVE_HOUR_WINDOW_MS, timeFormat, colors, usageValueMode, wallClockOpts)
             : null;
         if (fiveHourPart) {
             return appendBalance(`${fiveHourPart}${scopedSuffix}`, balanceLabel);
@@ -93,6 +98,7 @@ export function renderUsageLine(ctx, labelOptions = {}) {
         timeFormat,
         showResetLabel,
         usageValueMode,
+        wallClockOpts,
     });
     return appendBalance(`${usageLabel} ${fiveHourPart}${scopedSuffix}`, balanceLabel);
 }
@@ -113,12 +119,16 @@ export function renderWeeklyUsageLine(ctx, labelOptions = {}) {
         return null;
     }
     const timeFormat = normalizeTimeFormat(display?.timeFormat);
+    const wallClockOpts = {
+        hourCycle: display?.hourCycle ?? 'auto',
+        showSeconds: display?.showClockSeconds ?? false,
+    };
     const showResetLabel = display?.showResetLabel ?? true;
     const usageCompact = display?.usageCompact ?? false;
     const usageValueMode = display?.usageValue ?? 'percent';
     // Always visible: the sevenDayThreshold gate is intentionally not applied.
     if (usageCompact) {
-        return formatCompactWindowPart("7d", sevenDay, ctx.usageData.sevenDayResetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode);
+        return formatCompactWindowPart("7d", sevenDay, ctx.usageData.sevenDayResetAt, SEVEN_DAY_WINDOW_MS, timeFormat, colors, usageValueMode, wallClockOpts);
     }
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const barWidth = getAdaptiveBarWidth();
@@ -136,14 +146,15 @@ export function renderWeeklyUsageLine(ctx, labelOptions = {}) {
         forceLabel: true,
         labelOptions,
         usageValueMode,
+        wallClockOpts,
     });
 }
 function appendBalance(line, balanceLabel) {
     return balanceLabel ? `${line} | ${balanceLabel}` : line;
 }
-function formatCompactWindowPart(windowLabel, percent, resetAt, windowMs, timeFormat, colors, usageValueMode = 'percent') {
+function formatCompactWindowPart(windowLabel, percent, resetAt, windowMs, timeFormat, colors, usageValueMode = 'percent', wallClockOpts) {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
-    const reset = formatWindowTime(resetAt, windowMs, timeFormat);
+    const reset = formatWindowTime(resetAt, windowMs, timeFormat, wallClockOpts);
     const styledLabel = label(`${windowLabel}:`, colors);
     return reset
         ? `${styledLabel} ${usageDisplay} ${label(`│ ${reset}`, colors)}`
@@ -157,9 +168,9 @@ function formatUsagePercent(percent, colors, mode = 'percent') {
     const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
     return `${color}${formatPercent(displayPercent)}${RESET}`;
 }
-function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, windowMs, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, labelOptions = {}, usageValueMode = 'percent', }) {
+function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, windowMs, colors, usageBarEnabled, barWidth, timeFormat = 'relative', showResetLabel, forceLabel = false, labelOptions = {}, usageValueMode = 'percent', wallClockOpts, }) {
     const usageDisplay = formatUsagePercent(percent, colors, usageValueMode);
-    const reset = formatWindowTime(resetAt, windowMs, timeFormat);
+    const reset = formatWindowTime(resetAt, windowMs, timeFormat, wallClockOpts);
     const styledLabel = labelKey
         ? progressLabel(labelKey, colors, labelOptions)
         : label(windowLabel, colors);
@@ -185,19 +196,19 @@ function normalizeTimeFormat(value) {
     }
     return 'relative';
 }
-function formatWindowTime(resetAt, windowMs, timeFormat) {
+function formatWindowTime(resetAt, windowMs, timeFormat, wallClockOpts) {
     if (timeFormat === 'elapsed') {
         return formatElapsedWindow(resetAt, windowMs);
     }
     if (timeFormat === 'elapsedAndAbsolute') {
         const elapsed = formatElapsedWindow(resetAt, windowMs);
-        const absolute = formatResetTime(resetAt, 'absolute');
+        const absolute = formatResetTime(resetAt, 'absolute', wallClockOpts);
         if (elapsed && absolute) {
             return `${elapsed}, ${absolute}`;
         }
         return elapsed || absolute;
     }
-    return formatResetTime(resetAt, timeFormat);
+    return formatResetTime(resetAt, timeFormat, wallClockOpts);
 }
 function formatElapsedWindow(resetAt, windowMs) {
     if (!resetAt) {
