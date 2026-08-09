@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0-unpxre.2] - 2026-08-09
+
+Unpxre fork release re-synced on top of the latest upstream `0.7.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.7.0` main (post-release Windows Git test/CI hardening — cross-platform Git fixtures, orphaned-process cleanup validation, and surfaced Windows test failures — plus the fix that applies wall-clock clock settings to compact usage windows) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The wall-clock compact-window settings now thread through both the five-hour usage element and the fork's separated weekly-usage renderer.
+
 ## [0.7.0-unpxre.1] - 2026-08-08
 
 Unpxre fork release re-synced on top of upstream `0.7.0` main.

@@ -146,6 +146,31 @@ test('renderUsageLine compact mode shows only 5h; weekly is a separate element',
   assert.ok(weekly.includes('7d:'));
 });
 
+test('wall-clock options apply to compact windows across the split usage/weekly elements', () => {
+  const ctx = baseContext();
+  const resetAt = new Date();
+  resetAt.setDate(resetAt.getDate() + 1);
+  resetAt.setHours(19, 23, 45, 0);
+  ctx.config.display.usageCompact = true;
+  ctx.config.display.timeFormat = 'absolute';
+  ctx.config.display.hourCycle = 'h23';
+  ctx.config.display.showClockSeconds = true;
+  ctx.usageData.fiveHour = 60;
+  ctx.usageData.sevenDay = 85;
+  ctx.usageData.fiveHourResetAt = resetAt;
+  ctx.usageData.sevenDayResetAt = resetAt;
+
+  // Fork override: the five-hour window lives on the usage element, the weekly
+  // window on its own weeklyUsage element — but both honor the wall-clock options.
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+  assert.match(line, /5h:.*19:23:45/);
+  assert.doesNotMatch(line, /AM|PM/i);
+
+  const weekly = stripAnsi(renderWeeklyUsageLine(ctx) ?? '');
+  assert.match(weekly, /7d:.*19:23:45/);
+  assert.doesNotMatch(weekly, /AM|PM/i);
+});
+
 test('renderUsageLine compact mode returns null when no window data qualifies', () => {
   const ctx = baseContext();
   ctx.config.display.usageCompact = true;
