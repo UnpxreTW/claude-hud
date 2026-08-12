@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.1-unpxre.1] - 2026-08-12
+
+Unpxre fork release re-synced on top of upstream `0.7.1` main.
+
+### Changed
+- Re-synced the latest upstream `0.7.1` main (expire completed agent entries on the next HUD refresh after one minute so stale completions no longer displace running agents, and sanitize, validate, and bound untrusted agent labels before terminal output — #704) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
+
 ## [0.7.0-unpxre.2] - 2026-08-09
 
 Unpxre fork release re-synced on top of the latest upstream `0.7.0` main.
