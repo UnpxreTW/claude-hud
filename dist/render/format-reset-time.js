@@ -22,7 +22,7 @@ export function formatResetTime(resetAt, mode = 'relative', opts = DEFAULT_WALL_
     if (mode === 'relative') {
         return formatRelative(diffMs);
     }
-    const absolute = formatAbsolute(resetAt, now, opts);
+    const absolute = formatAbsoluteTime(resetAt, now, opts);
     if (mode === 'absolute') {
         return absolute;
     }
@@ -44,7 +44,15 @@ function formatRelative(diffMs) {
     }
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
-function formatAbsolute(resetAt, now, opts) {
+/**
+ * Renders a timestamp as wall-clock time, e.g. `at 14:30`, adding a date
+ * component when it falls on a different calendar day than `now`.
+ *
+ * @param at   - The timestamp to render.
+ * @param now  - Reference for the same-day check.
+ * @param opts - Wall-clock rendering options (hourCycle, showSeconds).
+ */
+export function formatAbsoluteTime(resetAt, now, opts = DEFAULT_WALL_CLOCK_OPTIONS) {
     // The preposition + spacing live in each locale's "format.absoluteTime"
     // pattern (en: "at {time}", zh: "{time}" — bare, preposition baked elsewhere).
     const timeOpts = { hour: '2-digit', minute: '2-digit' };

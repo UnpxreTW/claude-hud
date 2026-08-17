@@ -17,4 +17,13 @@ export interface WallClockOptions {
  *          or the date is unknown.
  */
 export declare function formatResetTime(resetAt: Date | null, mode?: TimeFormatMode, opts?: WallClockOptions): string;
+/**
+ * Renders a timestamp as wall-clock time, e.g. `at 14:30`, adding a date
+ * component when it falls on a different calendar day than `now`.
+ *
+ * @param at   - The timestamp to render.
+ * @param now  - Reference for the same-day check.
+ * @param opts - Wall-clock rendering options (hourCycle, showSeconds).
+ */
+export declare function formatAbsoluteTime(resetAt: Date, now: Date, opts?: WallClockOptions): string;
 //# sourceMappingURL=format-reset-time.d.ts.map
