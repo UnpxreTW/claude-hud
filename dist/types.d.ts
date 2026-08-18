@@ -148,6 +148,8 @@ export interface TranscriptData {
     sessionStart?: Date;
     sessionName?: string;
     lastAssistantResponseAt?: Date;
+    promptCacheAnchorAt?: Date;
+    promptCacheTtlSeconds?: number;
     sessionTokens?: SessionTokenUsage;
     lastCompactBoundaryAt?: Date;
     lastCompactPostTokens?: number;

@@ -34,6 +34,15 @@ function stripAnsi(str) {
     .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '');
 }
 
+/**
+ * The prompt cache value for an anchor and TTL, derived rather than hardcoded so
+ * the assertion holds in any timezone or locale.
+ */
+function expectedCacheExpiry(anchorAt, ttlSeconds) {
+  const expiresAt = new Date(anchorAt.getTime() + ttlSeconds * 1000);
+  return `Cache ⏱ at ${expiresAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+}
+
 function baseContext() {
   return {
     stdin: {
@@ -476,10 +485,11 @@ test('render expanded layout includes prompt cache as its own opt-in element', (
   const ctx = baseContext();
   ctx.config.lineLayout = 'expanded';
   ctx.config.display.showPromptCache = true;
-  ctx.transcript.lastAssistantResponseAt = new Date(Date.now() - 45_000);
+  ctx.transcript.promptCacheAnchorAt = new Date(Date.now() - 45_000);
 
+  const expected = expectedCacheExpiry(ctx.transcript.promptCacheAnchorAt, 300);
   const lines = captureRenderLines(ctx);
-  assert.ok(lines.some(line => line.includes('Cache ⏱ 4m 15s')), `should render prompt cache line, got: ${lines.join(' | ')}`);
+  assert.ok(lines.some(line => line.includes(expected)), `should render prompt cache line, got: ${lines.join(' | ')}`);
 });
 
 test('renderSessionLine omits project name when cwd is undefined', () => {
@@ -515,13 +525,14 @@ test('renderPromptCacheLine returns null when disabled or missing transcript dat
   assert.equal(renderPromptCacheLine(ctx), null);
 });
 
-test('renderSessionLine includes prompt cache countdown when enabled', () => {
+test('renderSessionLine includes the prompt cache expiry when enabled', () => {
   const ctx = baseContext();
   ctx.config.display.showPromptCache = true;
-  ctx.transcript.lastAssistantResponseAt = new Date(Date.now() - 30_000);
+  ctx.transcript.promptCacheAnchorAt = new Date(Date.now() - 30_000);
 
+  const expected = expectedCacheExpiry(ctx.transcript.promptCacheAnchorAt, 300);
   const line = stripAnsi(renderSessionLine(ctx));
-  assert.ok(line.includes('Cache ⏱ 4m 30s'), `should include prompt cache countdown, got: ${line}`);
+  assert.ok(line.includes(expected), `should include prompt cache expiry, got: ${line}`);
 });
 
 test('renderSessionLine hides session name by default', () => {
