@@ -1,12 +1,16 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getClaudeConfigDir, getHudPluginDir } from './claude-config-dir.js';
 import { createDebug } from './debug.js';
 import type { Language } from './i18n/types.js';
 import { MAX_TERMINAL_WIDTH } from './utils/terminal.js';
+import { sanitizeDisplayText } from './utils/sanitize.js';
 
 const debug = createDebug('config');
+const MAX_CONFIG_FILE_BYTES = 64 * 1024;
+const MAX_CONFIG_NESTING_DEPTH = 8;
+const UNSAFE_CONFIG_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 export type LineLayoutType = 'compact' | 'expanded';
 
@@ -394,6 +398,20 @@ export function getConfigPath(): string {
   return path.join(getHudPluginDir(homeDir), 'config.json');
 }
 
+/**
+ * Optional per-config-directory overrides, layered on top of the main config.
+ *
+ * Users who run several Claude config directories side by side (via
+ * CLAUDE_CONFIG_DIR) commonly symlink `plugins/` to one shared location, which
+ * makes `plugins/claude-hud/config.json` the very same physical file for every
+ * directory. This file lives outside `plugins/`, so it stays per-directory and
+ * can override any part of the shared config.
+ */
+export function getConfigOverridePath(): string {
+  const homeDir = os.homedir();
+  return path.join(getClaudeConfigDir(homeDir), 'claude-hud.json');
+}
+
 function validatePathLevels(value: unknown): value is PathLevels {
   return value === 1 || value === 2 || value === 3 || value === 'full';
 }
@@ -679,6 +697,12 @@ function validateOptionalPath(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function validateDisplayText(value: unknown, maxLength: number, fallback: string): string {
+  return typeof value === 'string'
+    ? sanitizeDisplayText(value).slice(0, maxLength)
+    : fallback;
+}
+
 function validateFreshnessMs(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return DEFAULT_CONFIG.display.externalUsageFreshnessMs;
@@ -900,21 +924,27 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     modelFormat: validateModelFormat(migrated.display?.modelFormat)
       ? migrated.display.modelFormat
       : DEFAULT_CONFIG.display.modelFormat,
-    modelOverride: typeof migrated.display?.modelOverride === 'string'
-      ? migrated.display.modelOverride.slice(0, 80)
-      : DEFAULT_CONFIG.display.modelOverride,
+    modelOverride: validateDisplayText(
+      migrated.display?.modelOverride,
+      80,
+      DEFAULT_CONFIG.display.modelOverride,
+    ),
     modelSource: ['auto', 'stdin', 'transcript'].includes(migrated.display?.modelSource as string)
       ? (migrated.display!.modelSource as 'auto' | 'stdin' | 'transcript')
       : DEFAULT_CONFIG.display.modelSource,
     showProvider: typeof migrated.display?.showProvider === 'boolean'
       ? migrated.display.showProvider
       : DEFAULT_CONFIG.display.showProvider,
-    providerName: typeof migrated.display?.providerName === 'string'
-      ? migrated.display.providerName.slice(0, 40)
-      : DEFAULT_CONFIG.display.providerName,
-    customLine: typeof migrated.display?.customLine === 'string'
-      ? migrated.display.customLine.slice(0, 80)
-      : DEFAULT_CONFIG.display.customLine,
+    providerName: validateDisplayText(
+      migrated.display?.providerName,
+      40,
+      DEFAULT_CONFIG.display.providerName,
+    ),
+    customLine: validateDisplayText(
+      migrated.display?.customLine,
+      80,
+      DEFAULT_CONFIG.display.customLine,
+    ),
     customLinePosition: validateCustomLinePosition(migrated.display?.customLinePosition)
       ? migrated.display.customLinePosition
       : DEFAULT_CONFIG.display.customLinePosition,
@@ -930,9 +960,11 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     showAdvisor: typeof migrated.display?.showAdvisor === 'boolean'
       ? migrated.display.showAdvisor
       : DEFAULT_CONFIG.display.showAdvisor,
-    advisorOverride: typeof migrated.display?.advisorOverride === 'string'
-      ? migrated.display.advisorOverride.slice(0, 80)
-      : DEFAULT_CONFIG.display.advisorOverride,
+    advisorOverride: validateDisplayText(
+      migrated.display?.advisorOverride,
+      80,
+      DEFAULT_CONFIG.display.advisorOverride,
+    ),
     autoCompactWindow: validateAutoCompactWindow(migrated.display?.autoCompactWindow),
   };
 
@@ -981,19 +1013,78 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
   return { language, lineLayout, showSeparators, pathLevels, maxWidth, forceMaxWidth, elementOrder, projectLineOrder, gitStatus, jjStatus, display, colors };
 }
 
-export async function loadConfig(): Promise<HudConfig> {
-  const configPath = getConfigPath();
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
+function hasSafeConfigShape(value: unknown, depth = 0): boolean {
+  if (depth > MAX_CONFIG_NESTING_DEPTH) {
+    return false;
+  }
+  if (Array.isArray(value)) {
+    return value.every(item => hasSafeConfigShape(item, depth + 1));
+  }
+  if (!isPlainObject(value)) {
+    return true;
+  }
+  return Object.entries(value).every(([key, child]) => (
+    !UNSAFE_CONFIG_KEYS.has(key) && hasSafeConfigShape(child, depth + 1)
+  ));
+}
+
+/**
+ * Layer `override` on top of `base`. Nested config sections (display, colors,
+ * gitStatus, …) merge key by key so an override only has to name what it
+ * changes; arrays and scalars replace the base value wholesale.
+ */
+function mergeOverrides(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = Object.assign(Object.create(null), base) as Record<string, unknown>;
+
+  for (const [key, value] of Object.entries(override)) {
+    const current = result[key];
+    result[key] = isPlainObject(current) && isPlainObject(value)
+      ? mergeOverrides(current, value)
+      : value;
+  }
+
+  return result;
+}
+
+function readConfigFile(configPath: string): Record<string, unknown> | null {
   try {
-    if (!fs.existsSync(configPath)) {
-      return mergeConfig({});
+    const stat = fs.lstatSync(configPath);
+    if (stat.isSymbolicLink() || !stat.isFile()) {
+      debug('Ignoring %s: expected a regular, non-symlink file', configPath);
+      return null;
+    }
+    if (stat.size > MAX_CONFIG_FILE_BYTES) {
+      debug('Ignoring %s: file exceeds %d bytes', configPath, MAX_CONFIG_FILE_BYTES);
+      return null;
     }
 
     const content = fs.readFileSync(configPath, 'utf-8');
-    const userConfig = JSON.parse(content) as Partial<HudConfig>;
-    return mergeConfig(userConfig);
+    const parsed: unknown = JSON.parse(content);
+    if (!isPlainObject(parsed) || !hasSafeConfigShape(parsed)) {
+      debug('Ignoring %s: expected a bounded JSON object without unsafe keys', configPath);
+      return null;
+    }
+    return parsed;
   } catch (err) {
-    debug('Failed to load config from %s, using defaults:', configPath, err instanceof Error ? err.message : err);
-    return mergeConfig({});
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
+    debug('Failed to load config from %s, ignoring it:', configPath, err instanceof Error ? err.message : err);
+    return null;
   }
+}
+
+export async function loadConfig(): Promise<HudConfig> {
+  const base = readConfigFile(getConfigPath()) ?? {};
+  const override = readConfigFile(getConfigOverridePath());
+  const userConfig = override ? mergeOverrides(base, override) : base;
+
+  return mergeConfig(userConfig as Partial<HudConfig>);
 }
