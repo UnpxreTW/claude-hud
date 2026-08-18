@@ -166,6 +166,16 @@ export interface HudConfig {
 }
 export declare const DEFAULT_CONFIG: HudConfig;
 export declare function getConfigPath(): string;
+/**
+ * Optional per-config-directory overrides, layered on top of the main config.
+ *
+ * Users who run several Claude config directories side by side (via
+ * CLAUDE_CONFIG_DIR) commonly symlink `plugins/` to one shared location, which
+ * makes `plugins/claude-hud/config.json` the very same physical file for every
+ * directory. This file lives outside `plugins/`, so it stays per-directory and
+ * can override any part of the shared config.
+ */
+export declare function getConfigOverridePath(): string;
 export declare function mergeConfig(userConfig: Partial<HudConfig>): HudConfig;
 export declare function loadConfig(): Promise<HudConfig>;
 //# sourceMappingURL=config.d.ts.map
