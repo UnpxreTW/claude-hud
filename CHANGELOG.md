@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.2-unpxre.1] - 2026-08-18
+
+Unpxre fork release re-synced on top of upstream `0.7.2` main.
+
+### Changed
+- Re-synced the latest upstream `0.7.2` main (anchor prompt-cache expiry to the main-session request, ignore subagent cache writes, and detect 5-minute or 1-hour cache tiers while preserving the configured fallback — #702; bound transcript request identifiers before grouping prompt-cache writes — #702; and bump the development-only `@types/node` from 26.1.2 to 26.2.0 — #711) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream `0.7.2` now also ships the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
+
 ## [0.7.1-unpxre.1] - 2026-08-12
 
 Unpxre fork release re-synced on top of upstream `0.7.1` main.
