@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0-unpxre.1] - 2026-08-19
+
+Unpxre fork release re-synced on top of upstream `0.8.0` main.
+
+### Changed
+- Re-synced the latest upstream `0.8.0` main (load optional per-config-directory overrides from `$CLAUDE_CONFIG_DIR/claude-hud.json` while preserving shared plugin settings — #714; add the `display.effortFormat` option to render the effort indicator as symbol only or level text only — #691; and bound config file size and nesting, reject symlinked or prototype-sensitive config input, and sanitize terminal-bound config labels — #714) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream `0.8.0` still ships the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
+
 ## [0.7.2-unpxre.1] - 2026-08-18
 
 Unpxre fork release re-synced on top of upstream `0.7.2` main.
