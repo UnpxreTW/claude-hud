@@ -115,6 +115,7 @@ export interface HudConfig {
         usageBarEnabled: boolean;
         showResetLabel: boolean;
         usageCompact: boolean;
+        showModelScopedUsage: boolean;
         showTools: boolean;
         showSkills: boolean;
         showMcp: boolean;

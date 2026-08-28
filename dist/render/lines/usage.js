@@ -21,7 +21,9 @@ export function renderUsageLine(ctx, labelOptions = {}) {
     }
     const usageLabel = progressLabel("label.usage", colors, labelOptions);
     const balanceLabel = ctx.usageData.balanceLabel ?? null;
-    const scopedWindows = ctx.usageData.scopedWindows ?? [];
+    const scopedWindows = display?.showModelScopedUsage === false
+        ? []
+        : ctx.usageData.scopedWindows ?? [];
     const hasWindowData = ctx.usageData.fiveHour !== null
         || ctx.usageData.sevenDay !== null
         || scopedWindows.length > 0;
