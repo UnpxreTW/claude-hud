@@ -107,6 +107,7 @@ export interface HudConfig {
         showConfigCounts: boolean;
         showCost: boolean;
         showRoutedCost: boolean;
+        showDailyCost: boolean;
         showDuration: boolean;
         showSpeed: boolean;
         showTokenBreakdown: boolean;
