@@ -23,6 +23,7 @@ export const zhHant = {
     "format.resets": "重置於",
     "format.resetsIn": "重置剩餘",
     "format.absoluteTime": "{time}",
+    "format.untilTime": "至 {time}",
     "format.in": "輸入",
     "format.cache": "快取",
     "format.out": "輸出",

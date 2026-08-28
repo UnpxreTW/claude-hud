@@ -45,7 +45,7 @@ export async function getGitStatus(cwd) {
         // Get per-file and total line diffs
         if (isDirty) {
             try {
-                const { stdout: numstatOut } = await runner.run(['-c', 'core.quotePath=false', 'diff', '--numstat', 'HEAD'], 2000);
+                const { stdout: numstatOut } = await runner.run(['-c', 'core.quotePath=false', '--no-optional-locks', 'diff', '--numstat', 'HEAD'], 2000);
                 const trackedPaths = new Set(fileStats?.trackedFiles.map((file) => file.fullPath) ?? []);
                 const { totalDiff, perFileDiff } = parseNumstat(numstatOut, trackedPaths);
                 lineDiff = totalDiff;

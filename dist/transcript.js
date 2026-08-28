@@ -9,7 +9,7 @@ import { sanitizeDisplayText } from './utils/sanitize.js';
 import { sanitizeTranscriptModel } from './model-source.js';
 import { isDetectedPromptCacheTtl, PROMPT_CACHE_TTL_1H_SECONDS, PROMPT_CACHE_TTL_5M_SECONDS, } from './constants.js';
 const debug = createDebug('transcript');
-const TRANSCRIPT_CACHE_VERSION = 17;
+const TRANSCRIPT_CACHE_VERSION = 18;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
 const MESSAGE_ID_MAX_LEN = 128;
@@ -749,6 +749,10 @@ function processEntry(entry, toolMap, skillSet, mcpServerSet, mcpErrorSet, agent
                 const resolvedModel = sanitizeTranscriptModel(entry.toolUseResult?.resolvedModel);
                 if (resolvedModel) {
                     agent.model = resolvedModel;
+                }
+                if (entry.toolUseResult?.isAsync === true
+                    || entry.toolUseResult?.status === 'async_launched') {
+                    agent.background = true;
                 }
                 if (!agent.background) {
                     agent.endTime = timestamp;
