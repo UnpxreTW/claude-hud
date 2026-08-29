@@ -774,7 +774,6 @@ test("formatSessionDuration keeps English format for zh-Hans", () => {
     setLanguage("en");
   }
 });
-
 test("main reads auth info only when an auth segment is enabled", async () => {
   let renderedContext;
   let lookupCalls = 0;

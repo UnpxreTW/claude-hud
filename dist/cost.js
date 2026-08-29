@@ -99,7 +99,7 @@ export function estimateSessionCost(stdin, sessionTokens, options) {
         outputUsd,
     };
 }
-function getNativeCostUsd(stdin, options) {
+export function getNativeCostUsd(stdin, options) {
     const nativeCost = stdin.cost?.total_cost_usd;
     if (typeof nativeCost !== 'number' || !Number.isFinite(nativeCost)) {
         return null;

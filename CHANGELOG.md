@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0-unpxre.2] - 2026-08-29
+
+Unpxre fork release re-synced on top of upstream `0.8.0` main (post-release fixes).
+
+### Changed
+- Re-synced the latest upstream `0.8.0` main (add the opt-in `display.showDailyCost` option showing today's cumulative spend across sessions as `Today $12.34` — #736; add the `display.showModelScopedUsage` toggle to hide model-scoped weekly windows — #728; refresh the prompt-cache clock when a request starts and render its value as `until <time>` — #721/#727; treat async-launched Agent results as background so the agents line stays up until the task-notification — #737; pass `--no-optional-locks` on `git diff --numstat` so a timed-out poll cannot leave `.git/index.lock` behind — #737; and close a TOCTOU between config validation and read via a single `O_NOFOLLOW` file descriptor — #732) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The new `showModelScopedUsage` gate is threaded through both the fork's five-hour usage element and the compact session line.
+
 ## [0.8.0-unpxre.1] - 2026-08-19
 
 Unpxre fork release re-synced on top of upstream `0.8.0` main.
