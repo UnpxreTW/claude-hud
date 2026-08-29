@@ -21,7 +21,9 @@ export function renderUsageLine(ctx, labelOptions = {}) {
     }
     const usageLabel = progressLabel("label.usage", colors, labelOptions);
     const balanceLabel = ctx.usageData.balanceLabel ?? null;
-    const scopedWindows = ctx.usageData.scopedWindows ?? [];
+    const scopedWindows = display?.showModelScopedUsage === false
+        ? []
+        : ctx.usageData.scopedWindows ?? [];
     // Weekly (sevenDay) is rendered by the separate weeklyUsage element; the usage
     // element covers the five-hour window plus any model-scoped weekly windows.
     const hasWindowData = ctx.usageData.fiveHour !== null || scopedWindows.length > 0;

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { getUsageFromStdin } from '../dist/stdin.js';
-import { renderUsageLine } from '../dist/render/lines/usage.js';
+import { renderUsageLine, renderWeeklyUsageLine } from '../dist/render/lines/usage.js';
 import { renderSessionLine } from '../dist/render/session-line.js';
 
 // Model-scoped weekly windows (rate_limits.model_scoped) — additive stdin field.
@@ -225,4 +225,84 @@ test('a maxed-out window renders a full bar (no limit warning) and retains bound
   assert.doesNotMatch(expanded, /Limit/);
   assert.match(compactLayout, /100 %.*Fable\s+38 %/);
   assert.doesNotMatch(compactLayout, /Limit/);
+});
+
+// display.showModelScopedUsage — render-time gate for model_scoped windows.
+
+test('renderUsageLine keeps scoped windows alongside 5h by default (weekly is a separate element)', () => {
+  const ctx = renderContext(scopedUsage({ fiveHour: 25, sevenDay: 85 }));
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+
+  // Fork override: padded percentages, and weekly renders through its own element.
+  assert.match(line, /5h\s+25 %/);
+  assert.match(line, /Fable\s+38 %/);
+  assert.match(stripAnsi(renderWeeklyUsageLine(ctx) ?? ''), /Weekly\s+85 %/);
+});
+
+test('renderUsageLine hides scoped windows when showModelScopedUsage is false', () => {
+  const ctx = renderContext(scopedUsage({ fiveHour: 25, sevenDay: 85 }), { showModelScopedUsage: false });
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+
+  assert.match(line, /5h\s+25 %/);
+  assert.doesNotMatch(line, /Fable/);
+});
+
+test('renderUsageLine drops the usage line when only hidden scoped windows exist', () => {
+  const ctx = renderContext(scopedUsage(), { showModelScopedUsage: false });
+
+  assert.equal(renderUsageLine(ctx), null);
+});
+
+test('renderUsageLine keeps the balance when scoped windows are hidden', () => {
+  const ctx = renderContext(scopedUsage({ balanceLabel: '$12 left' }), { showModelScopedUsage: false });
+  const line = stripAnsi(renderUsageLine(ctx) ?? '');
+
+  assert.match(line, /Usage\s+\$12 left/);
+  assert.doesNotMatch(line, /Fable/);
+});
+
+test('renderSessionLine hides scoped windows when showModelScopedUsage is false', () => {
+  const ctx = renderContext(scopedUsage({ fiveHour: 25 }), { showModelScopedUsage: false });
+  const line = stripAnsi(renderSessionLine(ctx));
+
+  assert.match(line, /5h\s+25 %/);
+  assert.doesNotMatch(line, /Fable/);
+});
+
+test('renderSessionLine drops the usage segment when only hidden scoped windows exist', () => {
+  const ctx = renderContext(scopedUsage(), { showModelScopedUsage: false });
+  const line = stripAnsi(renderSessionLine(ctx));
+
+  assert.doesNotMatch(line, /Fable/);
+  assert.doesNotMatch(line, /Usage/);
+  assert.doesNotMatch(line, /5h/);
+});
+
+test('showModelScopedUsage=false stays inert when model_scoped is present but empty', () => {
+  // An explicit empty model_scoped array has nothing to hide, so the flag must
+  // not change either layout: hiding "no windows" is not the same as hiding
+  // windows, and the two must not diverge.
+  const empty = scopedUsage({ scopedWindows: [] });
+  const shown = renderContext(empty);
+  const hidden = renderContext(empty, { showModelScopedUsage: false });
+
+  assert.equal(renderUsageLine(hidden), renderUsageLine(shown));
+  assert.equal(renderSessionLine(hidden), renderSessionLine(shown));
+});
+
+test('hidden scoped windows no longer lift the usage line over usageThreshold', () => {
+  // The gate runs before effectiveUsage is computed, so a hidden window stops
+  // holding the line open: with only the scoped window above the threshold,
+  // the whole usage group goes away, 5h included, exactly as it would for a
+  // payload that never carried scoped windows.
+  const usage = scopedUsage({
+    fiveHour: 42,
+    scopedWindows: [{ label: 'Fable', percent: 100, resetAt: null }],
+  });
+  const shown = renderContext(usage, { usageThreshold: 80 });
+  const hidden = renderContext(usage, { usageThreshold: 80, showModelScopedUsage: false });
+
+  assert.match(stripAnsi(renderUsageLine(shown) ?? ''), /5h\s+42 %/);
+  assert.equal(renderUsageLine(hidden), null);
+  assert.doesNotMatch(stripAnsi(renderSessionLine(hidden)), /5h|Fable/);
 });

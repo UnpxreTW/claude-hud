@@ -1,4 +1,5 @@
 import type { HourCycleMode, TimeFormatMode } from '../config.js';
+import type { MessageKey } from '../i18n/types.js';
 /** Options controlling how wall-clock time is rendered. */
 export interface WallClockOptions {
     hourCycle: HourCycleMode;
@@ -25,5 +26,5 @@ export declare function formatResetTime(resetAt: Date | null, mode?: TimeFormatM
  * @param now  - Reference for the same-day check.
  * @param opts - Wall-clock rendering options (hourCycle, showSeconds).
  */
-export declare function formatAbsoluteTime(resetAt: Date, now: Date, opts?: WallClockOptions): string;
+export declare function formatAbsoluteTime(resetAt: Date, now: Date, opts?: WallClockOptions, pattern?: MessageKey): string;
 //# sourceMappingURL=format-reset-time.d.ts.map

@@ -14,6 +14,9 @@ export declare function estimateSessionCost(stdin: StdinData, sessionTokens: Ses
     allowRoutedCost?: boolean;
     now?: Date;
 }): SessionCostEstimate | null;
+export declare function getNativeCostUsd(stdin: StdinData, options?: {
+    allowRoutedCost?: boolean;
+}): number | null;
 export declare function resolveSessionCost(stdin: StdinData, sessionTokens: SessionTokenUsage | undefined, options?: {
     allowRoutedCost?: boolean;
 }): SessionCostDisplay | null;

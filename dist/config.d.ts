@@ -107,6 +107,7 @@ export interface HudConfig {
         showConfigCounts: boolean;
         showCost: boolean;
         showRoutedCost: boolean;
+        showDailyCost: boolean;
         showDuration: boolean;
         showSpeed: boolean;
         showTokenBreakdown: boolean;
@@ -115,6 +116,7 @@ export interface HudConfig {
         usageBarEnabled: boolean;
         showResetLabel: boolean;
         usageCompact: boolean;
+        showModelScopedUsage: boolean;
         showTools: boolean;
         showSkills: boolean;
         showMcp: boolean;

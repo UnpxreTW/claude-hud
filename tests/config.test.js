@@ -205,6 +205,23 @@ test('mergeConfig preserves explicit showCost=true', () => {
   assert.equal(config.display.showCost, true);
 });
 
+test('mergeConfig defaults showDailyCost to false', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showDailyCost, false);
+  assert.equal(DEFAULT_CONFIG.display.showDailyCost, false);
+});
+
+test('mergeConfig preserves explicit showDailyCost=true', () => {
+  const config = mergeConfig({ display: { showDailyCost: true } });
+  assert.equal(config.display.showDailyCost, true);
+});
+
+test('mergeConfig falls back to false for non-boolean showDailyCost', () => {
+  assert.equal(mergeConfig({ display: { showDailyCost: 'yes' } }).display.showDailyCost, false);
+  assert.equal(mergeConfig({ display: { showDailyCost: 1 } }).display.showDailyCost, false);
+  assert.equal(mergeConfig({ display: { showDailyCost: null } }).display.showDailyCost, false);
+});
+
 test('mergeConfig defaults git push thresholds to disabled', () => {
   const config = mergeConfig({});
   assert.equal(config.gitStatus.branchOverflow, 'truncate');
@@ -677,6 +694,43 @@ test('loadConfig rejects oversized and symlinked claude-hud.json files', async (
   }
 });
 
+test('loadConfig rejects an oversized or symlinked shared config.json (TOCTOU-safe read)', async (t) => {
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const customConfigDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-config-file-'));
+
+  try {
+    process.env.CLAUDE_CONFIG_DIR = customConfigDir;
+    const pluginDir = path.join(customConfigDir, 'plugins', 'claude-hud');
+    await mkdir(pluginDir, { recursive: true });
+    const configPath = path.join(pluginDir, 'config.json');
+
+    // A normal, small config still loads.
+    await writeFile(configPath, JSON.stringify({ display: { customLine: 'ok' } }), 'utf8');
+    assert.equal((await loadConfig()).display.customLine, 'ok');
+
+    // A config over MAX_CONFIG_FILE_BYTES is rejected; loadConfig falls back to defaults.
+    await writeFile(configPath, JSON.stringify({ padding: 'x'.repeat(70 * 1024) }), 'utf8');
+    assert.equal((await loadConfig()).display.customLine, '');
+
+    // A symlinked config.json is rejected (O_NOFOLLOW on open, not a post-hoc lstat check).
+    const targetPath = path.join(customConfigDir, 'config-target.json');
+    await writeFile(targetPath, JSON.stringify({ display: { customLine: 'poison' } }), 'utf8');
+    await rm(configPath, { force: true });
+    try {
+      await symlink(targetPath, configPath, 'file');
+    } catch (err) {
+      if (err?.code === 'EPERM' || err?.code === 'EACCES') {
+        t.skip('file symlinks are unavailable on this platform');
+        return;
+      }
+      throw err;
+    }
+    assert.equal((await loadConfig()).display.customLine, '');
+  } finally {
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    await rm(customConfigDir, { recursive: true, force: true });
+  }
+});
 test('loadConfig keeps overrides isolated when config directories share plugins', async (t) => {
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
   const root = await mkdtemp(path.join(tmpdir(), 'claude-hud-shared-plugins-'));
@@ -1214,6 +1268,23 @@ test('mergeConfig rejects non-boolean showCompactions', () => {
   assert.equal(config.display.showCompactions, false);
 });
 
+test('mergeConfig defaults showModelScopedUsage to true', () => {
+  const config = mergeConfig({});
+  assert.equal(config.display.showModelScopedUsage, true);
+  assert.equal(DEFAULT_CONFIG.display.showModelScopedUsage, true);
+});
+
+test('mergeConfig preserves explicit showModelScopedUsage=false', () => {
+  const config = mergeConfig({ display: { showModelScopedUsage: false } });
+  assert.equal(config.display.showModelScopedUsage, false);
+});
+
+test('mergeConfig rejects non-boolean showModelScopedUsage', () => {
+  // A falsy probe is the load-bearing one: against a `true` default, a truthy
+  // probe alone would still pass under a Boolean()-coercing implementation.
+  assert.equal(mergeConfig({ display: { showModelScopedUsage: 0 } }).display.showModelScopedUsage, true);
+  assert.equal(mergeConfig({ display: { showModelScopedUsage: 'no' } }).display.showModelScopedUsage, true);
+});
 test('mergeConfig preserves explicit showAdvisor=true', () => {
   const config = mergeConfig({ display: { showAdvisor: true } });
   assert.equal(config.display.showAdvisor, true);

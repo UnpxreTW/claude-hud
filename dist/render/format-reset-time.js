@@ -52,20 +52,17 @@ function formatRelative(diffMs) {
  * @param now  - Reference for the same-day check.
  * @param opts - Wall-clock rendering options (hourCycle, showSeconds).
  */
-export function formatAbsoluteTime(resetAt, now, opts = DEFAULT_WALL_CLOCK_OPTIONS) {
-    // The preposition + spacing live in each locale's "format.absoluteTime"
-    // pattern (en: "at {time}", zh: "{time}" — bare, preposition baked elsewhere).
+export function formatAbsoluteTime(resetAt, now, opts = DEFAULT_WALL_CLOCK_OPTIONS, pattern = 'format.absoluteTime') {
     const timeOpts = { hour: '2-digit', minute: '2-digit' };
     if (opts.showSeconds)
         timeOpts.second = '2-digit';
     if (opts.hourCycle !== 'auto')
         timeOpts.hourCycle = opts.hourCycle;
     const timeStr = resetAt.toLocaleTimeString([], timeOpts);
-    // Show the date only when the reset falls on a different calendar day
     if (resetAt.toDateString() === now.toDateString()) {
-        return interpolate(t('format.absoluteTime'), { time: timeStr });
+        return interpolate(t(pattern), { time: timeStr });
     }
     const dateStr = resetAt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return interpolate(t('format.absoluteTime'), { time: `${dateStr} ${timeStr}` });
+    return interpolate(t(pattern), { time: `${dateStr} ${timeStr}` });
 }
 //# sourceMappingURL=format-reset-time.js.map

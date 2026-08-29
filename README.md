@@ -207,6 +207,7 @@ Simplified and Traditional Chinese HUD labels are available as explicit opt-ins.
 | `display.showConfigCounts` | boolean | false | Show CLAUDE.md, rules, MCPs, hooks counts |
 | `display.showCost` | boolean | false | Show session cost using Claude Code's native `cost.total_cost_usd` when available, with a local estimate fallback for direct Anthropic sessions |
 | `display.showRoutedCost` | boolean | false | Also show cost for routed providers (Bedrock/Vertex), which `showCost` hides by default. Requires `showCost` too. Uses the native `cost.total_cost_usd` when positive (`Cost`), otherwise the token estimate (`Est.`) |
+| `display.showDailyCost` | boolean | false | Show today's cumulative spend across sessions as `Today $12.34`, accumulated from the native `cost.total_cost_usd` into a small per-day ledger in the plugin data directory. Resets at local midnight. Independent of `showCost` |
 | `display.showOutputStyle` | boolean | false | Show the active Claude Code `outputStyle` from settings files as `style: <name>` |
 | `display.showDuration` | boolean | false | Show session duration `⏱️ 5m` |
 | `display.showSpeed` | boolean | false | Show output token speed `out: 42.1 tok/s` |
@@ -215,6 +216,7 @@ Simplified and Traditional Chinese HUD labels are available as explicit opt-ins.
 | `display.usageBarEnabled` | boolean | true | Display usage as visual bar instead of text |
 | `display.usageCompact` | boolean | false | Display usage in a shorter text form such as `5h: 25% (1h 30m)`; takes precedence over `display.usageBarEnabled` |
 | `display.showResetLabel` | boolean | true | Show the `resets in` prefix before usage countdowns |
+| `display.showModelScopedUsage` | boolean | true | Show the per-model weekly windows (`model_scoped`, e.g. Fable), whether they arrive on stdin or from the external usage snapshot. Set to `false` to render the usage line as if the payload carried none of them |
 | `display.timeFormat` | `relative` \| `absolute` \| `both` \| `elapsed` \| `elapsedAndAbsolute` | `relative` | How usage-window time is shown: countdown only (`resets in 2h 30m`), wall-clock reset (`resets at 14:30`), both, elapsed window percentage (`53% elapsed`), or elapsed plus wall-clock reset |
 | `display.hourCycle` | `auto` \| `h11` \| `h12` \| `h23` \| `h24` | `auto` | Hour cycle for wall-clock reset times (`absolute`/`both`/`elapsedAndAbsolute` modes). `auto` defers to the system locale; `h23` forces 24-hour time (`14:30`) regardless of locale |
 | `display.showClockSeconds` | boolean | false | Show seconds in wall-clock reset times, e.g. `at 14:30:07` |
@@ -267,9 +269,11 @@ Supported color names: `dim`, `red`, `green`, `yellow`, `magenta`, `cyan`, `brig
 
 `display.showCost` is fully opt-in. ClaudeHUD prefers the native `cost.total_cost_usd` field that Claude Code provides on stdin when it is available. If that field is absent or invalid for a direct Anthropic session, ClaudeHUD falls back to the existing local transcript-based estimate so the cost line still works on older payloads. The native field is absent before the first API response in a session, so the cost display may stay hidden until then. ClaudeHUD also keeps the cost hidden for known routed providers such as Bedrock and Vertex AI, because cloud-provider billed sessions may report `$0.00` or omit the field even though the session was not literally free. Set `display.showRoutedCost: true` (alongside `showCost`) to opt into cost for those providers anyway: the native `cost.total_cost_usd` is shown as `Cost` when positive, otherwise ClaudeHUD falls back to a token-based `Est.` from the Anthropic pricing table.
 
+`display.showDailyCost` is fully opt-in and answers a different question than `showCost`: what has the whole day cost across sessions, not just the current conversation. On each render ClaudeHUD folds the native `cost.total_cost_usd` into a small `daily-cost.json` ledger in the plugin data directory, keyed by `session_id`, and shows the day's cumulative spend as `Today $12.34`. The first sighting of a session records a baseline so only spend from that point counts, the counter resets at local midnight, sessions spanning midnight contribute only the current day's part, and entries unseen for more than 24 hours are dropped so the file stays bounded. It only uses the native field (no estimate fallback), so sessions that never render the statusline are not counted, counting starts when the option is enabled, and totals are per machine. Routed providers (Bedrock/Vertex) are excluded unless `display.showRoutedCost` is also enabled, matching `showCost`.
+
 Official MiniMax Anthropic-compatible endpoints receive a `MiniMax` provider label. MiniMax M2.7 can use its published token and cache prices for local estimates; M3 pricing depends on each request's context tier, which cumulative session tokens cannot safely infer, so ClaudeHUD does not guess an M3 estimate.
 
-`display.showPromptCache` is fully opt-in. When enabled, ClaudeHUD shows **the wall-clock time the session's prompt cache expires** (e.g. `Cache ⏱ at 14:30`), or `expired` once that time has passed. It follows `display.hourCycle` and `display.showClockSeconds` like every other clock time in the HUD. If the transcript has no main-session response yet, the cache element stays hidden.
+`display.showPromptCache` is fully opt-in. When enabled, ClaudeHUD shows **the wall-clock time the session's prompt cache expires** (e.g. `Cache ⏱ until 14:30`), or `expired` once that time has passed. It follows `display.hourCycle` and `display.showClockSeconds` like every other clock time in the HUD. If the transcript has no main-session response yet, the cache element stays hidden.
 
 It shows an expiry time rather than a countdown because the statusline only repaints while Claude Code is active. Between turns — exactly when the cache is draining — a countdown freezes at whatever it last displayed and keeps reporting it; a clock time stays true no matter how stale the render is.
 
@@ -327,6 +331,8 @@ seconds in the wall-clock time, e.g. `at 14:30:07`.
 Set `display.showResetLabel` to `false` if you want shorter usage countdowns such as `(3h 17m)` instead of `(resets in 3h 17m)`.
 
 Set `display.usageCompact` to `true` if you want the shorter usage-only form, for example `5h: 25% (1h 30m)`. Compact usage takes precedence over `display.usageBarEnabled`.
+
+Set `display.showModelScopedUsage` to `false` to hide the per-model weekly windows (e.g. Fable). The usage line then renders exactly as it would for an account that has none: the 5h/7d windows stay, snapshot windows are hidden along with the stdin ones, and a hidden window no longer counts toward a configured usage threshold, so it can no longer keep the line on screen by itself.
 
 ### Security Notes
 

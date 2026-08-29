@@ -51,7 +51,7 @@ export function renderPromptCacheLine(ctx, now = Date.now()) {
     };
     const value = state === 'expired'
         ? t('status.expired')
-        : formatAbsoluteTime(expiresAt, new Date(now), wallClockOpts);
+        : formatAbsoluteTime(expiresAt, new Date(now), wallClockOpts, 'format.untilTime');
     return `${label(t('label.promptCache'), ctx.config?.colors)} ${colorPromptCacheValue(`⏱ ${value}`, state, ctx)}`;
 }
 //# sourceMappingURL=prompt-cache.js.map
