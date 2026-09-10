@@ -164,12 +164,16 @@ test('estimateSessionCost prices Claude 5 ids carrying a context-window suffix',
 
 test('estimateSessionCost prices Claude 5 point releases like their base model', () => {
   const tokens = { inputTokens: 1000000, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 };
+  // Pin the clock before the September 1, 2026 Sonnet 5 introductory-pricing
+  // cutoff so this stays deterministic; otherwise base Sonnet 5 (and 5.1) price
+  // at the post-cutoff $3 and the introductory $2 assertion becomes a time bomb.
+  const now = new Date('2026-08-01T00:00:00.000Z');
 
-  const opus51 = estimateSessionCost({ model: { display_name: 'Opus 5.1' } }, tokens);
+  const opus51 = estimateSessionCost({ model: { display_name: 'Opus 5.1' } }, tokens, { now });
   assert.ok(opus51);
   assert.equal(opus51.inputUsd, 5);
 
-  const sonnet51 = estimateSessionCost({ model: { display_name: 'Sonnet 5.1' } }, tokens);
+  const sonnet51 = estimateSessionCost({ model: { display_name: 'Sonnet 5.1' } }, tokens, { now });
   assert.ok(sonnet51);
   assert.equal(sonnet51.inputUsd, 2);
 });

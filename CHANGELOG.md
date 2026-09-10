@@ -4,6 +4,16 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0-unpxre.3] - 2026-09-10
+
+Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release fixes).
+
+### Changed
+- Re-synced the latest upstream `0.8.0` main and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The fork source was already at upstream parity for all non-override modules, so this release mainly reconciles the merge history and refreshes the fork overrides. Upstream continues to ship the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
+
+### Fixed
+- Pinned the clock in the "point releases price like their base model" cost test so it no longer fails after the September 1, 2026 Sonnet 5 introductory-pricing cutoff (an upstream time-bomb assertion that had turned the fork's `main` CI red).
+
 ## [0.8.0-unpxre.2] - 2026-08-29
 
 Unpxre fork release re-synced on top of upstream `0.8.0` main (post-release fixes).
