@@ -5744,3 +5744,39 @@ test('full project paths stay sanitized when projectLineOrder moves them first',
   assert.doesNotMatch(compact, /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/i);
   assert.doesNotMatch(expanded, /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/i);
 });
+
+test('renderSessionLine keeps the daily cost hidden by default', () => {
+  const ctx = baseContext();
+  ctx.stdin.session_id = 'render-test-session';
+  ctx.stdin.cost = { total_cost_usd: 5.47 };
+  ctx.config.display.showCost = true;
+
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes('Cost $5.47'));
+  assert.ok(!line.includes('Today'), `daily cost must remain opt-in: ${line}`);
+});
+
+test('renderSessionLine shows the daily cost when showDailyCost is enabled', async () => {
+  const configDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-daily-render-'));
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_CONFIG_DIR = configDir;
+  try {
+    const ctx = baseContext();
+    ctx.config.display.showDailyCost = true;
+    ctx.stdin.session_id = 'render-test-session';
+    ctx.stdin.cost = { total_cost_usd: 2.0 };
+
+    // First render seeds the baseline, second render accrues the increment.
+    renderSessionLine(ctx);
+    ctx.stdin.cost = { total_cost_usd: 3.25 };
+    const line = stripAnsi(renderSessionLine(ctx));
+    assert.ok(line.includes('Today $1.25'), `expected daily cost, got: ${line}`);
+  } finally {
+    if (originalConfigDir === undefined) {
+      delete process.env.CLAUDE_CONFIG_DIR;
+    } else {
+      process.env.CLAUDE_CONFIG_DIR = originalConfigDir;
+    }
+    await rm(configDir, { recursive: true, force: true });
+  }
+});
