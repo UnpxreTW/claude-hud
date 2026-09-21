@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0-unpxre.5] - 2026-09-21
+
+Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release fixes, tests, and docs).
+
+### Changed
+- Re-synced the latest upstream `0.8.0` main (the daily cumulative cost option, `display.showModelScopedUsage`, prompt-cache clock refresh and `until <time>` display, agents/git-lock/cache-wording fixes, the config validation/read TOCTOU close, the reset-time test-clock fix, and the contributing/HUD-scope docs) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream now ships a native `zh-Hant` locale, a `zh-TW` region alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top, and refreshes the freshly-built `dist/`.
+
 ## [0.8.0-unpxre.4] - 2026-09-18
 
 Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release docs, fixes, and tests).
@@ -177,6 +184,137 @@ Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + for
 
 ### Changed
 - `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
+
+## [0.8.0] - 2026-08-18
+
+### Added
+- Load optional per-config-directory overrides from `$CLAUDE_CONFIG_DIR/claude-hud.json` while preserving shared plugin settings (#714).
+- `display.effortFormat` option (`full` | `symbol` | `text`) to render the effort indicator as symbol only or level text only; `full` keeps the current output (#691).
+
+### Security
+- Bound config file size and nesting, reject symlinked or prototype-sensitive config input, and sanitize terminal-bound config labels (#714).
+
+## [0.7.2] - 2026-08-17
+
+### Fixed
+- Anchor prompt-cache expiry to the main-session request, ignore subagent cache writes, and detect 5-minute or 1-hour cache tiers while preserving the configured fallback (#702).
+
+### Security
+- Bound transcript request identifiers before grouping prompt-cache writes (#702).
+
+### Dependencies
+- Update the development-only `@types/node` package from 26.1.2 to 26.2.0 (#711).
+
+## [0.7.1] - 2026-08-11
+
+### Fixed
+- Remove completed agents on the next HUD refresh after one minute and keep completed history from displacing running agents (#704).
+
+### Security
+- Sanitize, validate, and bound agent labels before terminal output (#704).
+
+## [0.7.0] - 2026-08-07
+
+### Added
+- Read bounded model-scoped usage windows from an optional external snapshot while preserving explicit empty stdin snapshots (#690).
+- Configure wall-clock hour cycles and optional seconds without changing the locale-driven default (#692).
+- Right-align an ordered suffix of merged expanded rows with `display.rightAlign` (#693).
+- Price Claude Opus 5, Sonnet 5, and Fable 5 in local cost estimates, including Sonnet's time-limited introductory rate (#694).
+- Detect the official MiniMax Anthropic-compatible endpoints and estimate MiniMax M2.7 token/cache cost without guessing MiniMax M3's request-tier pricing (#696).
+- Surface bounded MCP server failures when MCP activity or config counts are enabled, clearing a failure after a later successful result (#699).
+- Cache derived opt-in authentication labels against the source profile identity (#700).
+
+### Fixed
+- Prevent short-lived Windows statusline processes from orphaning their owned Git process trees, with bounded output, timeouts, and non-interactive read-only Git behavior (#703).
+- Silence `/dev/tty` probe failures during setup command execution (#686).
+- Treat Unicode variation selectors as zero-width in terminal-cell calculations (#687).
+- Count completed and progressive assistant token records after zero-value transcript placeholders (#698).
+- Preserve configured element order in right-aligned rows and cap hostile terminal/config widths (#693).
+
+### Security
+- Sanitize, bound, cache-version, and opt-in MCP error names before terminal rendering (#699).
+- Validate and version derived-auth cache entries, reject symlink/oversized reads, use private permissions, and write through unique exclusive temporary files (#700).
+
+### Dependencies
+- Update the development-only `@types/node` package from 26.1.1 to 26.1.2 (#697).
+
+## [0.6.0] - 2026-07-20
+
+### Added
+- Support `pathLevels: "full"` to show the entire absolute working directory in the project badge, instead of being capped at the last 3 segments (#678).
+- Allow users to reorder visible first-line segments with `projectLineOrder` while preserving the existing default output (#680).
+
+### Fixed
+- Show each agent's resolved runtime model when the launch input omits a model alias, while preserving unknown and provider-qualified model identifiers (#679).
+
+### Security
+- Keep full working-directory paths terminal-safe across compact, expanded, and reordered layouts by stripping control and bidirectional characters before rendering (#678, #680).
+
+## [0.5.1] - 2026-07-17
+
+### Fixed
+- Align context, usage, and opt-in memory progress bars by terminal cell width in CJK locales, including merged and narrow layouts (#673).
+
+## [0.5.0] - 2026-07-16
+
+### Added
+- Render bounded model-scoped weekly usage windows from Claude Code statusline input in expanded and compact layouts, including remaining-value, reset-time, threshold, and custom-color modes (#669).
+
+### Security
+- Sanitize and bound model-scoped usage labels and values before terminal rendering, and keep scoped-only input from overwriting shared external usage snapshots (#669).
+- Clean compiled output before every build and enforce source-to-artifact parity so removed modules cannot remain in release packages (#670).
+
+## [0.4.2] - 2026-07-15
+
+### Fixed
+- Show a useful git ref for detached HEAD sessions by preferring exact tags and falling back to a linked short commit label (#664).
+- Preserve slash-separated branch names in GitHub branch links so clicking the HUD branch opens the expected remote branch (#664).
+- Allow opt-in `--extra-cmd` hooks to use the last non-empty line of sanitized plain-text output in addition to JSON labels (#664).
+- Strip control and bidirectional characters from Git refs in compact rendering (#664).
+
+## [0.4.1] - 2026-07-14
+
+### Fixed
+- Restore the default 80% weekly-usage threshold when the setting is omitted or invalid, preventing the weekly segment from appearing at 0% while preserving the existing usage and environment defaults (#662).
+
+## [0.4.0] - 2026-07-13
+
+### Added
+- Add opt-in routed-provider cost display for Bedrock and Vertex sessions, with explicit native-versus-estimated labeling (#648).
+- Add opt-in authentication method and account display with terminal-safe truncation and active API-key precedence (#652).
+- Add Traditional Chinese (`zh-Hant` / `zh-TW`) across configuration, onboarding, and rendered labels (#645).
+- Add opt-in transcript and automatic model-source modes for proxy users, with bounded terminal-safe model labels (#643).
+
+### Changed
+- Show ultracode sessions as `ultracode(xhigh)` from transcript attachment and `/effort` signals (#640).
+- Move locale-specific time layout into named interpolation patterns so translations control word order and spacing (#647).
+- Keep effort suffixes attached to model names and enforce opt-in render guards consistently (#650).
+
+### Fixed
+- Deduplicate repeated assistant usage by bounded message IDs while preserving the idless transcript fallback (#646).
+- Show cache creation and cache read tokens in compact session-token summaries (#653).
+- Count symlinked rule files and directories with cycle-safe, bounded traversal and cache invalidation (#644).
+- Handle non-ASCII checkout paths correctly in direct-entrypoint tests (#655).
+
+### Removed
+- Drop the `ps`-based parent-process `--effort` fallback (#471); the effort label now comes solely from Claude Code's stdin, which carries the level directly.
+
+### Dependencies
+- Bump `@types/node` from 25.9.3 to 26.1.1 (#657).
+- Bump TypeScript from 6.0.3 to 7.0.2 (#656).
+
+## [0.3.0] - 2026-06-19
+
+### Added
+- Add `display.showProvider` and `display.providerName` so custom proxy users can optionally show provider labels before the model name in compact and expanded layouts (#629).
+
+### Changed
+- Extract shared model badge formatting so compact and expanded layouts keep provider labels and effort suffixes consistent (#629).
+
+### Fixed
+- Harden and document external usage snapshot read paths as absolute-only, with focused regression coverage for relative-path rejection (#637).
+- Add regression coverage for private `speed-cache` directory and cache file permissions introduced by the cache hardening work (#637).
+
 ## [0.2.1] - 2026-06-18
 
 ### Fixed
