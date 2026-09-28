@@ -4,6 +4,13 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0-unpxre.7] - 2026-09-28
+
+Unpxre fork release re-synced on top of upstream `0.8.0` main (post-release features, fixes, tests, and docs).
+
+### Changed
+- Re-synced the latest upstream `0.8.0` main (the opt-in `display.showDailyCost` daily cumulative cost option — #736; the `display.showModelScopedUsage` toggle for model-scoped weekly windows — #728; the prompt-cache clock refreshing when a request starts and rendering as `until <time>` — #721/#727; async Agent `tool_result` background handling, `--no-optional-locks` on `git diff --numstat`, and cache-wording/zh-docs fixes — #737; the config validation/read TOCTOU close — #732; the reset-time test-clock fix — #724; and the HUD-scope contributing docs — #738) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream continues to ship a native `zh-Hant` locale, a `zh-TW` region alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top, and refreshes the freshly-built `dist/`.
+
 ## [0.8.0-unpxre.6] - 2026-09-24
 
 Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release features, fixes, and docs).
