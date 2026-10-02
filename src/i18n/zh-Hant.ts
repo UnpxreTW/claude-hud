@@ -2,21 +2,21 @@ import type { Messages } from "./types.js";
 
 export const zhHant: Messages = {
   // Labels
-  "label.context": "上下文佔用",
-  "label.usage": "五小時上限",
-  "label.weekly": "每週使用量",
-  "label.approxRam": "記憶體用量",
+  "label.context": "上下文",
+  "label.usage": "用量",
+  "label.weekly": "本週",
+  "label.approxRam": "記憶體",
   "label.promptCache": "快取",
+  "label.cacheHitRate": "快取命中",
   "label.rules": "規則",
-  "label.hooks": "hooks",
-  "label.estimatedCost": "估算",
+  "label.hooks": "Hook",
   "label.cost": "費用",
   "label.today": "今日",
-  "label.tokens": "Tokens",
-  "label.sessionStarted": "工作階段開始",
+  "label.week": "本週",
+  "label.tokens": "Token",
+  "label.sessionStarted": "開始",
   "label.lastReply": "上次回覆",
   "label.advisor": "顧問",
-  "label.duration": "執行時間",
   "label.compactions": "壓縮次數",
 
   // Status
@@ -26,7 +26,7 @@ export const zhHant: Messages = {
 
   // Format
   "format.resets": "重置於",
-  "format.resetsIn": "",
+  "format.resetsIn": "重置剩餘",
   "format.absoluteTime": "{time}",
   "format.untilTime": "至 {time}",
   "format.in": "輸入",
@@ -36,9 +36,10 @@ export const zhHant: Messages = {
   "format.tokPerSec": "tok/s",
   "format.justNow": "剛剛",
   "format.relativeTime": "{value} 前",
+  "format.elapsed": "已過 {value}%",
 
   // Init
   "init.initializing": "[claude-hud] 正在初始化...",
   "init.macosNote":
-    "[claude-hud] 注意：在 macOS 上，您可能需要重啟 Claude Code 才能顯示 HUD。",
+    "[claude-hud] 注意：在 macOS 上，您可能需要重新啟動 Claude Code 才能顯示 HUD。",
 };
