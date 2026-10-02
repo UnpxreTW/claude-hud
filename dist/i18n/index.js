@@ -10,7 +10,6 @@ const locales = {
 };
 // Resolve short language tags to canonical BCP 47 forms.
 // Based on CLDR likely subtags: zh → zh-Hans-CN
-// zh-TW is accepted as a region alias resolving to the Traditional script.
 // https://www.unicode.org/cldr/charts/latest/supplemental/likely_subtags.html
 const CANONICAL = {
     "en": "en",
@@ -23,11 +22,8 @@ let currentLanguage = "en";
 export function setLanguage(lang) {
     currentLanguage = lang;
 }
-export function getLanguage() {
-    return currentLanguage;
-}
 // https://www.rfc-editor.org/info/bcp47
-export function getCanonicalLanguage() {
+function getCanonicalLanguage() {
     return CANONICAL[currentLanguage] ?? "en";
 }
 // https://www.unicode.org/reports/tr11/

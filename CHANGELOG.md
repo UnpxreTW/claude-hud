@@ -4,200 +4,73 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
-## [0.8.0-unpxre.7] - 2026-09-28
+### Fixed
+- A folder name containing ` │ ` no longer leaves the project link open over the rest of the HUD when line 1 wraps.
 
-Unpxre fork release re-synced on top of upstream `0.8.0` main (post-release features, fixes, tests, and docs).
+## [0.10.0] - 2026-10-01
 
-### Changed
-- Re-synced the latest upstream `0.8.0` main (the opt-in `display.showDailyCost` daily cumulative cost option — #736; the `display.showModelScopedUsage` toggle for model-scoped weekly windows — #728; the prompt-cache clock refreshing when a request starts and rendering as `until <time>` — #721/#727; async Agent `tool_result` background handling, `--no-optional-locks` on `git diff --numstat`, and cache-wording/zh-docs fixes — #737; the config validation/read TOCTOU close — #732; the reset-time test-clock fix — #724; and the HUD-scope contributing docs — #738) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream continues to ship a native `zh-Hant` locale, a `zh-TW` region alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top, and refreshes the freshly-built `dist/`.
-
-## [0.8.0-unpxre.6] - 2026-09-24
-
-Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release features, fixes, and docs).
+This release is a rewrite for simplicity, with the same options in about half the source and a quarter of the test code. It needs Claude Code v2.1.260 or later.
 
 ### Changed
-- Re-synced the latest upstream `0.8.0` main (the `display.showDailyCost` daily cumulative cost option, the prompt-cache clock now refreshing when a request starts and rendering as `until <time>`, background handling for async Agent `tool_result` payloads, `--no-optional-locks` on `git diff --numstat`, the `README.zh.md` config-option docs, and the HUD-scope contributing docs) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream continues to ship a native `zh-Hant` locale, a `zh-TW` region alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top, and refreshes the freshly-built `dist/`.
-
-## [0.8.0-unpxre.5] - 2026-09-21
-
-Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release fixes, tests, and docs).
-
-### Changed
-- Re-synced the latest upstream `0.8.0` main (the daily cumulative cost option, `display.showModelScopedUsage`, prompt-cache clock refresh and `until <time>` display, agents/git-lock/cache-wording fixes, the config validation/read TOCTOU close, the reset-time test-clock fix, and the contributing/HUD-scope docs) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream now ships a native `zh-Hant` locale, a `zh-TW` region alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top, and refreshes the freshly-built `dist/`.
-
-## [0.8.0-unpxre.4] - 2026-09-18
-
-Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release docs, fixes, and tests).
-
-### Changed
-- Re-synced the latest upstream `0.8.0` main (the daily cumulative cost option, `display.showModelScopedUsage`, prompt-cache clock refresh, agents/git-lock/cache-wording fixes, the config validation/read TOCTOU close, and the contributing/HUD-scope docs) and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The fork source was already at upstream parity for every non-override module, so this release reconciles the merge history, refreshes the freshly-built `dist/`, and keeps the fork's Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top of upstream's native `zh-Hant` locale, `zh-TW` alias, and Traditional Chinese configure option.
-
-## [0.8.0-unpxre.3] - 2026-09-10
-
-Unpxre fork release re-synced on top of upstream `0.8.0` main (further post-release fixes).
-
-### Changed
-- Re-synced the latest upstream `0.8.0` main and re-verified every fork override (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The fork source was already at upstream parity for all non-override modules, so this release mainly reconciles the merge history and refreshes the fork overrides. Upstream continues to ship the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
+- Read `version`, `cost`, `prompt_cache`, `session_name`, `output_style`, and `workspace.repo` from Claude Code's stdin instead of deriving them.
+- The prompt-cache expiry and hit rate come from Claude Code's `prompt_cache`, so the expiry no longer reads `expired` while the cache is warm.
+- `display.showCost` shows Claude Code's own cost; the local pricing-table estimate is removed.
+- Context percentage always follows Claude Code's `used_percentage`, falling back to the last request's size in the transcript when Claude Code reports none. `display.autocompactBuffer` and `display.promptCacheTtlSeconds` no longer exist.
+- Session duration is Claude Code's running time for the session.
+- Git status comes from one `git status --porcelain=v2` call, down from four or five, and the branch link comes from `workspace.repo`. A repository with no commits now shows its branch.
+- The compact layout gains expanded's branch link and push-threshold colours, and `display.timeFormat: "elapsed"` now works there.
+- `/claude-hud:setup` installs a small launcher and writes `settings.json` with a helper script instead of hand-built shell commands. Existing setups keep working; re-run setup to switch. It asks nothing unless it would replace another status line; customize afterwards by asking Claude or with `/claude-hud:configure`. A `refreshInterval` you set yourself is kept.
+- `/claude-hud:configure` asks one short set of questions and previews the diff.
+- The default HUD no longer parses the transcript, runs `claude --version`, or keeps context or transcript caches on disk.
 
 ### Fixed
-- Pinned the clock in the "point releases price like their base model" cost test so it no longer fails after the September 1, 2026 Sonnet 5 introductory-pricing cutoff (an upstream time-bomb assertion that had turned the fork's `main` CI red).
+- The macOS memory reading no longer blocks the rest of the render.
+- The daily cost ledger no longer throws on a non-string `session_id`.
 
-## [0.8.0-unpxre.2] - 2026-08-29
+### Security
+- Sanitize the output style, tool names, tool targets (paths, Grep patterns, Bash commands), todo text, and the model name before display. They reached the terminal raw.
+- `/claude-hud:setup` writes `settings.json` through a dotfiles symlink and keeps its permissions.
 
-Unpxre fork release re-synced on top of upstream `0.8.0` main (post-release fixes).
-
-### Changed
-- Re-synced the latest upstream `0.8.0` main (add the opt-in `display.showDailyCost` option showing today's cumulative spend across sessions as `Today $12.34` — #736; add the `display.showModelScopedUsage` toggle to hide model-scoped weekly windows — #728; refresh the prompt-cache clock when a request starts and render its value as `until <time>` — #721/#727; treat async-launched Agent results as background so the agents line stays up until the task-notification — #737; pass `--no-optional-locks` on `git diff --numstat` so a timed-out poll cannot leave `.git/index.lock` behind — #737; and close a TOCTOU between config validation and read via a single `O_NOFOLLOW` file descriptor — #732) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The new `showModelScopedUsage` gate is threaded through both the fork's five-hour usage element and the compact session line.
-
-## [0.8.0-unpxre.1] - 2026-08-19
-
-Unpxre fork release re-synced on top of upstream `0.8.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.8.0` main (load optional per-config-directory overrides from `$CLAUDE_CONFIG_DIR/claude-hud.json` while preserving shared plugin settings — #714; add the `display.effortFormat` option to render the effort indicator as symbol only or level text only — #691; and bound config file size and nesting, reject symlinked or prototype-sensitive config input, and sanitize terminal-bound config labels — #714) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream `0.8.0` still ships the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
-
-## [0.7.2-unpxre.1] - 2026-08-18
-
-Unpxre fork release re-synced on top of upstream `0.7.2` main.
-
-### Changed
-- Re-synced the latest upstream `0.7.2` main (anchor prompt-cache expiry to the main-session request, ignore subagent cache writes, and detect 5-minute or 1-hour cache tiers while preserving the configured fallback — #702; bound transcript request identifiers before grouping prompt-cache writes — #702; and bump the development-only `@types/node` from 26.1.2 to 26.2.0 — #711) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream `0.7.2` now also ships the native `zh-Hant` locale, `zh-TW` alias, and a Traditional Chinese option in the configure command; the fork keeps its Taiwan-specific terminology, `繁體中文（台灣）` / `zh-TW` labelling, and its `label.duration` key layered on top.
-
-## [0.7.1-unpxre.1] - 2026-08-12
-
-Unpxre fork release re-synced on top of upstream `0.7.1` main.
-
-### Changed
-- Re-synced the latest upstream `0.7.1` main (expire completed agent entries on the next HUD refresh after one minute so stale completions no longer displace running agents, and sanitize, validate, and bound untrusted agent labels before terminal output — #704) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.7.0-unpxre.2] - 2026-08-09
-
-Unpxre fork release re-synced on top of the latest upstream `0.7.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.7.0` main (post-release Windows Git test/CI hardening — cross-platform Git fixtures, orphaned-process cleanup validation, and surfaced Windows test failures — plus the fix that applies wall-clock clock settings to compact usage windows) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The wall-clock compact-window settings now thread through both the five-hour usage element and the fork's separated weekly-usage renderer.
-
-## [0.7.0-unpxre.1] - 2026-08-08
-
-Unpxre fork release re-synced on top of upstream `0.7.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.7.0` main (configurable wall-clock reset times via `display.hourCycle` and `display.showClockSeconds`, `display.rightAlign` for merged expanded lines, MiniMax and Claude 5 model pricing plus endpoint labels, opt-in surfacing of failing MCP servers on the environment line, external `model_scoped` usage snapshots, per-message session-token accumulation, and Windows Git process-cleanup hardening via the new `git-runner`) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. Upstream now ships a native `zh-Hant` locale and `zh-TW` alias; the fork keeps its Taiwan-specific terminology and its `label.duration` key layered on top, and threads the upstream `WallClockOptions` through the separated weekly-usage renderer.
-
-## [0.6.0-unpxre.1] - 2026-07-21
-
-Unpxre fork release re-synced on top of upstream `0.6.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.6.0` main (full absolute cwd via `pathLevels: "full"`, first-line segment reordering via `projectLineOrder`, agent model read from `toolUseResult.resolvedModel`, and a setup-time `statusLine` `refreshInterval` prompt) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.5.1-unpxre.1] - 2026-07-17
-
-Unpxre fork release re-synced on top of upstream `0.5.1` main.
-
-### Changed
-- Re-synced the latest upstream `0.5.1` main (align context, usage, and opt-in memory progress bars by terminal cell width in CJK locales across merged and narrow layouts via the new `ProgressLabelInput` label-options API) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The fork's separated weekly usage and context/usage renderers now thread the upstream label-options object so CJK bar alignment applies to them too.
-
-## [0.5.0-unpxre.1] - 2026-07-16
-
-Unpxre fork release re-synced on top of upstream `0.5.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.5.0` main (bounded model-scoped weekly usage windows rendered in expanded and compact layouts with remaining-value, reset-time, threshold, and custom-color modes; sanitized/bounded scoped usage labels and values; and a clean-before-build step that enforces source-to-artifact parity so removed modules cannot linger in `dist/`) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.4.2-unpxre.1] - 2026-07-15
-
-Unpxre fork release re-synced on top of upstream `0.4.2` main.
-
-### Changed
-- Re-synced the latest upstream `0.4.2` main (detached-HEAD git refs prefer exact tags with a linked short-commit fallback, slash-separated branch names preserved in GitHub branch links, opt-in `--extra-cmd` plain-text label fallback, and control/bidirectional-character stripping in compact git refs) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.4.1-unpxre.1] - 2026-07-14
-
-Unpxre fork release re-synced on top of upstream `0.4.1` main.
-
-### Changed
-- Re-synced the latest upstream `0.4.1` main (default display thresholds now fall back to `DEFAULT_CONFIG` values and reject non-finite inputs) and re-verified the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree. The upstream weekly-usage-hidden render test is intentionally not adopted because the fork's separated weekly usage element is always visible.
-
-## [0.4.0-unpxre.1] - 2026-07-13
-
-Unpxre fork release re-synced on top of upstream `0.4.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.4.0` main (opt-in routed-provider cost for Bedrock/Vertex, opt-in auth method and account display, native Traditional Chinese `zh-Hant`/`zh-TW` locale, opt-in transcript/auto model-source for proxy users, `ultracode(xhigh)` effort display, interpolation-based locale time layout, bounded assistant-usage dedup, compact cache-token summaries, symlinked-rules traversal fix, and removal of the `ps`-based effort fallback) and re-applied the fork overrides (fork Traditional Chinese terminology, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.3.0-unpxre.1] - 2026-06-20
-
-Unpxre fork release re-synced on top of upstream `0.3.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.3.0` main (optional provider label before the model name, shared model-badge formatting, extracted shared utilities, external usage snapshot and cache permission hardening, expanded test coverage) and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit, `@UnpxreTW` CODEOWNERS, owner-gated `@claude` workflow, Unpxre setup command, verify-only `build-dist`) on top of the synced upstream tree.
-
-## [0.2.1-unpxre.1] - 2026-06-19
-
-Unpxre fork release re-synced on top of upstream `0.2.1` main.
-
-### Changed
-- Re-synced the latest upstream `0.2.1` main (explicit `CLAUDE_HUD_ALLOW_EXTRA_CMD` opt-in for `--extra-cmd`, seven-day usage merge from an external snapshot, and corrected Opus 4.5+ cost estimates) and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.2.0-unpxre.2] - 2026-06-17
-
-Unpxre fork release re-synced on top of upstream `0.2.0` main.
-
-### Changed
-- Re-synced the latest upstream `0.2.0` main and re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.2.0-unpxre.1] - 2026-06-16
-
-Unpxre fork release synced on top of upstream `0.2.0` (session compaction count, `CLAUDE_HUD_DISABLE` kill switch, configure docs sync).
+## [0.9.0] - 2026-10-01
 
 ### Added
-- Synced upstream `0.2.0` (opt-in session compaction count display, `CLAUDE_HUD_DISABLE` per-session kill switch, and configure documentation sync).
-
-### Changed
-- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.1.1-unpxre.2] - 2026-06-12
-
-Unpxre fork release synced on top of upstream post-`0.1.1` main (fallback speed estimation, Simplified Chinese terminology fix, architecture docs refresh).
-
-### Added
-- Synced upstream fallback speed estimation via transcript file growth when native token timing is unavailable.
-
-### Changed
-- Synced upstream Simplified Chinese terminology fix ("token" rendered as 词元 instead of 令牌) and the refreshed CLAUDE.md architecture overview.
-- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.1.1-unpxre.1] - 2026-06-10
-
-Unpxre fork release synced on top of upstream `0.1.1` (Skills/MCP lines, external balance label, advisor hardening, auto-compact validation).
-
-### Added
-- Synced upstream `0.1.1` (Skills + MCP activity lines, advisor display hardening, `balance_label` rendering, narrow-terminal width fixes).
-
-### Changed
-- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.1.0-unpxre.7] - 2026-06-09
-
-Unpxre fork release synced on top of upstream `0.1.0` (advisor line + auto-compact denominator).
-
-### Added
-- Synced upstream advisor model display (`display.showAdvisor`) rendered inline on the project line.
-- Synced upstream `autoCompactWindow` context denominator, also used for the token display.
-
-### Changed
-- Re-applied the fork overrides (Traditional Chinese `zh-Hant` locale, localized session duration, separated always-visible weekly usage, 3-char padded percentages, reset-time separator, full bar at limit) on top of the synced upstream tree.
-
-## [0.1.0-unpxre.6] - 2026-06-08
-
-Unpxre fork release on top of upstream `0.1.0` (Traditional Chinese locale + fork overrides).
+- `gitStatus.showWorktree` option to show the linked worktree name after the branch, e.g. `git:(feat/x) ⎇ feat-x`, read from stdin `workspace.git_worktree` (#780).
+- `display.usagePace` option to colour usage windows amber or red, marked `▲`, when they are on track to run out before they reset (#779).
+- `display.skillsMaxVisible` option to control how many skill names the skills line shows before `+N more`; `0` means unlimited, default stays 4 (#739).
+- `display.showWeeklyCost` option to show spend since the weekly quota window opened (`Week $123.45`), from the same ledger as `showDailyCost`; subscribers only (#762).
+- `display.showDailyCost` option to show today's cumulative spend across sessions (`Today $12.34`), accumulated from the native stdin `cost.total_cost_usd` into a per-day ledger that resets at local midnight (#695).
+- `display.showCacheHitRate` option to show the session's prompt-cache hit rate as `Cache hit X%` (#741).
+- Expand a leading `~` and `${VAR}` in `display.externalUsagePath` and `display.externalUsageWritePath` (#760).
+- `display.showModelScopedUsage` option to hide the per-model weekly windows (e.g. Fable) while keeping the 5h/7d windows (#728).
 
 ### Fixed
-- Restored complete compiled `dist/` — the `zh-Hant` locale and percent-format modules were missing from `main`, crashing fresh installs with `ERR_MODULE_NOT_FOUND`.
+- Read `.claude.json` from inside `CLAUDE_CONFIG_DIR` when it is set, as Claude Code does, so `showAuth`, `showAuthUser`, and MCP counts work with a custom config directory (#776).
+- Refresh the prompt-cache clock when a request starts rather than when its response arrives, ignoring client-side slash command records, interrupt markers, and subagent requests (#719).
+- Treat Agent `tool_result` payloads with `isAsync` or `status: async_launched` as background so the agents line stays up until the task-notification (#734).
+- Pass `--no-optional-locks` on `git diff --numstat` so a timed-out statusline poll cannot leave `.git/index.lock` behind (#726).
+- Render the prompt-cache clock as `until <time>` so the value reads as expiry, not write time (#727).
+- Price 1-hour prompt-cache writes at 2x input instead of 1.25x in the local cost estimate (#758).
+- Show the running session's Claude Code version from stdin, falling back to `claude --version`, so `CC v…` no longer sticks when `claude` is a wrapper script (#753).
+- Keep the context cache fresh when Claude Code reports `used_percentage: 0` while `current_usage` already holds real tokens, so a later empty frame no longer restores a stale percentage (#743).
+- Show the latest response's output speed from the API time it added instead of diffing tokens against wall-clock time between renders (#772).
+- Launch the Windows + Git Bash statusline through the `cmd.exe` launcher so a statusLine shell killed mid-spawn can no longer strand a suspended `node.exe`; re-run `/claude-hud:setup` to pick it up (#748).
+- Ignore `<synthetic>` assistant records when tracking the transcript model (#774).
+- Show Claude Code's generated `ai-title` as the session name when the session was never renamed (#754).
+- Decode every C-style escape git uses in quoted porcelain paths (#765).
+- Count unmerged (`UU`, `UA`) paths in git file stats (#763).
+- Translate the elapsed usage-window suffix (#768).
 
-### Changed
-- `build-dist.yml` is now a verify-only PR check instead of a direct-push committer (the fork's protected `main` rejects direct pushes), so every PR must carry its own complete, freshly-built `dist/`.
+### Security
+- Exit quietly when the setup command cannot resolve the plugin directory instead of running `dist/index.js` relative to the current project; re-run `/claude-hud:setup` to pick it up (#759).
+- Sanitize session names before display (#754).
+- Validate and read config files through a single file descriptor so a file swapped between the checks cannot bypass them (#732).
+
+### Dependencies
+- Update the development-only `@types/node` package from 26.2.0 to 26.6.2 (#775).
+
+### Docs
+- Document the HUD scope bar in `CONTRIBUTING.md` (#738).
+- Add the ten missing config options and the absolute-path caveat for `display.externalUsagePath` to `README.zh.md` (#730).
 
 ## [0.8.0] - 2026-08-18
 
