@@ -16,6 +16,7 @@ export type MessageKey =
   | "label.lastReply"
   | "label.advisor"
   | "label.compactions"
+  | "label.duration"
   // Status
   | "status.limitReached"
   | "status.allTodosComplete"
@@ -33,6 +34,9 @@ export type MessageKey =
   | "format.justNow"
   | "format.relativeTime"
   | "format.elapsed"
+  | "format.durationUnder1Min"
+  | "format.durationMinutes"
+  | "format.durationHourMinutes"
   // Init
   | "init.initializing"
   | "init.macosNote";

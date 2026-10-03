@@ -16,6 +16,7 @@ export const en = {
     "label.lastReply": "Last reply",
     "label.advisor": "Advisor",
     "label.compactions": "Compactions",
+    "label.duration": "",
     // Status
     "status.limitReached": "Limit reached",
     "status.allTodosComplete": "All todos complete",
@@ -33,6 +34,9 @@ export const en = {
     "format.justNow": "just now",
     "format.relativeTime": "{value} ago",
     "format.elapsed": "{value}% elapsed",
+    "format.durationUnder1Min": "<1m",
+    "format.durationMinutes": "{m}m",
+    "format.durationHourMinutes": "{h}h {m}m",
     // Init
     "init.initializing": "[claude-hud] Initializing...",
     "init.macosNote": "[claude-hud] Note: On macOS, you may need to restart Claude Code for the HUD to appear.",

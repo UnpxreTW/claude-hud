@@ -18,6 +18,7 @@ export const zhHant: Messages = {
   "label.lastReply": "上次回覆",
   "label.advisor": "顧問",
   "label.compactions": "壓縮次數",
+  "label.duration": "執行時間：",
 
   // Status
   "status.limitReached": "已達上限",
@@ -37,6 +38,9 @@ export const zhHant: Messages = {
   "format.justNow": "剛剛",
   "format.relativeTime": "{value} 前",
   "format.elapsed": "已過 {value}%",
+  "format.durationUnder1Min": "< 1 分鐘",
+  "format.durationMinutes": "{m} 分鐘",
+  "format.durationHourMinutes": "{h} 小時 {m} 分鐘",
 
   // Init
   "init.initializing": "[claude-hud] 正在初始化...",

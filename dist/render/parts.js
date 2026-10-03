@@ -127,8 +127,14 @@ export function versionPart(f) {
     return labeled(f, version && `CC v${version}`);
 }
 export function durationPart(f) {
-    const duration = f.config?.display?.showDuration === true ? sessionDuration(f) : '';
-    return labeled(f, duration && `⏱️  ${duration}`);
+    if (f.config?.display?.showDuration !== true)
+        return null;
+    const duration = sessionDuration(f);
+    if (!duration)
+        return null;
+    // Locales with a duration label render `⏱️ 執行時間：1 小時`; English keeps the bare `⏱️  1h`.
+    const prefix = t('label.duration');
+    return labeled(f, prefix ? `⏱️ ${prefix}${duration}` : `⏱️  ${duration}`);
 }
 export function extraPart(f) {
     return labeled(f, f.extraLabel);
