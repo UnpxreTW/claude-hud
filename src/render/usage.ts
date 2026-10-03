@@ -28,25 +28,24 @@ function formatWindow(f: Frame, layout: Layout, w: UsageWindow, align: LabelAlig
   const percent = formatQuotaPercent(w.percent, colors, display?.usageValue ?? 'percent', w.pace);
   const reset = formatWindowTime(w.resetAt, w.windowMs, timeFormat, wallClock(display), f.now);
 
+  // The reset time rides a `│` separator as bare time — no parentheses and no
+  // "resets in" wording (so showResetLabel no longer gates usage lines).
   if (display?.usageCompact) {
     return reset
-      ? `${label(`${w.label}:`, colors)} ${percent} ${label(`(${reset})`, colors)}`
+      ? `${label(`${w.label}:`, colors)} ${percent} ${label(`│ ${reset}`, colors)}`
       : `${label(`${w.label}:`, colors)} ${percent}`;
   }
 
-  const elapsedMode = timeFormat === 'elapsed' || timeFormat === 'elapsedAndAbsolute';
-  const wording = (display?.showResetLabel ?? true) && !elapsedMode;
-  const resetText = reset && wording ? `${t(timeFormat === 'absolute' ? 'format.resets' : 'format.resetsIn')} ${reset}` : reset;
   const styledLabel = w.labelKey ? barLabel(w.labelKey, colors, align) : label(w.label, colors);
 
   if (display?.usageBarEnabled ?? true) {
     const barReset = layout === 'compact' && timeFormat === 'relative' && reset
       ? `${reset} / ${w.durationLabel ?? w.label}`
-      : resetText;
-    const body = `${quotaBar(w.percent ?? 0, f.barWidth, colors, w.pace)} ${percent}${barReset ? ` (${barReset})` : ''}`;
+      : reset;
+    const body = `${quotaBar(w.percent ?? 0, f.barWidth, colors, w.pace)} ${percent}${barReset ? ` │ ${barReset}` : ''}`;
     return w.forceLabel ? `${styledLabel} ${body}` : body;
   }
-  return `${styledLabel} ${percent}${resetText ? ` (${resetText})` : ''}`;
+  return `${styledLabel} ${percent}${reset ? ` │ ${reset}` : ''}`;
 }
 
 function limitNotice(f: Frame): string {
@@ -56,10 +55,9 @@ function limitNotice(f: Frame): string {
   const resetAt = usage.fiveHour === 100 ? usage.fiveHourResetAt : usage.sevenDayResetAt;
   const reset = formatResetTime(resetAt, format, wallClock(display), f.now);
   if (display?.usageCompact) {
-    return critical(`⚠ Limit${reset ? ` (${reset})` : ''}`, f.config?.colors);
+    return critical(`⚠ Limit${reset ? ` │ ${reset}` : ''}`, f.config?.colors);
   }
-  const resetsKey = format === 'absolute' ? 'format.resets' : 'format.resetsIn';
-  const suffix = reset ? ((display?.showResetLabel ?? true) ? ` (${t(resetsKey)} ${reset})` : ` (${reset})`) : '';
+  const suffix = reset ? ` │ ${reset}` : '';
   return critical(`⚠ ${t('status.limitReached')}${suffix}`, f.config?.colors);
 }
 

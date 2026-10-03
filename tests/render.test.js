@@ -68,17 +68,17 @@ test('scoped usage windows follow 5h and weekly, with the window length in compa
   const data = usage({ sevenDay: 85, scopedWindows: [fable()] });
   assert.equal(
     lines(ctx({ usageData: data }))[1],
-    'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % (resets in 1h 30m) | Weekly █████████░  85 % (resets in 2d 2h) | Fable ██████░░░░  60 % (resets in 1d 6h)',
+    'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % │ 1h 30m | Weekly █████████░  85 % │ 2d 2h | Fable ██████░░░░  60 % │ 1d 6h',
   );
   assert.equal(
     lines(ctx({ usageData: data, config: compact() }))[0],
-    '[Opus] █████░░░░░  45 % | my-project | Usage ███░░░░░░░  25 % (1h 30m / 5h) | Weekly █████████░  85 % (2d 2h / Weekly) | Fable ██████░░░░  60 % (1d 6h / 7d)',
+    '[Opus] █████░░░░░  45 % | my-project | Usage ███░░░░░░░  25 % │ 1h 30m / 5h | Weekly █████████░  85 % │ 2d 2h / Weekly | Fable ██████░░░░  60 % │ 1d 6h / 7d',
   );
 });
 
 test('scoped-only usage leads with the Usage label; hiding scoped windows keeps the balance', () => {
   const scopedOnly = usage({ fiveHour: null, sevenDay: null, scopedWindows: [fable()] });
-  assert.equal(lines(ctx({ usageData: scopedOnly }))[1], 'Context █████░░░░░  45 % │ Usage Fable ██████░░░░  60 % (resets in 1d 6h)');
+  assert.equal(lines(ctx({ usageData: scopedOnly }))[1], 'Context █████░░░░░  45 % │ Usage Fable ██████░░░░  60 % │ 1d 6h');
 
   const hidden = { config: { display: { showModelScopedUsage: false } } };
   assert.equal(lines(ctx({ usageData: scopedOnly, ...hidden }))[1], 'Context █████░░░░░  45 %');
@@ -95,11 +95,11 @@ test('a reached limit replaces the windows; compact drops the Usage label', () =
   const data = usage({ fiveHour: 100, balanceLabel: '¥6.35', scopedWindows: [fable()] });
   assert.equal(
     lines(ctx({ usageData: data }))[1],
-    'Context █████░░░░░  45 % │ Usage ⚠ Limit reached (resets in 1h 30m) | Fable ██████░░░░  60 % (resets in 1d 6h) | ¥6.35',
+    'Context █████░░░░░  45 % │ Usage ⚠ Limit reached │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h | ¥6.35',
   );
-  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| ⚠ Limit reached \(resets in 1h 30m\) \| Fable .* \| ¥6\.35$/);
+  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| ⚠ Limit reached │ 1h 30m \| Fable .* \| ¥6\.35$/);
   assert.match(lines(ctx({ usageData: usage({ sevenDay: 100, sevenDayResetAt: null }) }))[1], /Usage ⚠ Limit reached$/);
-  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /│ ⚠ Limit \(1h 30m\) \| Fable:  60 % \(1d 6h\) \| ¥6\.35$/);
+  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /│ ⚠ Limit │ 1h 30m \| Fable:  60 % │ 1d 6h \| ¥6\.35$/);
 });
 
 test('below usageThreshold only a balance remains', () => {
@@ -112,7 +112,7 @@ test('below usageThreshold only a balance remains', () => {
 
 test('weekly-only usage keeps its label in both layouts', () => {
   const data = usage({ fiveHour: null });
-  assert.equal(lines(ctx({ usageData: data }))[1], 'Context █████░░░░░  45 % │ Usage Weekly ████░░░░░░  40 % (resets in 2d 2h)');
+  assert.equal(lines(ctx({ usageData: data }))[1], 'Context █████░░░░░  45 % │ Usage Weekly ████░░░░░░  40 % │ 2d 2h');
   assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| Weekly ████░░░░░░  40 %/);
 });
 
@@ -135,7 +135,7 @@ const withMemory = { display: { showMemoryUsage: true }, elementOrder: ['project
 test('a visible memory bar widens the other bar labels to match', () => {
   const data = usage({ sevenDay: 85 });
   assert.deepEqual(lines(ctx({ usageData: data, memoryUsage: memory, config: withMemory })).slice(1), [
-    'Context    █████░░░░░  45 % │ Usage      ███░░░░░░░  25 % (resets in 1h 30m) | Weekly     █████████░  85 % (resets in 2d 2h)',
+    'Context    █████░░░░░  45 % │ Usage      ███░░░░░░░  25 % │ 1h 30m | Weekly     █████████░  85 % │ 2d 2h',
     'Approx RAM █████░░░░░ 8.0 GB / 16 GB (50%)',
   ]);
   assert.equal(lines(ctx({ usageData: data, config: withMemory }))[1].slice(0, 9), 'Context █');
@@ -145,11 +145,11 @@ test('a visible memory bar widens the other bar labels to match', () => {
 test('a merged row that does not fit stacks with aligned labels', () => {
   assert.deepEqual(lines(ctx({ usageData: usage({ sevenDay: 85 }), memoryUsage: memory, config: withMemory }), 60).slice(1), [
     'Context    ███░░░  45 %',
-    'Usage      ██░░░░  25 % (resets in 1h 30m)',
-    'Weekly     █████░  85 % (resets in 2d 2h)',
+    'Usage      ██░░░░  25 % │ 1h 30m | Weekly     █████░  85 %',
+    '2d 2h',
     'Approx RAM ███░░░ 8.0 GB / 16 GB (50%)',
   ]);
-  assert.deepEqual(lines(ctx({ usageData: usage() }), 50).slice(1), ['Context ██░░  45 %', 'Usage   █░░░  25 % (resets in 1h 30m)']);
+  assert.deepEqual(lines(ctx({ usageData: usage() }), 50).slice(1), ['Context ██░░  45 % │ Usage █░░░  25 % │ 1h 30m']);
   setLanguage('zh-Hans');
   const stacked = lines(ctx({ usageData: usage({ sevenDay: 85 }), memoryUsage: memory, config: withMemory }), 60).slice(1);
   const barColumns = stacked.map((line) => textWidth(line.slice(0, line.search(/[█░]/))));
@@ -160,8 +160,8 @@ test('rightAlign pushes the rest of a merged row flush right', () => {
   const config = { display: { rightAlign: ['usage'] } };
   const [, row] = lines(ctx({ usageData: usage(), config }), 100);
   assert.equal(row.length, 100);
-  assert.match(row, /^Context █████░░░░░  45 % {2,}Usage ███░░░░░░░  25 % \(resets in 1h 30m\)$/);
-  const unaligned = 'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % (resets in 1h 30m)';
+  assert.match(row, /^Context █████░░░░░  45 % {2,}Usage ███░░░░░░░  25 % │ 1h 30m$/);
+  const unaligned = 'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % │ 1h 30m';
   assert.equal(lines(ctx({ usageData: usage(), config }))[1], unaligned, 'no width, no alignment');
   assert.equal(lines(ctx({ usageData: usage(), config: { display: { rightAlign: ['context'] } } }), 100)[1], unaligned, 'nothing precedes it');
 });
