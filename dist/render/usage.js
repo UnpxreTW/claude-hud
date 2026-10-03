@@ -1,9 +1,8 @@
 import { t } from '../i18n/index.js';
-import { isLimitReached } from '../types.js';
 import { FIVE_HOUR_WINDOW_MS, SEVEN_DAY_WINDOW_MS, resolveUsagePaces } from '../usage-pace.js';
-import { critical, formatQuotaPercent, label, quotaBar } from './colors.js';
+import { formatQuotaPercent, label, quotaBar } from './colors.js';
 import { barLabel } from './labels.js';
-import { formatResetTime, formatWindowTime, limitTimeFormat, wallClock } from './time.js';
+import { formatWindowTime, wallClock } from './time.js';
 function formatWindow(f, layout, w, align) {
     const display = f.config?.display;
     const colors = f.config?.colors;
@@ -26,18 +25,6 @@ function formatWindow(f, layout, w, align) {
         return w.forceLabel ? `${styledLabel} ${body}` : body;
     }
     return `${styledLabel} ${percent}${reset ? ` │ ${reset}` : ''}`;
-}
-function limitNotice(f) {
-    const display = f.config?.display;
-    const usage = f.usageData;
-    const format = limitTimeFormat(display?.timeFormat ?? 'relative');
-    const resetAt = usage.fiveHour === 100 ? usage.fiveHourResetAt : usage.sevenDayResetAt;
-    const reset = formatResetTime(resetAt, format, wallClock(display), f.now);
-    if (display?.usageCompact) {
-        return critical(`⚠ Limit${reset ? ` │ ${reset}` : ''}`, f.config?.colors);
-    }
-    const suffix = reset ? ` │ ${reset}` : '';
-    return critical(`⚠ ${t('status.limitReached')}${suffix}`, f.config?.colors);
 }
 /**
  * The usage windows as separator-joined parts. Expanded joins them into one line;
@@ -69,10 +56,6 @@ export function usageParts(f, layout, align = {}) {
         forceLabel: true,
         durationLabel: '7d',
     }, align));
-    if (isLimitReached(usage)) {
-        const notice = limitNotice(f);
-        return withBalance([compact || display?.usageCompact ? notice : withLabel(notice), ...scoped]);
-    }
     const effectiveUsage = Math.max(usage.fiveHour ?? 0, usage.sevenDay ?? 0, ...scopedWindows.map((w) => w.percent ?? 0));
     if (effectiveUsage < (display?.usageThreshold ?? 0) && !paces.alert) {
         return balance ? [compact ? balance : withLabel(balance)] : null;

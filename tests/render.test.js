@@ -91,15 +91,15 @@ test('scoped-only usage leads with the Usage label; hiding scoped windows keeps 
   assert.equal(lines(ctx({ usageData: high, config: threshold }))[1], 'Context █████░░░░░  45 %', 'a hidden window cannot lift usage over the threshold');
 });
 
-test('a reached limit replaces the windows; compact drops the Usage label', () => {
+test('a reached limit renders a full bar rather than a notice', () => {
   const data = usage({ fiveHour: 100, balanceLabel: '¥6.35', scopedWindows: [fable()] });
   assert.equal(
     lines(ctx({ usageData: data }))[1],
-    'Context █████░░░░░  45 % │ Usage ⚠ Limit reached │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h | ¥6.35',
+    'Context █████░░░░░  45 % │ Usage ██████████ 100 % │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h | ¥6.35',
   );
-  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| ⚠ Limit reached │ 1h 30m \| Fable .* \| ¥6\.35$/);
-  assert.match(lines(ctx({ usageData: usage({ sevenDay: 100, sevenDayResetAt: null }) }))[1], /Usage ⚠ Limit reached$/);
-  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /│ ⚠ Limit │ 1h 30m \| Fable:  60 % │ 1d 6h \| ¥6\.35$/);
+  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| Usage ██████████ 100 % │ 1h 30m \/ 5h \| Fable .* \| ¥6\.35$/);
+  assert.match(lines(ctx({ usageData: usage({ sevenDay: 100, sevenDayResetAt: null }) }))[1], /Weekly ██████████ 100 %$/);
+  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /│ 5h: 100 % │ 1h 30m \| Fable:  60 % │ 1d 6h \| ¥6\.35$/);
 });
 
 test('below usageThreshold only a balance remains', () => {
