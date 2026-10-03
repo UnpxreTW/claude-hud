@@ -18,6 +18,7 @@ export const en: Messages = {
   "label.lastReply": "Last reply",
   "label.advisor": "Advisor",
   "label.compactions": "Compactions",
+  "label.duration": "",
 
   // Status
   "status.limitReached": "Limit reached",
@@ -37,6 +38,9 @@ export const en: Messages = {
   "format.justNow": "just now",
   "format.relativeTime": "{value} ago",
   "format.elapsed": "{value}% elapsed",
+  "format.durationUnder1Min": "<1m",
+  "format.durationMinutes": "{m}m",
+  "format.durationHourMinutes": "{h}h {m}m",
 
   // Init
   "init.initializing": "[claude-hud] Initializing...",

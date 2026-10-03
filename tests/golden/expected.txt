@@ -487,7 +487,7 @@
 \e[0m\e[33m▸\e[0m Fix authentication bug \e[2m(1/3)\e[0m
 
 ### kitchen-sink/zh-Hans
-\e[0m\e[36m[Opus 5.5 ◑ high]\e[0m │ \e]8;;file://<BASE>/home/dev/my-project\e\\e[33mmy-project\e[0m\e]8;;\e\ \e[35mgit:(\e[0m\e]8;;https://github.com/jarrodwatts/claude-hud/tree/main\e\\e[36mmain*\e[0m\e]8;;\e\ [\e[32m+2\e[0m]\e[35m)\e[0m \e[35m⎇ feat-auth\e[0m │ \e[2m顾问:\e[0m Opus 5.5 │ \e[2mauth-fix\e[0m │ \e[2mCC v2.1.286\e[0m │ \e[2m⏱️  1h 0m\e[0m │ \e[2m费用 $1.23 | 今日 $0.0000 | 本周 $0.0000\e[0m
+\e[0m\e[36m[Opus 5.5 ◑ high]\e[0m │ \e]8;;file://<BASE>/home/dev/my-project\e\\e[33mmy-project\e[0m\e]8;;\e\ \e[35mgit:(\e[0m\e]8;;https://github.com/jarrodwatts/claude-hud/tree/main\e\\e[36mmain*\e[0m\e]8;;\e\ [\e[32m+2\e[0m]\e[35m)\e[0m \e[35m⎇ feat-auth\e[0m │ \e[2m顾问:\e[0m Opus 5.5 │ \e[2mauth-fix\e[0m │ \e[2mCC v2.1.286\e[0m │ \e[2m⏱️ 执行时间：1 小时 0 分钟\e[0m │ \e[2m费用 $1.23 | 今日 $0.0000 | 本周 $0.0000\e[0m
 \e[0m\e[2m上下文\e[0m \e[32m█████\e[2m░░░░░\e[0m \e[32m45%\e[0m │ \e[2m用量\e[0m \e[94m███\e[2m░░░░░░░\e[0m \e[94m25%\e[0m (重置剩余 1h 30m)
 \e[0m\e[2m缓存\e[0m \e[32m⏱ 至 12:04 PM\e[0m
 \e[0m\e[2m缓存命中\e[0m 91.0%

@@ -16,6 +16,7 @@ export const zhHant = {
     "label.lastReply": "上次回覆",
     "label.advisor": "顧問",
     "label.compactions": "壓縮次數",
+    "label.duration": "執行時間：",
     // Status
     "status.limitReached": "已達上限",
     "status.allTodosComplete": "全部完成",
@@ -33,6 +34,9 @@ export const zhHant = {
     "format.justNow": "剛剛",
     "format.relativeTime": "{value} 前",
     "format.elapsed": "已過 {value}%",
+    "format.durationUnder1Min": "< 1 分鐘",
+    "format.durationMinutes": "{m} 分鐘",
+    "format.durationHourMinutes": "{h} 小時 {m} 分鐘",
     // Init
     "init.initializing": "[claude-hud] 正在初始化...",
     "init.macosNote": "[claude-hud] 注意：在 macOS 上，您可能需要重新啟動 Claude Code 才能顯示 HUD。",
