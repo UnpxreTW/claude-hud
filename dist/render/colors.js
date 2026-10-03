@@ -1,4 +1,5 @@
 import { isPaceAlert } from '../usage-pace.js';
+import { padPercent } from '../utils/format.js';
 export const RESET = '\x1b[0m';
 const DIM = '\x1b[2m';
 const RED = '\x1b[31m';
@@ -122,7 +123,7 @@ export function formatQuotaPercent(percent, colors, mode = 'percent', pace = nul
     const displayPercent = mode === 'remaining' ? Math.max(0, 100 - percent) : percent;
     // The marker takes the pace's own colour, which the percent band may outrank.
     const marker = isPaceAlert(pace) ? ` ${colorize('▲', getQuotaColor(0, colors, pace))}` : '';
-    return `${color}${displayPercent}%${RESET}${marker}`;
+    return `${color}${padPercent(displayPercent)}${RESET}${marker}`;
 }
 export function quotaBar(percent, width = 10, colors, pace = null) {
     const safeWidth = Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0;

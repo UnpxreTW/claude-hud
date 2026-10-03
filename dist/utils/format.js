@@ -7,17 +7,21 @@ export function formatTokens(n) {
         return `${(n / 1000).toFixed(0)}k`;
     return n.toString();
 }
-// percent → "45%", tokens → "45k/200k", remaining → "55%", both → "45% (45k/200k)".
+/** A percentage padded to a 3-char number plus ` %`, e.g. `  1 %`, ` 11 %`, `100 %`. */
+export function padPercent(n) {
+    return `${String(n).padStart(3)} %`;
+}
+// percent → "45 %", tokens → "45k/200k", remaining → " 55 %", both → "45 % (45k/200k)".
 export function formatContextValue(context, mode) {
     const { percent, tokens, size } = context;
     const ratio = size > 0 ? `${formatTokens(tokens)}/${formatTokens(size)}` : formatTokens(tokens);
     if (mode === 'tokens')
         return ratio;
     if (mode === 'both')
-        return size > 0 ? `${percent}% (${ratio})` : `${percent}%`;
+        return size > 0 ? `${padPercent(percent)} (${ratio})` : padPercent(percent);
     if (mode === 'remaining')
-        return `${Math.max(0, 100 - percent)}%`;
-    return `${percent}%`;
+        return padPercent(Math.max(0, 100 - percent));
+    return padPercent(percent);
 }
 // Units come from the locale's pattern strings, so CJK renders e.g. `1 小時 30 分鐘`
 // while English keeps `1h 30m`. No raw language tag is compared here.
