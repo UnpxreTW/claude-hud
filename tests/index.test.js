@@ -38,7 +38,7 @@ test('the CLI renders stdin, stays silent when disabled, and reports bad input',
   const rendered = await runCli(stdin);
   assert.equal(rendered.status, 0, rendered.stderr);
   assert.match(rendered.stdout, /\[Opus\]/);
-  assert.match(rendered.stdout, /12%/);
+  assert.match(rendered.stdout, /12 %/);
 
   const disabled = await runCli(stdin, { CLAUDE_HUD_DISABLE: '1' });
   assert.equal(disabled.stdout, '');
