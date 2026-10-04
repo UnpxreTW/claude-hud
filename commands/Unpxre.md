@@ -111,10 +111,12 @@ so it renders on its own line alongside the five-hour usage.
     "showAheadBehind": false,
     "showFileStats": false
   },
+  "elementOrder": ["project", "context", "usage", "weeklyUsage"],
   "display": {
     "customLinePosition": "first",
     "timeFormat": "absolute",
     "mergeGroups": [["context", "usage"]],
+    "sevenDayThreshold": 80,
     "showTools": false,
     "showAgents": false,
     "showTodos": false,
@@ -130,9 +132,11 @@ so it renders on its own line alongside the five-hour usage.
 }
 ```
 
-Line 1 keeps the model badge, project, and git branch + dirty marker. Context
-and the five-hour usage are merged onto a single line via `mergeGroups`; weekly
-usage keeps the fork's default handling. Everything else is hidden.
+Line 1 keeps the model badge, project, and git branch + dirty marker. The
+explicit `elementOrder` places `context` and `usage` adjacent so `mergeGroups`
+merges them onto a single line, while `weeklyUsage` follows the upstream
+threshold rule — `sevenDayThreshold: 80` shows it only at or above 80%.
+Everything else is omitted from the order, so it stays hidden.
 
 ---
 

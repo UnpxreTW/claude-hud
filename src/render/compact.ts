@@ -10,7 +10,7 @@ import {
   advisorPart, authPart, compactionsPart, configCountParts, costPart, customLinePart, durationPart, extraPart,
   modelBadge, projectParts, sessionNamePart, sessionTokensSummary, speedPart, versionPart, type Part,
 } from './parts.js';
-import { usageParts } from './usage.js';
+import { usageParts, weeklyUsageParts } from './usage.js';
 
 const ACTIVITY: ActivityElement[] = ['tools', 'skills', 'mcp', 'agents', 'todos'];
 
@@ -33,6 +33,7 @@ function sessionLine(f: Frame): string {
   add(versionPart(f), 'version');
   configCountParts(f).forEach((part) => add(part));
   (usageParts(f, 'compact') ?? []).forEach((part) => add(part));
+  (weeklyUsageParts(f, 'compact') ?? []).forEach((part) => add(part));
   if (f.config?.display?.showSessionTokens) add(sessionTokensSummary(f, `${t('format.tok')}:`));
   add(compactionsPart(f));
   add(advisorPart(f), 'advisor');

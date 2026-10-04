@@ -93,7 +93,7 @@ Claude HUD 是一个[状态栏](https://code.claude.com/docs/en/statusline)命�
 | `pathLevels` | 1-3 \| `full` | 1 | 项目路径显示的目录层级数，或设为 `full` 显示完整绝对路径 |
 | `maxWidth` | number \| `null` | `null` | 可选的回退宽度，仅在终端宽度检测完全失败时使用 |
 | `forceMaxWidth` | boolean | false | 当设置了 `maxWidth` 时始终使用它，即使终端宽度检测返回更小的值 |
-| `elementOrder` | string[] | `["project","context","usage","promptCache","memory","environment","tools","agents","todos","sessionTime"]` | 展开模式下元素的顺序。省略的条目在展开模式下隐藏。现有配置会保留其显式顺序直到更新 |
+| `elementOrder` | string[] | `["project","usage","weeklyUsage","context","promptCache","memory","environment","tools","agents","todos","sessionTime"]` | 展开模式下元素的顺序。省略的条目在展开模式下隐藏。`weeklyUsage` 是独立成行的 7 天窗口；将它放在 `usage` 与 `context` 之间可让三个条形图各占一行。现有配置会保留其显式顺序直到更新 |
 | `projectLineOrder` | string[] | `[]` | 可选的首行片段前置顺序，适用于两种布局。可见性仍由 `display.show*` 控制；省略的片段保持渲染器原有顺序。例如 `["project","model"]` 会将项目和 Git 放到模型徽标之前 |
 | `display.mergeGroups` | string[][] | `[["context","usage"]]` | 展开模式下相邻时应共享一行的元素分组。设为 `[]` 可禁用合并行 |
 | `display.rightAlign` | string[] | `[]` | 以合并行中第一个列出的元素作为右对齐后缀的起点，保持 `elementOrder` 并用空格填充间隔。锚点必须位于实际合并渲染的 `display.mergeGroups` 分组中。终端宽度未知、锚点位于首位或空间不足时回退到普通的 ` │ ` 连接。示例：分组为 `["project","context","usage"]` 时设为 `["context"]`，项目/git 保持在左侧，context 与 usage 靠右对齐。 |
@@ -140,7 +140,7 @@ Claude HUD 是一个[状态栏](https://code.claude.com/docs/en/statusline)命�
 | `display.hourCycle` | `auto` \| `h11` \| `h12` \| `h23` \| `h24` | `auto` | 墙钟重置时间（`absolute`/`both`/`elapsedAndAbsolute` 模式）的时制。`auto` 跟随系统区域设置；`h23` 强制使用 24 小时制（`14:30`），不受区域设置影响 |
 | `display.showClockSeconds` | boolean | false | 在墙钟重置时间中显示秒数，如 `at 14:30:07` |
 | `display.usageThreshold` | 0-100 | 0 | 任一窗口达到此百分比前隐藏使用率（0 = 始终显示） |
-| `display.sevenDayThreshold` | 0-100 | 80 | 当 7 天使用率 ≥ 阈值时显示（0 = 始终显示） |
+| `display.sevenDayThreshold` | 0-100 | 0 | 当 7 天使用率 ≥ 阈值时显示 `weeklyUsage` 元素（0 = 始终显示） |
 | `display.externalUsagePath` | string | `""` | 可选的本地使用率快照文件**绝对路径**。支持开头的 `~` 和 `${VAR}`。相对路径会被忽略。stdin `rate_limits` 存在时会附加 `balance_label`，并在 stdin 缺少 `model_scoped` 窗口时用快照补齐；stdin 窗口缺失时可整体作为回退 |
 | `display.externalUsageWritePath` | string | `""` | 可选的绝对 `.json` 路径，父目录必须已存在。支持开头的 `~` 和 `${VAR}`。当 stdin `rate_limits` 存在时，ClaudeHUD 会写入私有权限快照供其他本地工具读取。相对路径、非 json 文件和缺失父目录会被忽略 |
 | `display.externalUsageFreshnessMs` | number | `300000` | 外部使用率快照允许的最长存活时间，超时后会被忽略 |
@@ -191,10 +191,12 @@ Claude HUD 是一个[状态栏](https://code.claude.com/docs/en/statusline)命�
 
 ### 使用率限制
 
-只要 Claude Code 发送了订阅用户的 `rate_limits`（会话中首个响应之后），就会显示使用率。API key、Bedrock 和 Vertex 会话没有订阅用户限额，因此不显示。7 天窗口在超过 `display.sevenDayThreshold` 后出现：
+只要 Claude Code 发送了订阅用户的 `rate_limits`（会话中首个响应之后），就会显示使用率。API key、Bedrock 和 Vertex 会话没有订阅用户限额，因此不显示。7 天窗口是独立的 `weeklyUsage` 元素，当 7 天使用率超过 `display.sevenDayThreshold`（默认 `0`，即始终显示）时出现：
 
 ```
-Context █████░░░░░ 45% │ Usage ██░░░░░░░░ 25% (resets in 1h 30m) | Weekly █████████░ 85% (resets in 1d)
+Usage ██░░░░░░░░ 25% │ 1h 30m
+Weekly █████████░ 85% │ 1d
+Context █████░░░░░ 45%
 ```
 
 开启 `display.usagePace` 后，消耗快于恢复的窗口会变为琥珀色（预计用到 90% 及以上）或红色（预计在重置前用尽），并加上 `▲`。已用低于 10% 的窗口保持中性。

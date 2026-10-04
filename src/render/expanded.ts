@@ -11,7 +11,7 @@ import {
   advisorPart, authPart, compactionsPart, costPart, customLinePart, durationPart, extraPart, modelBadge,
   projectParts, sessionNamePart, sessionTokensSummary, speedPart, versionPart, type Part,
 } from './parts.js';
-import { usageParts } from './usage.js';
+import { usageParts, weeklyUsageParts } from './usage.js';
 import { gitFilesLine } from './vcs.js';
 import { t } from '../i18n/index.js';
 
@@ -45,6 +45,7 @@ function elementLine(f: Frame, element: HudElement, align: LabelAlign = {}): str
     case 'addedDirs': return addedDirsLine(f);
     case 'context': return contextLine(f, align);
     case 'usage': return usageParts(f, 'expanded', align)?.join(' | ') ?? null;
+    case 'weeklyUsage': return weeklyUsageParts(f, 'expanded', align)?.join(' | ') ?? null;
     case 'promptCache': return promptCacheLine(f);
     case 'cacheHitRate': return cacheHitRateLine(f);
     case 'memory': return memoryLine(f, align);
@@ -81,7 +82,9 @@ export function expandedLines(f: Frame): string[] {
 
   // A visible memory bar widens the label column of the other bars so they line up.
   const memoryVisible = order.includes('memory') && f.config?.display?.showMemoryUsage === true && f.memoryUsage != null;
-  const otherBarVisible = order.includes('context') || (order.includes('usage') && usageParts(f, 'expanded') !== null);
+  const otherBarVisible = order.includes('context')
+    || (order.includes('usage') && usageParts(f, 'expanded') !== null)
+    || (order.includes('weeklyUsage') && weeklyUsageParts(f, 'expanded') !== null);
   const separateAlign: LabelAlign = memoryVisible && otherBarVisible ? { align: true, includeMemoryInWidth: true } : {};
   const stackedAlign: LabelAlign = { align: true, includeMemoryInWidth: memoryVisible };
 

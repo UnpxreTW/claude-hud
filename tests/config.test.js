@@ -123,7 +123,7 @@ test('numeric options clamp, floor, or reject per key', () => {
     ['display.contextWarningThreshold', 150, 100],
     ['display.contextCriticalThreshold', -5, 0],
     ['display.usageThreshold', 42.5, 42.5],
-    ['display.sevenDayThreshold', NaN, 80],
+    ['display.sevenDayThreshold', NaN, 0],
     ['display.environmentThreshold', '50', 0],
     ['display.toolsMaxVisible', 0, 0],
     ['display.toolsMaxVisible', 2.5, 4],
