@@ -6,7 +6,7 @@ import { contextBarAndValue, tokenBreakdown } from './context.js';
 import { cacheHitRateLine, promptCacheLine, sessionTimeLine } from './lines.js';
 import { orderParts } from './order.js';
 import { advisorPart, authPart, compactionsPart, configCountParts, costPart, customLinePart, durationPart, extraPart, modelBadge, projectParts, sessionNamePart, sessionTokensSummary, speedPart, versionPart, } from './parts.js';
-import { usageParts } from './usage.js';
+import { usageParts, weeklyUsageParts } from './usage.js';
 const ACTIVITY = ['tools', 'skills', 'mcp', 'agents', 'todos'];
 // The context bar rides with the model badge, so the cluster moves as the 'model' segment.
 function modelCluster(f) {
@@ -28,6 +28,7 @@ function sessionLine(f) {
     add(versionPart(f), 'version');
     configCountParts(f).forEach((part) => add(part));
     (usageParts(f, 'compact') ?? []).forEach((part) => add(part));
+    (weeklyUsageParts(f, 'compact') ?? []).forEach((part) => add(part));
     if (f.config?.display?.showSessionTokens)
         add(sessionTokensSummary(f, `${t('format.tok')}:`));
     add(compactionsPart(f));

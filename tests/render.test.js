@@ -64,29 +64,33 @@ test('every line starts with a reset so earlier colour cannot leak in', () => {
   for (const line of raw(ctx({ usageData: usage() }))) assert.ok(line.startsWith('\x1b[0m'), JSON.stringify(line));
 });
 
-test('scoped usage windows follow 5h and weekly, with the window length in compact', () => {
+test('scoped usage windows follow 5h; weekly is its own line', () => {
   const data = usage({ sevenDay: 85, scopedWindows: [fable()] });
-  assert.equal(
-    lines(ctx({ usageData: data }))[1],
-    'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % │ 1h 30m | Weekly █████████░  85 % │ 2d 2h | Fable ██████░░░░  60 % │ 1d 6h',
-  );
+  assert.deepEqual(lines(ctx({ usageData: data })).slice(1), [
+    'Usage ███░░░░░░░  25 % │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h',
+    'Weekly █████████░  85 % │ 2d 2h',
+    'Context █████░░░░░  45 %',
+  ]);
   assert.equal(
     lines(ctx({ usageData: data, config: compact() }))[0],
-    '[Opus] █████░░░░░  45 % | my-project | Usage ███░░░░░░░  25 % │ 1h 30m / 5h | Weekly █████████░  85 % │ 2d 2h / Weekly | Fable ██████░░░░  60 % │ 1d 6h / 7d',
+    '[Opus] █████░░░░░  45 % | my-project | Usage ███░░░░░░░  25 % │ 1h 30m / 5h | Fable ██████░░░░  60 % │ 1d 6h / 7d | Weekly █████████░  85 % │ 2d 2h / Weekly',
   );
 });
 
 test('scoped-only usage leads with the Usage label; hiding scoped windows keeps the balance', () => {
   const scopedOnly = usage({ fiveHour: null, sevenDay: null, scopedWindows: [fable()] });
-  assert.equal(lines(ctx({ usageData: scopedOnly }))[1], 'Context █████░░░░░  45 % │ Usage Fable ██████░░░░  60 % │ 1d 6h');
+  assert.deepEqual(lines(ctx({ usageData: scopedOnly })).slice(1), [
+    'Usage Fable ██████░░░░  60 % │ 1d 6h',
+    'Context █████░░░░░  45 %',
+  ]);
 
   const hidden = { config: { display: { showModelScopedUsage: false } } };
   assert.equal(lines(ctx({ usageData: scopedOnly, ...hidden }))[1], 'Context █████░░░░░  45 %');
-  assert.equal(
-    lines(ctx({ usageData: { ...scopedOnly, balanceLabel: '¥6.35' }, ...hidden }))[1],
-    'Context █████░░░░░  45 % │ Usage ¥6.35',
+  assert.deepEqual(
+    lines(ctx({ usageData: { ...scopedOnly, balanceLabel: '¥6.35' }, ...hidden })).slice(1),
+    ['Usage ¥6.35', 'Context █████░░░░░  45 %'],
   );
-  const high = usage({ fiveHour: 10, sevenDay: 10, scopedWindows: [fable(95)] });
+  const high = usage({ fiveHour: 10, sevenDay: null, scopedWindows: [fable(95)] });
   const threshold = { display: { showModelScopedUsage: false, usageThreshold: 50 } };
   assert.equal(lines(ctx({ usageData: high, config: threshold }))[1], 'Context █████░░░░░  45 %', 'a hidden window cannot lift usage over the threshold');
 });
@@ -95,24 +99,31 @@ test('a reached limit renders a full bar rather than a notice', () => {
   const data = usage({ fiveHour: 100, balanceLabel: '¥6.35', scopedWindows: [fable()] });
   assert.equal(
     lines(ctx({ usageData: data }))[1],
-    'Context █████░░░░░  45 % │ Usage ██████████ 100 % │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h | ¥6.35',
+    'Usage ██████████ 100 % │ 1h 30m | Fable ██████░░░░  60 % │ 1d 6h | ¥6.35',
   );
-  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| Usage ██████████ 100 % │ 1h 30m \/ 5h \| Fable .* \| ¥6\.35$/);
-  assert.match(lines(ctx({ usageData: usage({ sevenDay: 100, sevenDayResetAt: null }) }))[1], /Weekly ██████████ 100 %$/);
-  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /│ 5h: 100 % │ 1h 30m \| Fable:  60 % │ 1d 6h \| ¥6\.35$/);
+  assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| Usage ██████████ 100 % │ 1h 30m \/ 5h \| Fable .* \| ¥6\.35 \| Weekly ████░░░░░░  40 %/);
+  assert.match(lines(ctx({ usageData: usage({ sevenDay: 100, sevenDayResetAt: null }) }))[2], /^Weekly ██████████ 100 %$/);
+  assert.match(lines(ctx({ usageData: data, config: { display: { usageCompact: true } } }))[1], /^5h: 100 % │ 1h 30m \| Fable:  60 % │ 1d 6h \| ¥6\.35$/);
 });
 
 test('below usageThreshold only a balance remains', () => {
   const config = { display: { usageThreshold: 50 } };
-  assert.equal(lines(ctx({ usageData: usage(), config }))[1], 'Context █████░░░░░  45 %');
-  assert.equal(lines(ctx({ usageData: usage({ balanceLabel: '¥6.35' }), config }))[1], 'Context █████░░░░░  45 % │ Usage ¥6.35');
-  assert.equal(lines(ctx({ usageData: usage({ balanceLabel: '¥6.35' }), config: compact(config) }))[0], '[Opus] █████░░░░░  45 % | my-project | ¥6.35');
+  assert.equal(lines(ctx({ usageData: usage({ sevenDay: null }), config }))[1], 'Context █████░░░░░  45 %');
+  assert.deepEqual(
+    lines(ctx({ usageData: usage({ sevenDay: null, balanceLabel: '¥6.35' }), config })).slice(1),
+    ['Usage ¥6.35', 'Context █████░░░░░  45 %'],
+  );
+  assert.equal(lines(ctx({ usageData: usage({ sevenDay: null, balanceLabel: '¥6.35' }), config: compact(config) }))[0], '[Opus] █████░░░░░  45 % | my-project | ¥6.35');
+  // showUsage:false hides the weekly element too, so only context remains.
   assert.equal(lines(ctx({ usageData: usage(), config: { display: { showUsage: false } } }))[1], 'Context █████░░░░░  45 %');
 });
 
 test('weekly-only usage keeps its label in both layouts', () => {
   const data = usage({ fiveHour: null });
-  assert.equal(lines(ctx({ usageData: data }))[1], 'Context █████░░░░░  45 % │ Usage Weekly ████░░░░░░  40 % │ 2d 2h');
+  assert.deepEqual(lines(ctx({ usageData: data })).slice(1), [
+    'Weekly ████░░░░░░  40 % │ 2d 2h',
+    'Context █████░░░░░  45 %',
+  ]);
   assert.match(lines(ctx({ usageData: data, config: compact() }))[0], /my-project \| Weekly ████░░░░░░  40 %/);
 });
 
@@ -123,10 +134,14 @@ test('usage pace colours the percent, marks it, and overrides the thresholds', (
     const line = raw(ctx({ usageData: data, config: { ...config, ...layout } })).join('\n');
     assert.ok(line.includes(`${RED} 70 %`), 'projected over 100% is red');
     assert.ok(line.includes(`${RED}▲`));
-    assert.match(plain(line), / 70 % ▲.*Weekly.* 50 % ▲/, 'amber weekly pace surfaces the weekly window');
+    assert.match(plain(line), / 70 % ▲[\s\S]*Weekly[\s\S]* 50 % ▲/, 'amber weekly pace surfaces the weekly window');
     assert.ok(line.includes(`${BRIGHT_MAGENTA} 50 %`));
   }
-  assert.equal(lines(ctx({ usageData: data, config: { display: { usageThreshold: 80 } } }))[1], 'Context █████░░░░░  45 %');
+  // Without pace, usageThreshold 80 hides the 70% five-hour row, but weekly stays (its own element).
+  assert.deepEqual(lines(ctx({ usageData: data, config: { display: { usageThreshold: 80 } } })).slice(1), [
+    'Weekly █████░░░░░  50 % │ 3d 12h',
+    'Context █████░░░░░  45 %',
+  ]);
 });
 
 const memory = { totalBytes: 16 * 2 ** 30, usedBytes: 8 * 2 ** 30, freeBytes: 8 * 2 ** 30, usedPercent: 50 };
@@ -135,7 +150,7 @@ const withMemory = { display: { showMemoryUsage: true }, elementOrder: ['project
 test('a visible memory bar widens the other bar labels to match', () => {
   const data = usage({ sevenDay: 85 });
   assert.deepEqual(lines(ctx({ usageData: data, memoryUsage: memory, config: withMemory })).slice(1), [
-    'Context    █████░░░░░  45 % │ Usage      ███░░░░░░░  25 % │ 1h 30m | Weekly     █████████░  85 % │ 2d 2h',
+    'Context    █████░░░░░  45 % │ Usage      ███░░░░░░░  25 % │ 1h 30m',
     'Approx RAM █████░░░░░ 8.0 GB / 16 GB (50%)',
   ]);
   assert.equal(lines(ctx({ usageData: data, config: withMemory }))[1].slice(0, 9), 'Context █');
@@ -143,13 +158,13 @@ test('a visible memory bar widens the other bar labels to match', () => {
 });
 
 test('a merged row that does not fit stacks with aligned labels', () => {
-  assert.deepEqual(lines(ctx({ usageData: usage({ sevenDay: 85 }), memoryUsage: memory, config: withMemory }), 60).slice(1), [
-    'Context    ███░░░  45 %',
-    'Usage      ██░░░░  25 % │ 1h 30m | Weekly     █████░  85 %',
-    '2d 2h',
-    'Approx RAM ███░░░ 8.0 GB / 16 GB (50%)',
+  assert.deepEqual(lines(ctx({ usageData: usage({ sevenDay: 85 }), memoryUsage: memory, config: withMemory }), 48).slice(1), [
+    'Context    ██░░  45 %',
+    'Usage      █░░░  25 % │ 1h 30m',
+    'Approx RAM ██░░ 8.0 GB / 16 GB (50%)',
   ]);
-  assert.deepEqual(lines(ctx({ usageData: usage() }), 50).slice(1), ['Context ██░░  45 % │ Usage █░░░  25 % │ 1h 30m']);
+  const merged = { elementOrder: ['project', 'context', 'usage'] };
+  assert.deepEqual(lines(ctx({ usageData: usage(), config: merged }), 50).slice(1), ['Context ██░░  45 % │ Usage █░░░  25 % │ 1h 30m']);
   setLanguage('zh-Hans');
   const stacked = lines(ctx({ usageData: usage({ sevenDay: 85 }), memoryUsage: memory, config: withMemory }), 60).slice(1);
   const barColumns = stacked.map((line) => textWidth(line.slice(0, line.search(/[█░]/))));
@@ -157,13 +172,13 @@ test('a merged row that does not fit stacks with aligned labels', () => {
 });
 
 test('rightAlign pushes the rest of a merged row flush right', () => {
-  const config = { display: { rightAlign: ['usage'] } };
+  const config = { display: { rightAlign: ['usage'] }, elementOrder: ['project', 'context', 'usage'] };
   const [, row] = lines(ctx({ usageData: usage(), config }), 100);
   assert.equal(row.length, 100);
   assert.match(row, /^Context █████░░░░░  45 % {2,}Usage ███░░░░░░░  25 % │ 1h 30m$/);
   const unaligned = 'Context █████░░░░░  45 % │ Usage ███░░░░░░░  25 % │ 1h 30m';
   assert.equal(lines(ctx({ usageData: usage(), config }))[1], unaligned, 'no width, no alignment');
-  assert.equal(lines(ctx({ usageData: usage(), config: { display: { rightAlign: ['context'] } } }), 100)[1], unaligned, 'nothing precedes it');
+  assert.equal(lines(ctx({ usageData: usage(), config: { display: { rightAlign: ['context'] }, elementOrder: ['project', 'context', 'usage'] } }), 100)[1], unaligned, 'nothing precedes it');
 });
 
 test('project paths keep the configured trailing segments on POSIX and Windows', () => {
@@ -339,12 +354,13 @@ test('Chinese labels translate the session token summary in both layouts', () =>
 });
 
 test('wrap width: columns, then maxWidth, and forceMaxWidth overrides columns', () => {
-  const long = ctx({ usageData: usage(), config: { maxWidth: 40 } });
+  const merged = ['project', 'context', 'usage'];
+  const long = ctx({ usageData: usage(), config: { maxWidth: 40, elementOrder: merged } });
   assert.equal(lines(long).length, 3, 'maxWidth applies when the width is unknown');
   assert.equal(lines(long, 120).length, 2, 'a known width wins over maxWidth');
-  const forced = ctx({ usageData: usage(), config: { maxWidth: 40, forceMaxWidth: true } });
+  const forced = ctx({ usageData: usage(), config: { maxWidth: 40, forceMaxWidth: true, elementOrder: merged } });
   assert.equal(lines(forced, 120).length, 3);
-  assert.equal(lines(ctx({ usageData: usage() })).length, 2, 'no width, no wrapping');
+  assert.equal(lines(ctx({ usageData: usage(), config: { elementOrder: merged } })).length, 2, 'no width, no wrapping');
 });
 
 test('untrusted text cannot emit terminal control sequences', () => {

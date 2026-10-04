@@ -48,7 +48,7 @@ export function resolveUsagePaces(usage, scopedWindows, display, now = Date.now(
     const fiveHour = paceOf(usage.fiveHour, usage.fiveHourResetAt, FIVE_HOUR_WINDOW_MS);
     const sevenDay = paceOf(usage.sevenDay, usage.sevenDayResetAt, SEVEN_DAY_WINDOW_MS);
     const scoped = scopedWindows.map((w) => paceOf(w.percent, w.resetAt, SEVEN_DAY_WINDOW_MS));
-    const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
+    const sevenDayThreshold = display?.sevenDayThreshold ?? 0;
     return {
         fiveHour,
         sevenDay,
