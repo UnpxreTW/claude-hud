@@ -1,9 +1,9 @@
 export const zhHant = {
     // Labels
-    "label.context": "上下文",
-    "label.usage": "用量",
-    "label.weekly": "本週",
-    "label.approxRam": "記憶體",
+    "label.context": "上下文佔用",
+    "label.usage": "五小時上限",
+    "label.weekly": "每週使用量",
+    "label.approxRam": "記憶體用量",
     "label.promptCache": "快取",
     "label.cacheHitRate": "快取命中",
     "label.rules": "規則",
